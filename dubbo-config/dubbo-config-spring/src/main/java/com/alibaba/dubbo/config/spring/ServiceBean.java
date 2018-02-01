@@ -50,22 +50,16 @@ import java.util.Map;
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener<ContextRefreshedEvent>, BeanNameAware {
 
     private static final long serialVersionUID = 213195494150089726L;
-
     private static transient ApplicationContext SPRING_CONTEXT;
-
     private final transient Service service;
-
     private transient ApplicationContext applicationContext;
-
     private transient String beanName;
-
     private transient boolean supportedApplicationListener;
 
     public ServiceBean() {
         super();
         this.service = null;
     }
-
     public ServiceBean(Service service) {
         super(service);
         this.service = service;
@@ -113,6 +107,14 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         return service;
     }
 
+    /**
+     * 当 ApplicationContext 被初始化或刷新时，ContextRefreshedEvent事件会被发布，方法用来监听ContextRefreshedEvent事件，
+     * 当前ContextRefreshedEvent事件发生后，Spring会调用该方法。
+     *
+     * dubbo暴露服务就是通过该方法中的 exprot() 方法进行暴露的。
+     *
+     * @param event     Spring监听器要监听的事件源
+     */
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (isDelay() && !isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {

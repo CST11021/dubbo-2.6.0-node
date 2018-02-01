@@ -36,15 +36,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Main {
 
     public static final String CONTAINER_KEY = "dubbo.container";
-
     public static final String SHUTDOWN_HOOK_KEY = "dubbo.shutdown.hook";
-
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-
     private static final ExtensionLoader<Container> loader = ExtensionLoader.getExtensionLoader(Container.class);
-
     private static final ReentrantLock LOCK = new ReentrantLock();
-
     private static final Condition STOP = LOCK.newCondition();
 
     public static void main(String[] args) {

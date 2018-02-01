@@ -33,43 +33,27 @@ import java.util.Map;
 
 /**
  * ReferenceFactoryBean
+ * Spring在初始化IOC容器时会利用这里注册的BeanDefinitionParser的parse方法获取对应的ReferenceBean的BeanDefinition实例，
+ * 由于ReferenceBean实现了InitializingBean接口，在设置了bean的所有属性后会调用afterPropertiesSet方法：
  *
  * @export
  */
 public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean, ApplicationContextAware, InitializingBean, DisposableBean {
 
     private static final long serialVersionUID = 213195494150089726L;
-
     private transient ApplicationContext applicationContext;
 
     public ReferenceBean() {
         super();
     }
-
     public ReferenceBean(Reference reference) {
         super(reference);
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-        SpringExtensionFactory.addApplicationContext(applicationContext);
-    }
-
-    public Object getObject() throws Exception {
-        return get();
-    }
-
-    public Class<?> getObjectType() {
-        return getInterfaceClass();
-    }
-
-    @Parameter(excluded = true)
-    public boolean isSingleton() {
-        return true;
-    }
-
     @SuppressWarnings({"unchecked"})
     public void afterPropertiesSet() throws Exception {
+
+        // 1、设置 ConsumerConfig
         if (getConsumer() == null) {
             Map<String, ConsumerConfig> consumerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConsumerConfig.class, false, false);
             if (consumerConfigMap != null && consumerConfigMap.size() > 0) {
@@ -87,8 +71,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+        // 2、设置 ApplicationConfig
         if (getApplication() == null
-                && (getConsumer() == null || getConsumer().getApplication() == null)) {
+            && (getConsumer() == null || getConsumer().getApplication() == null)) {
             Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
             if (applicationConfigMap != null && applicationConfigMap.size() > 0) {
                 ApplicationConfig applicationConfig = null;
@@ -105,8 +91,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+        // 3、设置 ModuleConfig
         if (getModule() == null
-                && (getConsumer() == null || getConsumer().getModule() == null)) {
+            && (getConsumer() == null || getConsumer().getModule() == null)) {
             Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
             if (moduleConfigMap != null && moduleConfigMap.size() > 0) {
                 ModuleConfig moduleConfig = null;
@@ -123,9 +111,11 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+        // 4、设置注册中心 RegistryConfig
         if ((getRegistries() == null || getRegistries().size() == 0)
-                && (getConsumer() == null || getConsumer().getRegistries() == null || getConsumer().getRegistries().size() == 0)
-                && (getApplication() == null || getApplication().getRegistries() == null || getApplication().getRegistries().size() == 0)) {
+            && (getConsumer() == null || getConsumer().getRegistries() == null || getConsumer().getRegistries().size() == 0)
+            && (getApplication() == null || getApplication().getRegistries() == null || getApplication().getRegistries().size() == 0)) {
             Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
             if (registryConfigMap != null && registryConfigMap.size() > 0) {
                 List<RegistryConfig> registryConfigs = new ArrayList<RegistryConfig>();
@@ -139,9 +129,11 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+        // 5、设置监控中心 MonitorConfig
         if (getMonitor() == null
-                && (getConsumer() == null || getConsumer().getMonitor() == null)
-                && (getApplication() == null || getApplication().getMonitor() == null)) {
+            && (getConsumer() == null || getConsumer().getMonitor() == null)
+            && (getApplication() == null || getApplication().getMonitor() == null)) {
             Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
             if (monitorConfigMap != null && monitorConfigMap.size() > 0) {
                 MonitorConfig monitorConfig = null;
@@ -158,6 +150,9 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+        // 6、这步其实是Reference确认生成Invoker所需要的组件是否已经准备好，都准备好后我们进入生成Invoker的部分。
+        // 这里的getObject会调用父类ReferenceConfig的init方法完成组装
         Boolean b = isInit();
         if (b == null && getConsumer() != null) {
             b = getConsumer().isInit();
@@ -166,5 +161,23 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             getObject();
         }
     }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        SpringExtensionFactory.addApplicationContext(applicationContext);
+    }
+
+    public Object getObject() throws Exception {
+        return get();
+    }
+    public Class<?> getObjectType() {
+        return getInterfaceClass();
+    }
+    @Parameter(excluded = true)
+    public boolean isSingleton() {
+        return true;
+    }
+
+
 
 }

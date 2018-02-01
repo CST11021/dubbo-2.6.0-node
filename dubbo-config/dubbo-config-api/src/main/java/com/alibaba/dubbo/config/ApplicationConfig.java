@@ -35,48 +35,35 @@ public class ApplicationConfig extends AbstractConfig {
 
     private static final long serialVersionUID = 5508512956753757169L;
 
-    // application name
+    // 指当前应用名称，主要用来给 zookeeper 注册中心计算应用间依赖关系
     private String name;
-
     // module version
     private String version;
-
     // application owner
     private String owner;
-
     // application's organization (BU)
     private String organization;
-
     // architecture layer
     private String architecture;
-
     // environment, e.g. dev, test or production
     private String environment;
-
     // Java compiler
     private String compiler;
-
     // logger
     private String logger;
-
     // registry centers
     private List<RegistryConfig> registries;
-
     // monitor center
     private MonitorConfig monitor;
-
     // is default or not
     private Boolean isDefault;
-
     // directory for saving thread dump
     private String dumpDirectory;
-
     // customized parameters
     private Map<String, String> parameters;
 
     public ApplicationConfig() {
     }
-
     public ApplicationConfig(String name) {
         setName(name);
     }
@@ -85,7 +72,6 @@ public class ApplicationConfig extends AbstractConfig {
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         checkName("name", name);
         this.name = name;
@@ -93,47 +79,37 @@ public class ApplicationConfig extends AbstractConfig {
             id = name;
         }
     }
-
     @Parameter(key = "application.version")
     public String getVersion() {
         return version;
     }
-
     public void setVersion(String version) {
         this.version = version;
     }
-
     public String getOwner() {
         return owner;
     }
-
     public void setOwner(String owner) {
         checkMultiName("owner", owner);
         this.owner = owner;
     }
-
     public String getOrganization() {
         return organization;
     }
-
     public void setOrganization(String organization) {
         checkName("organization", organization);
         this.organization = organization;
     }
-
     public String getArchitecture() {
         return architecture;
     }
-
     public void setArchitecture(String architecture) {
         checkName("architecture", architecture);
         this.architecture = architecture;
     }
-
     public String getEnvironment() {
         return environment;
     }
-
     public void setEnvironment(String environment) {
         checkName("environment", environment);
         if (environment != null) {
@@ -143,77 +119,60 @@ public class ApplicationConfig extends AbstractConfig {
         }
         this.environment = environment;
     }
-
     public RegistryConfig getRegistry() {
         return registries == null || registries.size() == 0 ? null : registries.get(0);
     }
-
     public void setRegistry(RegistryConfig registry) {
         List<RegistryConfig> registries = new ArrayList<RegistryConfig>(1);
         registries.add(registry);
         this.registries = registries;
     }
-
     public List<RegistryConfig> getRegistries() {
         return registries;
     }
-
     @SuppressWarnings({"unchecked"})
     public void setRegistries(List<? extends RegistryConfig> registries) {
         this.registries = (List<RegistryConfig>) registries;
     }
-
     public MonitorConfig getMonitor() {
         return monitor;
     }
-
     public void setMonitor(MonitorConfig monitor) {
         this.monitor = monitor;
     }
-
     public void setMonitor(String monitor) {
         this.monitor = new MonitorConfig(monitor);
     }
-
     public String getCompiler() {
         return compiler;
     }
-
     public void setCompiler(String compiler) {
         this.compiler = compiler;
         AdaptiveCompiler.setDefaultCompiler(compiler);
     }
-
     public String getLogger() {
         return logger;
     }
-
     public void setLogger(String logger) {
         this.logger = logger;
         LoggerFactory.setLoggerAdapter(logger);
     }
-
     public Boolean isDefault() {
         return isDefault;
     }
-
     public void setDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
-
     @Parameter(key = "dump.directory")
     public String getDumpDirectory() {
         return dumpDirectory;
     }
-
     public void setDumpDirectory(String dumpDirectory) {
         this.dumpDirectory = dumpDirectory;
     }
-
     public Map<String, String> getParameters() {
         return parameters;
     }
-
     public void setParameters(Map<String, String> parameters) {
         checkParameterName(parameters);
         this.parameters = parameters;

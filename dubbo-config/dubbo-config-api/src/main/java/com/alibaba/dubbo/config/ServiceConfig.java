@@ -72,11 +72,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final long serialVersionUID = 3033787999037024738L;
 
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
-
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
-
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
-
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     private final List<URL> urls = new ArrayList<URL>();
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
@@ -91,14 +88,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private List<MethodConfig> methods;
     private ProviderConfig provider;
     private transient volatile boolean exported;
-
     private transient volatile boolean unexported;
-
     private volatile String generic;
 
     public ServiceConfig() {
     }
-
     public ServiceConfig(Service service) {
         appendAnnotation(Service.class, service);
     }
@@ -215,7 +209,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             doExport();
         }
     }
-
     protected synchronized void doExport() {
         if (unexported) {
             throw new IllegalStateException("Already unexported!");

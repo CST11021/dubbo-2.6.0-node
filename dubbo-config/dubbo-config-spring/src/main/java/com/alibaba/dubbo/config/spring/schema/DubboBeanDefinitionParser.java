@@ -51,6 +51,8 @@ import java.util.regex.Pattern;
 /**
  * AbstractBeanDefinitionParser
  *
+ * 该类用于解析dubbo命名空间的配置标签
+ *
  * @export
  */
 public class DubboBeanDefinitionParser implements BeanDefinitionParser {
@@ -65,11 +67,23 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         this.required = required;
     }
 
+    /**
+     * 解析dubbo名空间对应的标签
+     * @param element           要解析的配置标签
+     * @param parserContext     解析上下文
+     * @return
+     */
+    public BeanDefinition parse(Element element, ParserContext parserContext) {
+        return parse(element, parserContext, beanClass, required);
+    }
+
     @SuppressWarnings("unchecked")
     private static BeanDefinition parse(Element element, ParserContext parserContext, Class<?> beanClass, boolean required) {
         RootBeanDefinition beanDefinition = new RootBeanDefinition();
         beanDefinition.setBeanClass(beanClass);
         beanDefinition.setLazyInit(false);
+
+        // 1、解析id属性，如果没有配置，则如下规则生成id
         String id = element.getAttribute("id");
         if ((id == null || id.length() == 0) && required) {
             String generatedBeanName = element.getAttribute("name");
@@ -89,6 +103,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 id = generatedBeanName + (counter++);
             }
         }
+
+        // 2、将对应的标签解析为一个BeanDefinition后，注册到Spring的BeanDefinition注册表
         if (id != null && id.length() > 0) {
             if (parserContext.getRegistry().containsBeanDefinition(id)) {
                 throw new IllegalStateException("Duplicate spring bean id " + id);
@@ -96,6 +112,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             parserContext.getRegistry().registerBeanDefinition(id, beanDefinition);
             beanDefinition.getPropertyValues().addPropertyValue("id", id);
         }
+
+        //
         if (ProtocolConfig.class.equals(beanClass)) {
             for (String name : parserContext.getRegistry().getBeanDefinitionNames()) {
                 BeanDefinition definition = parserContext.getRegistry().getBeanDefinition(name);
@@ -398,10 +416,6 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 beanDefinition.getPropertyValues().addPropertyValue("arguments", arguments);
             }
         }
-    }
-
-    public BeanDefinition parse(Element element, ParserContext parserContext) {
-        return parse(element, parserContext, beanClass, required);
     }
 
 }
