@@ -31,70 +31,51 @@ public class RegistryConfig extends AbstractConfig {
 
     public static final String NO_AVAILABLE = "N/A";
     private static final long serialVersionUID = 5508512956753757169L;
-    // register center address
+    // 注册中心的地址
     private String address;
-
-    // username to login register center
+    // 登录注册中心的用户名
     private String username;
-
-    // password to login register center
+    // 登录注册中心的密码
     private String password;
-
-    // default port for register center
+    // 注册中心的端口号
     private Integer port;
-
-    // protocol for register center
+    // 注册中心使用的协议
     private String protocol;
-
     // client impl
     private String transporter;
-
     private String server;
-
     private String client;
-
     private String cluster;
-
     private String group;
-
     private String version;
 
-    // request timeout in milliseconds for register center
+    // 访问注册中心的请求超时时间（单位：毫秒）
     private Integer timeout;
-
-    // session timeout in milliseconds for register center
+    // 注册中心session超时时间（单位：毫秒）
     private Integer session;
-
     // file for saving register center dynamic list
     private String file;
-
     // wait time before stop
     private Integer wait;
-
     // whether to check if register center is available when boot up
     private Boolean check;
-
     // whether to allow dynamic service to register on the register center
     private Boolean dynamic;
-
     // whether to export service on the register center
     private Boolean register;
-
     // whether allow to subscribe service on the register center
     private Boolean subscribe;
-
     // customized parameters
     private Map<String, String> parameters;
-
     // if it's default
     private Boolean isDefault;
 
     public RegistryConfig() {
     }
-
     public RegistryConfig(String address) {
         setAddress(address);
     }
+
 
     public static void destroyAll() {
         AbstractRegistryFactory.destroyAll();

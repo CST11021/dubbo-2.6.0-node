@@ -77,7 +77,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     private final List<URL> urls = new ArrayList<URL>();
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
-    // interface type
+    // 表示暴露的服务接口类型，这里使用接口的全限定类名
     private String interfaceName;
     private Class<?> interfaceClass;
     // reference to interface impl
@@ -87,6 +87,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     // method configuration
     private List<MethodConfig> methods;
     private ProviderConfig provider;
+    // 用于标识是否已经暴露服务
     private transient volatile boolean exported;
     private transient volatile boolean unexported;
     private volatile String generic;
@@ -186,6 +187,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
+    /**
+     * dubbo暴露服务有两种情况，一种是设置了延迟暴露（比如delay=”5000”），另外一种是没有设置延迟暴露或者延迟设置为-1（delay=”-1”）：
+     *
+     *     设置了延迟暴露，dubbo在Spring实例化bean（initializeBean）的时候会对实现了InitializingBean的类进行回调，回调方法是
+     * afterPropertySet()，如果设置了延迟暴露，dubbo在这个方法中进行服务的发布。
+     *     没有设置延迟或者延迟为-1，dubbo会在Spring实例化完bean之后，在刷新容器最后一步发布ContextRefreshEvent事件的时候，
+     * 通知实现了ApplicationListener的类进行回调onApplicationEvent，dubbo会在这个方法中发布服务。
+     *
+     * 使用export初始化的时候会将Bean对象转换成URL格式，所有Bean属性转换成URL的参数。
+     */
     public synchronized void export() {
         if (provider != null) {
             if (export == null) {
@@ -345,13 +356,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 获取暴露服务的URL地址
         List<URL> registryURLs = loadRegistries(true);
         for (ProtocolConfig protocolConfig : protocols) {
+            // 根据所使用的协议暴露服务
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
 
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
+        // 如果没有配置暴露服务的协议，则默认使用dubbo
         String name = protocolConfig.getName();
         if (name == null || name.length() == 0) {
             name = "dubbo";
@@ -820,6 +834,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.protocols = convertProviderToProtocol(providers);
     }
 
+    /**
+     * 生成一个唯一的服务接口名称
+     *
+     * @return
+     */
     @Parameter(excluded = true)
     public String getUniqueServiceName() {
         StringBuilder buf = new StringBuilder();

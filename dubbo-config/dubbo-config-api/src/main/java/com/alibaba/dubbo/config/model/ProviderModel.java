@@ -26,9 +26,13 @@ import java.util.List;
 import java.util.Map;
 
 public class ProviderModel {
+    // 表示暴露的服务接口
     private final String serviceName;
+    // 表示实现服务接口的实例对象
     private final Object serviceInstance;
+    // 表示配置信息
     private final ServiceConfig metadata;
+
     private final Map<String, List<ProviderMethodModel>> methods = new HashMap<String, List<ProviderMethodModel>>();
 
     public ProviderModel(String serviceName, ServiceConfig metadata, Object serviceInstance) {

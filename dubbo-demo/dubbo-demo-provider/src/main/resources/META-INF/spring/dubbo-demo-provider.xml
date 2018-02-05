@@ -22,12 +22,50 @@ limitations under the License.
        http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
 
     <!-- provider's application name, used for tracing dependency relationship -->
+    <!--应用配置，用于配置当前应用信息，不管该应用是提供者还是消费者，主要用来给注册中心计算应用间依赖关系-->
     <dubbo:application name="demo-provider"/>
+    <!--<dubbo:application
+            id=""
+            name=""
+            version=""
+            architecture=""
+            compiler=""
+            default=""
+            environment=""
+            logger=""
+            monitor=""
+            organization=""
+            owner=""
+            registry=""/>-->
 
     <!-- use multicast registry center to export service -->
     <dubbo:registry address="multicast://224.5.6.7:1234"/>
+    <!--<dubbo:registry
+            default=""
+            version=""
+            id=""
+            group=""
+            address=""
+            check=""
+            client=""
+            cluster=""
+            dynamic=""
+            file=""
+            password=""
+            port=""
+            protocol=""
+            register=""
+            server=""
+            session=""
+            subscribe=""
+            timeout=""
+            transport=""
+            transporter=""
+            username=""
+            wait=""/>-->
 
     <!-- use dubbo protocol to export service on port 20880 -->
+    <!--用于配置暴露服务的协议-->
     <dubbo:protocol name="dubbo" port="20880"/>
 
     <!-- service implementation, as same as regular local bean -->

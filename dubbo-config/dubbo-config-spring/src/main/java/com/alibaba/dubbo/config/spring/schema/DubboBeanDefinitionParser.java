@@ -113,7 +113,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             beanDefinition.getPropertyValues().addPropertyValue("id", id);
         }
 
-        //
+        // 3、处理不同的配置标签
         if (ProtocolConfig.class.equals(beanClass)) {
             for (String name : parserContext.getRegistry().getBeanDefinitionNames()) {
                 BeanDefinition definition = parserContext.getRegistry().getBeanDefinition(name);
@@ -139,14 +139,20 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         } else if (ConsumerConfig.class.equals(beanClass)) {
             parseNested(element, parserContext, ReferenceBean.class, false, "reference", "consumer", id, beanDefinition);
         }
+
+        // 4、处理（解析）该标签下的所有子标签
         Set<String> props = new HashSet<String>();
         ManagedMap parameters = null;
+        // 遍历这个配置类的所有方法
         for (Method setter : beanClass.getMethods()) {
             String name = setter.getName();
+            // 判断是否为set方法
             if (name.length() > 3 && name.startsWith("set")
                     && Modifier.isPublic(setter.getModifiers())
                     && setter.getParameterTypes().length == 1) {
+
                 Class<?> type = setter.getParameterTypes()[0];
+                // 截取setter对应的变量名
                 String property = StringUtils.camelToSplitName(name.substring(3, 4).toLowerCase() + name.substring(4), "-");
                 props.add(property);
                 Method getter = null;
@@ -163,6 +169,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                         || !type.equals(getter.getReturnType())) {
                     continue;
                 }
+
+                // 处理不同的孩子节点
                 if ("parameters".equals(property)) {
                     parameters = parseParameters(element.getChildNodes(), beanDefinition);
                 } else if ("methods".equals(property)) {
@@ -236,6 +244,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 }
             }
         }
+
+        // 5、处理（解析）当前标签的所有属性
         NamedNodeMap attributes = element.getAttributes();
         int len = attributes.getLength();
         for (int i = 0; i < len; i++) {
@@ -255,6 +265,11 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         return beanDefinition;
     }
 
+    /**
+     * 判断这个 cls 是否为基础类型
+     * @param cls
+     * @return
+     */
     private static boolean isPrimitive(Class<?> cls) {
         return cls.isPrimitive() || cls == Boolean.class || cls == Byte.class
                 || cls == Character.class || cls == Short.class || cls == Integer.class
@@ -263,8 +278,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
     }
 
     @SuppressWarnings("unchecked")
-    private static void parseMultiRef(String property, String value, RootBeanDefinition beanDefinition,
-                                      ParserContext parserContext) {
+    private static void parseMultiRef(String property, String value, RootBeanDefinition beanDefinition, ParserContext parserContext) {
         String[] values = value.split("\\s*[,]+\\s*");
         ManagedList list = null;
         for (int i = 0; i < values.length; i++) {
@@ -358,8 +372,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
     }
 
     @SuppressWarnings("unchecked")
-    private static void parseMethods(String id, NodeList nodeList, RootBeanDefinition beanDefinition,
-                                     ParserContext parserContext) {
+    private static void parseMethods(String id, NodeList nodeList, RootBeanDefinition beanDefinition, ParserContext parserContext) {
         if (nodeList != null && nodeList.getLength() > 0) {
             ManagedList methods = null;
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -390,8 +403,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
     }
 
     @SuppressWarnings("unchecked")
-    private static void parseArguments(String id, NodeList nodeList, RootBeanDefinition beanDefinition,
-                                       ParserContext parserContext) {
+    private static void parseArguments(String id, NodeList nodeList, RootBeanDefinition beanDefinition, ParserContext parserContext) {
         if (nodeList != null && nodeList.getLength() > 0) {
             ManagedList arguments = null;
             for (int i = 0; i < nodeList.getLength(); i++) {

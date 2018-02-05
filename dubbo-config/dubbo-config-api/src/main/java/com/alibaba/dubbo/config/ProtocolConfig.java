@@ -43,79 +43,54 @@ public class ProtocolConfig extends AbstractConfig {
 
     // protocol name
     private String name;
-
     // service IP address (when there are multiple network cards available)
     private String host;
-
     // service port
     private Integer port;
-
     // context path
     private String contextpath;
-
     // thread pool
     private String threadpool;
-
     // thread pool size (fixed size)
     private Integer threads;
-
     // IO thread pool size (fixed size)
     private Integer iothreads;
-
     // thread pool's queue length
     private Integer queues;
-
     // max acceptable connections
     private Integer accepts;
-
     // protocol codec
     private String codec;
-
     // serialization
     private String serialization;
-
     // charset
     private String charset;
-
     // payload max length
     private Integer payload;
-
     // buffer size
     private Integer buffer;
-
     // heartbeat interval
     private Integer heartbeat;
-
     // access log
     private String accesslog;
-
     // transfort
     private String transporter;
-
     // how information is exchanged
     private String exchanger;
-
     // thread dispatch mode
     private String dispatcher;
-
     // networker
     private String networker;
-
     // sever impl
     private String server;
-
     // client impl
     private String client;
-
     // supported telnet commands, separated with comma.
     private String telnet;
-
     // command line prompt
     private String prompt;
-
     // status check
     private String status;
-
     // whether to register
     private Boolean register;
 

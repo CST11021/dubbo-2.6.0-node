@@ -30,6 +30,8 @@ import java.util.Arrays;
 /**
  * ProviderConfig
  *
+ * 当 ProtocolConfig 和 ServiceConfig 某属性没有配置时，采用此缺省值，可选
+ *
  * @export
  * @see com.alibaba.dubbo.config.ProtocolConfig
  * @see com.alibaba.dubbo.config.ServiceConfig
@@ -42,70 +44,48 @@ public class ProviderConfig extends AbstractServiceConfig {
 
     // service IP addresses (used when there are multiple network cards available)
     private String host;
-
     // service port
     private Integer port;
-
     // context path
     private String contextpath;
-
     // thread pool
     private String threadpool;
-
     // thread pool size (fixed size)
     private Integer threads;
-
     // IO thread pool size (fixed size)
     private Integer iothreads;
-
     // thread pool queue length
     private Integer queues;
-
     // max acceptable connections
     private Integer accepts;
-
     // protocol codec
     private String codec;
-
     // charset
     private String charset;
-
     // payload max length
     private Integer payload;
-
     // buffer size
     private Integer buffer;
-
     // transporter
     private String transporter;
-
     // how information gets exchanged
     private String exchanger;
-
     // thread dispatching mode
     private String dispatcher;
-
     // networker
     private String networker;
-
     // server impl
     private String server;
-
     // client impl
     private String client;
-
     // supported telnet commands, separated with comma.
     private String telnet;
-
     // command line prompt
     private String prompt;
-
     // status check
     private String status;
-
     // wait time when stop
     private Integer wait;
-
     // if it's default
     private Boolean isDefault;
 
