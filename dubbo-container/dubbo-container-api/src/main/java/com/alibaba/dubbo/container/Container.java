@@ -20,6 +20,13 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Container. (SPI, Singleton, ThreadSafe)
+ *
+
+ 这是一个基类的接口，这个模块中，他的实现类有SpringContainer、Log4jContainer、JettyContainer、LogbackContainer。
+
+ container为服务容器，用于部署运行服务，是一个Standlone的容器，以简单的Main加载Spring启动，因为服务通常不需要Tomcat/JBoss
+ 等Web容器的特性，没必要用Web容器去加载服务。
+
  */
 @SPI("spring")
 public interface Container {

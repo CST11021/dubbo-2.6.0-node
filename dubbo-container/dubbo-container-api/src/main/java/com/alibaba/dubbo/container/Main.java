@@ -32,6 +32,18 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Main. (API, Static, ThreadSafe)
+ *
+ 容器的停机
+    Dubbo是通过JDK的ShutdownHook来完成优雅停机的，所以如果用户使用”kill -9 PID”等强制关闭指令，是不会执行优雅停机的，只有通过”kill PID”时，才会执行。
+ 此时有下面的情况：
+
+ 1，服务提供方
+    停止时，先标记为不接收新请求，新请求过来时直接报错，让客户端重试其它机器。
+    然后，检测线程池中的线程是否正在运行，如果有，等待所有线程执行完成，除非超时，则强制关闭。
+
+ 2，服务消费方
+    停止时，不再发起新的调用请求，所有新的调用在客户端即报错。
+    然后，检测有没有请求的响应还没有返回，等待响应返回，除非超时，则强制关闭。
  */
 public class Main {
 
@@ -55,6 +67,7 @@ public class Main {
             }
             logger.info("Use container type(" + Arrays.toString(args) + ") to run dubbo serivce.");
 
+            // 添加一个钩子，以优雅的方式停止
             if ("true".equals(System.getProperty(SHUTDOWN_HOOK_KEY))) {
                 Runtime.getRuntime().addShutdownHook(new Thread() {
                     public void run() {
@@ -76,6 +89,7 @@ public class Main {
                 });
             }
 
+            // 根据参数启动容器，我们在启动容器时候，可以选择spring、jetty、log4j、logback等参数
             for (Container container : containers) {
                 container.start();
                 logger.info("Dubbo " + container.getClass().getSimpleName() + " started!");

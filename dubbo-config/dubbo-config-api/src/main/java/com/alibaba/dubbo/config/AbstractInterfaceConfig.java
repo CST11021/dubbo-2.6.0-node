@@ -247,6 +247,14 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return null;
     }
 
+    /**
+     * 检查配置的方法在对应的远程服务接口上是否都存在，如下配置：
+        <dubbo:reference id="demoService" check="false" interface="com.alibaba.dubbo.demo.DemoService">
+            <dubbo:method name="sayHello"/>
+        </dubbo:reference>
+     * @param interfaceClass
+     * @param methods
+     */
     protected void checkInterfaceAndMethods(Class<?> interfaceClass, List<MethodConfig> methods) {
         // interface cannot be null
         if (interfaceClass == null) {

@@ -31,6 +31,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * LogbackContainer. (SPI, Singleton, ThreadSafe)
+
+ 自动配置log4j的配置，在多进程启动时，自动给日志文件按进程分目录
+
  */
 public class LogbackContainer implements Container {
 

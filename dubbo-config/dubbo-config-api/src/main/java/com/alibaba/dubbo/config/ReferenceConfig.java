@@ -64,26 +64,32 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     private static final long serialVersionUID = -5864351140409987595L;
 
+    /** 表示本次调用所使用的协议 */
     private static final Protocol refprotocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
+    /** 表示本次调用使用的路由规则 */
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
+    /** 表示本次要代理远程接口所使用代理工厂 */
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
     private final List<URL> urls = new ArrayList<URL>();
-    // interface name
+    // 表示配置的远程服务接口的全限定类名
     private String interfaceName;
+    // 表示配置的远程服务接口的类型
     private Class<?> interfaceClass;
     // client type
     private String client;
     // url for peer-to-peer invocation
     private String url;
-    // method configs
+    // 表示<dubbo:method/>配置
     private List<MethodConfig> methods;
-    // default config
+    /** 表示消费者配置，对应<dubbo:consumer/>配置标签 */
     private ConsumerConfig consumer;
     private String protocol;
-    // interface proxy reference
+    /** 指向代理该远程服务接口的代理对象 */
     private transient volatile T ref;
     private transient volatile Invoker<?> invoker;
+    /** 用于标识该远程服务接口是否已经创建了代理对象 */
     private transient volatile boolean initialized;
+    /** 表示该Bean是否已经被销毁，当Bean实现 DisposableBean 接口时，如果Bean被销毁，则该字段会被置为true */
     private transient volatile boolean destroyed;
     @SuppressWarnings("unused")
     private final Object finalizerGuardian = new Object() {
@@ -153,6 +159,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         return urls;
     }
 
+    /**
+     * 获取该Bean配置表示的远程服务接口的代理对象
+     * @return
+     */
     public synchronized T get() {
         if (destroyed) {
             throw new IllegalStateException("Already destroyed!");
@@ -190,6 +200,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
+
         // get consumer's global configuration
         checkDefault();
         appendProperties(this);
@@ -207,6 +218,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
             checkInterfaceAndMethods(interfaceClass, methods);
         }
+
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
         if (resolve == null || resolve.length() == 0) {
@@ -217,6 +229,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     resolveFile = userResolveFile.getAbsolutePath();
                 }
             }
+
             if (resolveFile != null && resolveFile.length() > 0) {
                 Properties properties = new Properties();
                 FileInputStream fis = null;
@@ -428,10 +441,14 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         return (T) proxyFactory.getProxy(invoker);
     }
 
+    /**
+     * 检查{@link ReferenceConfig#consumer} 是否已经被设置，如果没有创建一个默认的消费者配置
+     */
     private void checkDefault() {
         if (consumer == null) {
             consumer = new ConsumerConfig();
         }
+        // 给这个消费者配置对象设置默认的属性
         appendProperties(consumer);
     }
 

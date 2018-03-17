@@ -354,6 +354,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         unexported = true;
     }
 
+    /**
+     * 根据 URL 服务暴露
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
         // 获取暴露服务的URL地址
@@ -363,7 +366,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
-
+    /**
+     * 根据 URL 的协议头，进行不同协议的服务暴露
+     */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         // 如果没有配置暴露服务的协议，则默认使用dubbo
         String name = protocolConfig.getName();

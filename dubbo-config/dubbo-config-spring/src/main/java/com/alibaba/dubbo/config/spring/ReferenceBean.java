@@ -50,6 +50,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         super(reference);
     }
 
+    /**
+     * InitializingBean 后处理器的接口方法，在Bean的所有配置属性被设置后，调用该方法
+     * @throws Exception
+     */
     @SuppressWarnings({"unchecked"})
     public void afterPropertiesSet() throws Exception {
 
@@ -162,17 +166,37 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         }
     }
 
+    /**
+     * Spring的自动注入方法
+     * @param applicationContext
+     */
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         SpringExtensionFactory.addApplicationContext(applicationContext);
     }
 
+    /**
+     * ReferenceBean 实现了 FactoryBean 接口，所以它其实是一个工厂Bean，Spring实例化时会调用{@link FactoryBean#getObject()}
+     * 方法来返回Bean对象
+     * @return
+     * @throws Exception
+     */
     public Object getObject() throws Exception {
         return get();
     }
+
+    /**
+     * FactoryBean 接口的方法，用于判断{@link FactoryBean#getObject()}方法返回的Bean类型
+     * @return
+     */
     public Class<?> getObjectType() {
         return getInterfaceClass();
     }
+
+    /**
+     * FactoryBean 接口的方法，用于判断{@link FactoryBean#getObject()}方法返回的Bean对象是否为单例对象
+     * @return
+     */
     @Parameter(excluded = true)
     public boolean isSingleton() {
         return true;
