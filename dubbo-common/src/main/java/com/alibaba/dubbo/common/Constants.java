@@ -301,8 +301,9 @@ public class Constants {
 
     public static final int DEFAULT_SHUTDOWN_TIMEOUT = 1000 * 60 * 15;
 
+    /** 当前进程的PID */
     public static final String PID_KEY = "pid";
-
+    /** 时间戳 */
     public static final String TIMESTAMP_KEY = "timestamp";
 
     public static final String REMOTE_TIMESTAMP_KEY = "remote.timestamp";
@@ -337,6 +338,7 @@ public class Constants {
 
     public static final String REVISION_KEY = "revision";
 
+    /** 表示dubbo的版本 */
     public static final String DUBBO_VERSION_KEY = "dubbo";
 
     public static final String HESSIAN_VERSION_KEY = "hessian.version";

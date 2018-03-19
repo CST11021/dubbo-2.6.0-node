@@ -42,7 +42,10 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
     // whether to use generic interface
     protected String generic;
 
-    // whether to find reference's instance from the current JVM
+    /**
+     * whether to find reference's instance from the current JVM
+     * 用于标识该服务接口的实现是否指向本地
+     * */
     protected Boolean injvm;
 
     // lazy create connection

@@ -293,6 +293,7 @@ public class ConfigUtils {
         return properties;
     }
 
+    /** 获取当前进程的pid */
     public static int getPid() {
         if (PID < 0) {
             try {
