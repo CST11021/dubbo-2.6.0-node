@@ -75,19 +75,22 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
+    /** 保存暴露的服务 */
     private final List<URL> urls = new ArrayList<URL>();
+    /** 服务暴露会封装为一个Exporter对象，并保存到该属性中，详见{@link ServiceConfig#doExportUrlsFor1Protocol(ProtocolConfig, List)}方法*/
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
-    // 表示暴露的服务接口类型，这里使用接口的全限定类名
+    /** 表示暴露的服务接口类型，这里使用接口的全限定类名 */
     private String interfaceName;
     private Class<?> interfaceClass;
-    // reference to interface impl
+    /** reference to interface impl （表示服务接口的实现类） */
     private T ref;
     // service name
     private String path;
     // method configuration
     private List<MethodConfig> methods;
+    /** 表示提供服务的应用配置 */
     private ProviderConfig provider;
-    // 用于标识是否已经暴露服务
+    /** 用于标识是否已经暴露服务 */
     private transient volatile boolean exported;
     private transient volatile boolean unexported;
     private volatile String generic;
@@ -697,6 +700,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return port;
     }
 
+    /** 初始化一个ProviderConfig对象 */
     private void checkDefault() {
         if (provider == null) {
             provider = new ProviderConfig();

@@ -37,6 +37,9 @@ import java.lang.reflect.Constructor;
 
 /**
  * StubProxyFactoryWrapper
+ * 装饰器模式，用于装饰实现了{@link ProxyFactory}接口的实现类，如：
+ * @see com.alibaba.dubbo.rpc.proxy.javassist.JavassistProxyFactory （dubbo的默认实现）
+ * @see com.alibaba.dubbo.rpc.proxy.jdk.JdkProxyFactory
  */
 public class StubProxyFactoryWrapper implements ProxyFactory {
 

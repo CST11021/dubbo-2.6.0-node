@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RegistryProtocol
+ * 服务地址发布到注册中心
  *
  */
 public class RegistryProtocol implements Protocol {

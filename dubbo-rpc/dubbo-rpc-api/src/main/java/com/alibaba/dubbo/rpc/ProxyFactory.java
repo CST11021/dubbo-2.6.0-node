@@ -23,12 +23,14 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
+ *
+ * 通过该代理工厂返回服务接口的代理对象，默认使用javassist动态代理的技术实现代理
  */
 @SPI("javassist")
 public interface ProxyFactory {
 
     /**
-     * create proxy.
+     * create proxy.创建一个代理对象
      *
      * @param invoker
      * @return proxy

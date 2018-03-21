@@ -29,12 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 // TODO need to adjust project structure in order to fully utilize the methods introduced here.
+/** 表示暴露服务的应用 */
 public class ApplicationModel {
 
     protected static final Logger logger = LoggerFactory.getLogger(ApplicationModel.class);
 
     /**
      * full qualified class name -> provided service
+     * 表示该应用暴露的服务接口，key：服务接口的全限定名
      */
     private static final ConcurrentMap<String, ProviderModel> providedServices = new ConcurrentHashMap<String, ProviderModel>();
     /**
@@ -73,6 +75,7 @@ public class ApplicationModel {
             logger.warn("already register the provider service: " + serviceName);
             return;
         }
+        System.out.println();
     }
 
    public static void addProviderInvoker(String serviceName,Invoker invoker){

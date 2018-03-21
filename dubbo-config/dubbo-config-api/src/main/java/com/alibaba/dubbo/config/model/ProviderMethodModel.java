@@ -18,6 +18,7 @@ package com.alibaba.dubbo.config.model;
 
 import java.lang.reflect.Method;
 
+/** 表示服务接口要暴露的方法 */
 public class ProviderMethodModel {
     private transient final Method method;
     private final String methodName;

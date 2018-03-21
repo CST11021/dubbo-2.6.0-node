@@ -32,3 +32,8 @@ transport 网络传输层：
 
 serialize 数据序列化层：
     可复用的一些工具，扩展接口为  Serialization  ,ObjectInput  ,  ObjectOutput  ,  ThreadPool
+
+
+模块划分：
+
+    dubbo-remoting 远程通讯模块，相当于Dubbo协议的实现，如果RPC用RMI协议则不需要使用此包。

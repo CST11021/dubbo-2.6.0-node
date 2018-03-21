@@ -37,6 +37,13 @@ public class SpringExtensionFactory implements ExtensionFactory {
         contexts.remove(context);
     }
 
+    /**
+     * 从{@link SpringExtensionFactory#contexts}获取指定类型和beanName的bean对象
+     * @param type object type.
+     * @param name object name.
+     * @param <T>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public <T> T getExtension(Class<T> type, String name) {
         for (ApplicationContext context : contexts) {

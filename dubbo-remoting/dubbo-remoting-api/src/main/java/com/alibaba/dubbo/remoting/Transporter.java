@@ -30,6 +30,12 @@ import javax.sound.midi.Receiver;
  * <a href="http://en.wikipedia.org/wiki/Client%E2%80%93server_model">Client/Server</a>
  *
  * @see com.alibaba.dubbo.remoting.Transporters
+ *
+ *
+ * 网络传输层（Transport）：抽象mina和netty为统一接口，以Message为中心，扩展接口为Channel、Transporter、Client、Server和Codec。
+ * dubbo中具体传输功能的实现都继承自Transporter接口。
+ * 此接口如下，只包含两个方法接口，bind和connect。通过SPI的adaptive注解方式进行注解，默认为netty
+ *
  */
 @SPI("netty")
 public interface Transporter {

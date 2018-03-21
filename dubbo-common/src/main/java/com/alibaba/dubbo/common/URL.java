@@ -73,33 +73,21 @@ public final class URL implements Serializable {
     private static final long serialVersionUID = -1985165475234910535L;
 
     private final String protocol;
-
     private final String username;
-
     private final String password;
-
     private final String host;
-
     private final int port;
-
     private final String path;
-
     private final Map<String, String> parameters;
 
     // ==== cache ====
 
     private volatile transient Map<String, Number> numbers;
-
     private volatile transient Map<String, URL> urls;
-
     private volatile transient String ip;
-
     private volatile transient String full;
-
     private volatile transient String identity;
-
     private volatile transient String parameter;
-
     private volatile transient String string;
 
     protected URL() {
@@ -115,35 +103,27 @@ public final class URL implements Serializable {
     public URL(String protocol, String host, int port) {
         this(protocol, null, null, host, port, null, (Map<String, String>) null);
     }
-
     public URL(String protocol, String host, int port, String[] pairs) { // varargs ... confilict with the following path argument, use array instead.
         this(protocol, null, null, host, port, null, CollectionUtils.toStringMap(pairs));
     }
-
     public URL(String protocol, String host, int port, Map<String, String> parameters) {
         this(protocol, null, null, host, port, null, parameters);
     }
-
     public URL(String protocol, String host, int port, String path) {
         this(protocol, null, null, host, port, path, (Map<String, String>) null);
     }
-
     public URL(String protocol, String host, int port, String path, String... pairs) {
         this(protocol, null, null, host, port, path, CollectionUtils.toStringMap(pairs));
     }
-
     public URL(String protocol, String host, int port, String path, Map<String, String> parameters) {
         this(protocol, null, null, host, port, path, parameters);
     }
-
     public URL(String protocol, String username, String password, String host, int port, String path) {
         this(protocol, username, password, host, port, path, (Map<String, String>) null);
     }
-
     public URL(String protocol, String username, String password, String host, int port, String path, String... pairs) {
         this(protocol, username, password, host, port, path, CollectionUtils.toStringMap(pairs));
     }
-
     public URL(String protocol, String username, String password, String host, int port, String path, Map<String, String> parameters) {
         if ((username == null || username.length() == 0)
                 && password != null && password.length() > 0) {

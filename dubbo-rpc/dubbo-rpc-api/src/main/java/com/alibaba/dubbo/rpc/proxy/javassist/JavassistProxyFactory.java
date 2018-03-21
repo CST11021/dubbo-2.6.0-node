@@ -29,6 +29,14 @@ import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
  */
 public class JavassistProxyFactory extends AbstractProxyFactory {
 
+    /**
+     * 创建服务接口的代理对象
+     *
+     * @param invoker
+     * @param interfaces    服务接口类型
+     * @param <T>           服务接口类型
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
@@ -38,10 +46,19 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
         return new AbstractProxyInvoker<T>(proxy, type, url) {
+
+            /**
+             * 远程调用就是在该方法中实现的
+             *
+             * @param proxy             代理后的对象
+             * @param methodName
+             * @param parameterTypes
+             * @param arguments
+             * @return
+             * @throws Throwable
+             */
             @Override
-            protected Object doInvoke(T proxy, String methodName,
-                                      Class<?>[] parameterTypes,
-                                      Object[] arguments) throws Throwable {
+            protected Object doInvoke(T proxy, String methodName, Class<?>[] parameterTypes, Object[] arguments) throws Throwable {
                 return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
             }
         };

@@ -50,10 +50,13 @@ import java.util.Map;
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener<ContextRefreshedEvent>, BeanNameAware {
 
     private static final long serialVersionUID = 213195494150089726L;
+    /** 在{@link ServiceBean#setApplicationContext(ApplicationContext)}中会自动注入 */
     private static transient ApplicationContext SPRING_CONTEXT;
-    private final transient Service service;
     private transient ApplicationContext applicationContext;
+
+    private final transient Service service;
     private transient String beanName;
+    /** 在{@link ServiceBean#setApplicationContext(ApplicationContext)}方法中设置监听后，该字段置为true */
     private transient boolean supportedApplicationListener;
 
     public ServiceBean() {

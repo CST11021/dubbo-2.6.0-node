@@ -87,7 +87,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     // module info
     protected ModuleConfig module;
 
-    // registry centers
+    /** registry centers 注册中心：对应的配置<dubbo:registry/> */
     protected List<RegistryConfig> registries;
 
     // connection events
@@ -156,6 +156,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         }
     }
 
+    /**
+     * 通过 loadRegistries 获取注册中心 registryUrls
+     * @param provider
+     * @return
+     */
     protected List<URL> loadRegistries(boolean provider) {
         checkRegistry();
         List<URL> registryList = new ArrayList<URL>();
