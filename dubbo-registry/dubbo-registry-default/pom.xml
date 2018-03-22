@@ -36,6 +36,8 @@
             <artifactId>dubbo-registry-api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <!--测试-->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dubbo-rpc-default</artifactId>

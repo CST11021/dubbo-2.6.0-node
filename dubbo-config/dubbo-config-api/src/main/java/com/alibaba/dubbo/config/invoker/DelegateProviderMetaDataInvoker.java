@@ -24,7 +24,9 @@ import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcException;
 
 public class DelegateProviderMetaDataInvoker<T> implements Invoker {
+    /** 表示暴露服务对应的Invoker对象 */
     protected final Invoker<T> invoker;
+    /** 表示该服务接口的配置信息 */
     private ServiceConfig metadata;
 
     public DelegateProviderMetaDataInvoker(Invoker<T> invoker,ServiceConfig metadata) {

@@ -70,22 +70,24 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
     /** 表示本次要代理远程接口所使用代理工厂 */
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    /** 该URL对象包含的信息包括： 要调用的服务接口信息 + 注册中心信息 ，详见{@link ReferenceConfig#createProxy(Map)} */
     private final List<URL> urls = new ArrayList<URL>();
-    // 表示配置的远程服务接口的全限定类名
+    /** 表示配置的远程服务接口的全限定类名 */
     private String interfaceName;
-    // 表示配置的远程服务接口的类型
+    /** 表示配置的远程服务接口的类型 */
     private Class<?> interfaceClass;
     // client type
     private String client;
     // url for peer-to-peer invocation
     private String url;
-    // 表示<dubbo:method/>配置
+    /** 表示<dubbo:method/>配置 */
     private List<MethodConfig> methods;
     /** 表示消费者配置，对应<dubbo:consumer/>配置标签 */
     private ConsumerConfig consumer;
     private String protocol;
     /** 指向代理该远程服务接口的代理对象 */
     private transient volatile T ref;
+    /** 表示服务接口的调用对象，通过{@link Protocol#refer(Class, URL)}返回的 */
     private transient volatile Invoker<?> invoker;
     /** 用于标识该远程服务接口是否已经创建了代理对象 */
     private transient volatile boolean initialized;
@@ -258,6 +260,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
         }
+
         if (consumer != null) {
             if (application == null) {
                 application = consumer.getApplication();
@@ -272,6 +275,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = consumer.getMonitor();
             }
         }
+
         if (module != null) {
             if (registries == null) {
                 registries = module.getRegistries();
@@ -280,6 +284,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = module.getMonitor();
             }
         }
+
         if (application != null) {
             if (registries == null) {
                 registries = application.getRegistries();
@@ -288,6 +293,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = application.getMonitor();
             }
         }
+
         checkApplication();
         checkStubAndMock(interfaceClass);
         // 用于保存服务接口的相关信息，方便后续为这个服务接口构建代理实现
@@ -351,7 +357,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     /**
      * 根据这个map创建一个代理该远程服务接口的代理对象
-     * @param map
+     *
+     * @param map   保存了服务接口的配置信息
      * @return
      */
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
@@ -394,7 +401,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         }
                     }
                 }
-            } else { // assemble URL from register center's configuration
+            } else {
+                // 获取注册中的配置信息
                 List<URL> us = loadRegistries(false);
                 if (us != null && us.size() > 0) {
                     for (URL u : us) {
@@ -402,6 +410,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         if (monitorUrl != null) {
                             map.put(Constants.MONITOR_KEY, URL.encode(monitorUrl.toFullString()));
                         }
+                        // 将要调用的服务接口信息追加到URL中
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }
@@ -412,16 +421,21 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
             if (urls.size() == 1) {
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
-            } else {
+                System.out.println();
+            }
+            // 如果配置了多个注册中心，则需要使用路由策略
+            else {
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
                     invokers.add(refprotocol.refer(interfaceClass, url));
                     if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
-                        registryURL = url; // use last registry url
+                        // use last registry url
+                        registryURL = url;
                     }
                 }
-                if (registryURL != null) { // registry url is available
+                if (registryURL != null) {
+                    // registry url is available
                     // use AvailableCluster only when register's cluster is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME);
                     invoker = cluster.join(new StaticDirectory(u, invokers));

@@ -40,11 +40,12 @@ public interface ProxyFactory {
 
     /**
      * create invoker.
+     * 根据入参将要暴露的服务封装为一个{@link Invoker}对象
      *
      * @param <T>
-     * @param proxy
-     * @param type
-     * @param url
+     * @param proxy     一般这个代理对象就是服务接口的实现对象
+     * @param type      要代理的服务接口类型
+     * @param url       要暴露的 URL
      * @return invoker
      */
     @Adaptive({Constants.PROXY_KEY})

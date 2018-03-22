@@ -74,6 +74,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
+    /** 延迟暴露服务时，会使用该线程池服务进行服务暴露 */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     /** 保存暴露的服务 */
     private final List<URL> urls = new ArrayList<URL>();
@@ -92,6 +93,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private ProviderConfig provider;
     /** 用于标识是否已经暴露服务 */
     private transient volatile boolean exported;
+    /** 当ServiceBean被销毁时，会调用{@link ServiceBean#destroy()} 方法，在该方法中会将该字段置为true */
     private transient volatile boolean unexported;
     private volatile String generic;
 
@@ -362,18 +364,22 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
-        // 获取暴露服务的URL地址
+        // 获取注册中的配置信息，例如：registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=907616&registry=multicast&timestamp=1521707411058
         List<URL> registryURLs = loadRegistries(true);
         for (ProtocolConfig protocolConfig : protocols) {
-            // 根据所使用的协议暴露服务
+            // 根据url中所使用的协议暴露服务
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
+
     /**
      * 根据 URL 的协议头，进行不同协议的服务暴露
+     *
+     * @param protocolConfig    使用的协议配置
+     * @param registryURLs      注册中心配置信息
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
-        // 如果没有配置暴露服务的协议，则默认使用dubbo
+        // 如果没有配置暴露服务的协议，则默认使用dubbo，对应实现类是DubboProtocol
         String name = protocolConfig.getName();
         if (name == null || name.length() == 0) {
             name = "dubbo";
@@ -391,6 +397,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         appendParameters(map, provider, Constants.DEFAULT_KEY);
         appendParameters(map, protocolConfig);
         appendParameters(map, this);
+
+        // 遍历暴露服务接口的内部方法
         if (methods != null && methods.size() > 0) {
             for (MethodConfig method : methods) {
                 appendParameters(map, method, method.getName());
@@ -464,6 +472,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put("methods", StringUtils.join(new HashSet<String>(Arrays.asList(methods)), ","));
             }
         }
+
+        // 这个应该是暴露服务所使用的令牌（注册中心注册服务时需要校验，校验方式有很多比如，IP名单校验、用户名/密码校验，这里应该是使用令牌校验）
         if (!ConfigUtils.isEmpty(token)) {
             if (ConfigUtils.isDefault(token)) {
                 map.put("token", UUID.randomUUID().toString());
@@ -471,10 +481,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put("token", token);
             }
         }
+
+        // 如果使用的是injvm协议，则表示当前服务是本地服务，不用注册到注册中心
         if ("injvm".equals(protocolConfig.getName())) {
             protocolConfig.setRegister(false);
             map.put("notify", "false");
         }
+
         // export service
         String contextPath = protocolConfig.getContextpath();
         if ((contextPath == null || contextPath.length() == 0) && provider != null) {
@@ -483,6 +496,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
+        // 这个通过这个url就可以知道该服务是由谁提供的，使用的是什么协议等信息
         URL url = new URL(name, host, port, (contextPath == null || contextPath.length() == 0 ? "" : contextPath + "/") + path, map);
 
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -496,9 +510,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
+            // 如果这个服务的作用域不是remote的话，就将服务暴露到本地
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
+
             // export to remote if the config is not local (export to local only when config is local)
             if (!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
@@ -514,9 +530,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         if (logger.isInfoEnabled()) {
                             logger.info("Register dubbo service " + interfaceClass.getName() + " url " + url + " to registry " + registryURL);
                         }
+                        // Invoker<?> 这个？表示参入 ref 指向的对象类型（即：实现服务接口的对象类型）
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                        // 使用相应的协议进行暴露服务
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
@@ -532,6 +550,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.urls.add(url);
     }
 
+    /**
+     * 将服务暴露到本地，服务提供者暴露的服务可能服务提供者应用本身也可能会调用，这种情况时dubbo会将服务也暴露到本地，
+     * 这样当本地调用时就不会被路由到其他机器去调用了
+     *
+     * @param url   要暴露到本地的 URL
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
@@ -560,6 +584,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * @param registryURLs
      * @param map
      * @return
+     *
+     * 获取服务提供者的地址（IP）
+     *
      */
     private String findConfigedHosts(ProtocolConfig protocolConfig, List<URL> registryURLs, Map<String, String> map) {
         boolean anyhost = false;
@@ -634,6 +661,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * @param protocolConfig
      * @param name
      * @return
+     *
+     * 获取服务提供者要暴露服务的端口
+     *
      */
     private Integer findConfigedPorts(ProtocolConfig protocolConfig, String name, Map<String, String> map) {
         Integer portToBind = null;

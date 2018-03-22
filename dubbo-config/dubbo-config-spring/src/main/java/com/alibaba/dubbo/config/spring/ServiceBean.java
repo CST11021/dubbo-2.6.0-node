@@ -144,6 +144,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         if ((getRegistries() == null || getRegistries().size() == 0)
             && (getProvider() == null || getProvider().getRegistries() == null || getProvider().getRegistries().size() == 0)
             && (getApplication() == null || getApplication().getRegistries() == null || getApplication().getRegistries().size() == 0)) {
+
             Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
             if (registryConfigMap != null && registryConfigMap.size() > 0) {
                 List<RegistryConfig> registryConfigs = new ArrayList<RegistryConfig>();
@@ -161,7 +162,9 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         if (getMonitor() == null
             && (getProvider() == null || getProvider().getMonitor() == null)
             && (getApplication() == null || getApplication().getMonitor() == null)) {
-            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
+
+            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ?
+                null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
             if (monitorConfigMap != null && monitorConfigMap.size() > 0) {
                 MonitorConfig monitorConfig = null;
                 for (MonitorConfig config : monitorConfigMap.values()) {
@@ -180,6 +183,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
         if ((getProtocols() == null || getProtocols().size() == 0)
             && (getProvider() == null || getProvider().getProtocols() == null || getProvider().getProtocols().size() == 0)) {
+
             Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
             if (protocolConfigMap != null && protocolConfigMap.size() > 0) {
                 List<ProtocolConfig> protocolConfigs = new ArrayList<ProtocolConfig>();

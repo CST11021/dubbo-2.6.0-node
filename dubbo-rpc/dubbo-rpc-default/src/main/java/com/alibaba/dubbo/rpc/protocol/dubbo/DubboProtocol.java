@@ -61,7 +61,8 @@ public class DubboProtocol extends AbstractProtocol {
     public static final int DEFAULT_PORT = 20880;
     private static final String IS_CALLBACK_SERVICE_INVOKE = "_isCallBackServiceInvoke";
     private static DubboProtocol INSTANCE;
-    private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>(); // <host:port,Exchanger>
+    /** 保存所有暴露的服务，key：“ip:port” value：{@link ExchangeServer} <host:port,Exchanger> */
+    private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>();
     private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>(); // <host:port,Exchanger>
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap = new ConcurrentHashMap<String, LazyConnectExchangeClient>();
     private final Set<String> optimizers = new ConcurrentHashSet<String>();
@@ -244,7 +245,7 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private void openServer(URL url) {
-        // find server.
+        // 获取服务地址：ip:port
         String key = url.getAddress();
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(Constants.IS_SERVER_KEY, true);

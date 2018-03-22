@@ -33,34 +33,24 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
 
     // timeout for remote invocation in milliseconds
     protected Integer timeout;
-
     // retry times
     protected Integer retries;
-
     // max concurrent invocations
     protected Integer actives;
-
     // load balance
     protected String loadbalance;
-
     // whether to async
     protected Boolean async;
-
     // whether to ack async-sent
     protected Boolean sent;
-
     // the name of mock class which gets called when a service fails to execute
     protected String mock;
-
     // merger
     protected String merger;
-
     // cache
     protected String cache;
-
     // validation
     protected String validation;
-
     // customized parameters
     protected Map<String, String> parameters;
 

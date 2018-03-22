@@ -34,31 +34,32 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     // version
     protected String version;
-
     // group
     protected String group;
-
     // whether the service is deprecated
     protected Boolean deprecated;
-
-    // delay service exporting
+    /**
+     * 设置延迟服务发布的时间
+     * dubbo暴露服务有两种情况，一种是设置了延迟暴露（比如delay=”5000”），另外一种是没有设置延迟暴露或者延迟设置为-1（delay=”-1”）：
+     *
+     *     设置了延迟暴露，dubbo在Spring实例化bean（initializeBean）的时候会对实现了InitializingBean的类进行回调，回调方法是
+     * afterPropertySet()，如果设置了延迟暴露，dubbo在这个方法中进行服务的发布。
+     *     没有设置延迟或者延迟为-1，dubbo会在Spring实例化完bean之后，在刷新容器最后一步发布ContextRefreshEvent事件的时候，
+     * 通知实现了ApplicationListener的类进行回调onApplicationEvent，dubbo会在这个方法中发布服务。
+     *
+     * 使用export初始化的时候会将Bean对象转换成URL格式，所有Bean属性转换成URL的参数。
+     */
     protected Integer delay;
-
     // whether to export the service
     protected Boolean export;
-
     // weight
     protected Integer weight;
-
     // document center
     protected String document;
-
     // whether to register as a dynamic service or not on register center
     protected Boolean dynamic;
-
     // whether to use token
     protected String token;
-
     // access log
     protected String accesslog;
     protected List<ProtocolConfig> protocols;
@@ -66,10 +67,8 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
     private Integer executes;
     // whether to register
     private Boolean register;
-
     // warm up period
     private Integer warmup;
-
     // serialization
     private String serialization;
 

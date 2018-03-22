@@ -49,29 +49,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * MulticastRegistry
- *
+ * 当配置中使用如：<dubbo:registry address="multicast://224.5.6.7:1234"/>配置时，使用该注册中心实现
  */
 public class MulticastRegistry extends FailbackRegistry {
 
     // logging output
     private static final Logger logger = LoggerFactory.getLogger(MulticastRegistry.class);
-
     private static final int DEFAULT_MULTICAST_PORT = 1234;
-
     private final InetAddress mutilcastAddress;
-
     private final MulticastSocket mutilcastSocket;
-
     private final int mutilcastPort;
-
     private final ConcurrentMap<URL, Set<URL>> received = new ConcurrentHashMap<URL, Set<URL>>();
-
     private final ScheduledExecutorService cleanExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboMulticastRegistryCleanTimer", true));
-
     private final ScheduledFuture<?> cleanFuture;
-
     private final int cleanPeriod;
-
     private volatile boolean admin = false;
 
     public MulticastRegistry(URL url) {

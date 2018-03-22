@@ -52,53 +52,36 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     // local impl class name for the service interface
     protected String local;
-
     // local stub class name for the service interface
     protected String stub;
-
     // service monitor
     protected MonitorConfig monitor;
-
     // proxy type
     protected String proxy;
-
     // cluster type
     protected String cluster;
-
     // filter
     protected String filter;
-
     // listener
     protected String listener;
-
     // owner
     protected String owner;
-
-    // connection limits, 0 means shared connection, otherwise it defines the connections delegated to the
-    // current service
+    // connection limits, 0 means shared connection, otherwise it defines the connections delegated to the current service
     protected Integer connections;
-
     // layer
     protected String layer;
-
     // application info
     protected ApplicationConfig application;
-
     // module info
     protected ModuleConfig module;
-
     /** registry centers 注册中心：对应的配置<dubbo:registry/> */
     protected List<RegistryConfig> registries;
-
     // connection events
     protected String onconnect;
-
     // disconnection events
     protected String ondisconnect;
-
     // callback limits
     private Integer callbacks;
-
     // the scope for referring/exporting a service, if it's local, it means searching in current JVM only.
     private String scope;
 
@@ -157,9 +140,10 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     }
 
     /**
-     * 通过 loadRegistries 获取注册中心 registryUrls
-     * @param provider
-     * @return
+     * 通过 loadRegistries 获取注册中心的配置信息，服务提供者和服务消费都可以调用该方法
+     *
+     * @param provider  表示调用该方法是否是服务提供者
+     * @return          返回注册中的配置信息，配置信息封装为一个URL对象
      */
     protected List<URL> loadRegistries(boolean provider) {
         checkRegistry();
