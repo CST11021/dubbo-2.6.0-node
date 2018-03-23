@@ -55,53 +55,154 @@ import java.util.regex.Pattern;
  * @see com.alibaba.dubbo.common.extension.SPI
  * @see com.alibaba.dubbo.common.extension.Adaptive
  * @see com.alibaba.dubbo.common.extension.Activate
+ *
+ *
+ *
+
+参考：https://blog.csdn.net/chs007chs/article/details/56830748
+
+SPI
+
+    SPI只是一种协议，它只是规定在META-INF目录下提供接口的实现描述文件，由框架本身定义接口、规范，第三方只需要将自己实现
+    在META-INF下描述清楚，那么框架就会自动加载你的实现。比如Dubbo的规则是在META-INF/dubbo、META-INF/dubbo/internal或者
+    META-INF/services下面以需要实现的接口全面去创建一个文件，并且在文件中以properties规则一样配置实现类的全面以及分配实
+    现一个名称。
+
+
+ExtensionLoader
+
+    Dubbo对于SPI的实现全部集中在类ExtensionLoader中，ExtensionLoader是一个单例工厂类，它对外暴露getExtensionLoader静态方
+    法返回一个ExtensionLoader实体，这个方法的入参是一个Class类型，这个方法的意思是返回某个接口的ExtensionLoader，对于一
+    个接口，只会有一个ExtensionLoader实体。
+
+    ExtensionLoader实体对外暴露一些接口来获取扩展实现，这些接口分为几类，分别是activate extension, adaptive extension,
+    default extension, get extension by name , supported extension。
+
+（1）URL为总线的模式
+
+    即运行过程中所有的状态信息都可以通过URL来获取。
+
+（2）activate extension
+
+    activate extension都需要传入url参数，这里涉及到Activate 注解，这个注解主要用于标注在插件接口实现类上，用来配置该扩展
+    实现类激活条件。
+
+    在Dubbo框架里 面的Filter的各种实现类都通过Activate标注，用来描述该Filter什么时候生效。
+
+    MonitorFillter通过Activate标注来告诉Dubbo框架这个Filter是在服务提供端和消费端会生效的。
+    TimeoutFilter则只在服务提供端生效。
+    ValidationFilter除了在消费端和服务提供端激活，它还配置value，这是另一个激活条件，这个value表示传入的URL参数中必须有
+    指定的值才可激活这个扩展。
+
+    另个activate注解还有一个参数order，这是表示一种排序规则，因为一个接口的实现有多种，返回的结果是一个列表，如果不指定
+    排序规则，那么可能列表的排序不可控，其中order的值越大，那么该扩展实现排序就越靠前，对于排序还可以使用before和after来
+    配置。对于用户自定义的扩展默认是追加到列表后面的。
+
+    getActivateExtension(URL url, String[] values, String group)
+
+（3）adaptive extension
+    Dubbo框架提供的各种接口均有很多种类的实现，为了能够适配一个接口的各种实现，便有了adaptive extension。
+    createAdaptiveExtensionClassCode。
+
+    对某个接口实现对应的适配器。
+    对于这种途径，Dubbo也提供了一个注解Adaptive，用来标注在接口的某个实现上，表示这个实现并不是提供具体业务支持，而是作
+    为该接口的适配器。
+    Dubbo框架中的AdaptiveExtensionFatory就是使用Adaptive进行了标注，它用来适ExtensionFactory接口SPIExtensionFactory和
+    SpringExtensionFactory两种实现 ，它会根据支行的状态来确定具体调用ExtensionFactory的哪个实现。
+    Dubbo框架动态生成适配器。
+    ExtensionLoader通过分配接口配置的adaptive规则动态生成adaptive类并且加载到ClassLoader中，来实现动态适配。adaptive注解
+    有一个value属性，通过设置这个属性便可以设置该接口的Adaptive的规则，Dubbo动态生成Adaptive的扩展接口的方法入参必须包含
+    URL或者参数存在能返回URL对象的方法，这样才能根据支行状态动态选择具体实现。
+
+
+（4）get extension by name
+    就是通过接口实现的别名来获取某个具体的服务。
+
+（5）default extension
+    被实现的接口必须标注SPI注解，用来告诉Dubbo这个接口是通过SPI来进行扩展实现的，在接口上标注SPI注解的时候可以配置一个
+    value属性用来描述这个接口的默认实现别名。
+
+应用场景
+    在dubbo中随处可见ExtensionLoader的使用，几乎任何预留扩展的服务都通过ExtensionLoader加载。
+    SPI，扩展点接口标识，只有添加了这个注解才能通过ExtensionLoader加载其服务实现。
+    Adaptive，标识此类为Adaptive类（dubbo可自动生成）。
+    Activate，用于标识此实现是否激活，可以配置一些激活条件。
+    以ReferencConfig为例，其中的Protocol等便是通过ExtensionLoader来加载的。
+
+（1）首先通过getExtensionLoader方法获取对应的Protocol的ExtensionLoader实例。
+（2）之后便是通过getAdaptiveExtension()获取对应的Adaptive实现。
+（3）Adaptive实例不存在，则通过createAdaptiveExtension()创建，在这之前要加载Adaptive Class。
+（4）如果找不到被Adaptive注解的适配器，则通过dubbo动态创建（字节码）适配器。
+（5）由injectExtension完成依赖服务注入（借助ExtensionFactory找到依赖的服务，通过set方法注入）。
+
+
+Dubbo的扩展点主要有adaptive和wrapper两种：
+
+（1）adaptive，因为dubbo底层会大量使用反射，出于性能考虑默认使用javassist字节码编译生成一个adaptive，由它动态委派处理。用户可以自己实现一个adaptive，只需要对某个类打上@adaptive即可。对于默认编译生成Adaptive的方案，需要使用@Adaptive声明接口上的哪些方法是adaptive方法。扩展点名称的key默认是接口类型上@SPI#value，方法上的@Adaptive#value有更高优先级。
+
+（2）包装类必须有一个参数为spi接口类型的构造函数，否则不能正常工作。判断warpper的标准是class有没有一个参数为接口类型的构造参数。Wrapper可以有多个，会被按顺序依次覆盖，假设spi定义如下：
+
+A=a.b.c
+B=a.b.wrapper1
+C=a.b.wrapper2
+
+wrapper的最终结构则为B-C-A
+
+ *
+ *
  */
 public class ExtensionLoader<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionLoader.class);
 
     private static final String SERVICES_DIRECTORY = "META-INF/services/";
-
     private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
-
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
-
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
-
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
-
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
-
+    /** 表示一个SPI接口的类型 */
     private final Class<?> type;
-
     private final ExtensionFactory objectFactory;
-
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
-
+    /** 保存{@link type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
-
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
     private volatile Class<?> cachedAdaptiveClass = null;
+    /** 表示这个SPI接口的默认实现，对应@SPI注解的value值，参见{@link ExtensionLoader#loadExtensionClasses()}*/
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
-
     private Set<Class<?>> cachedWrapperClasses;
-
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
+
+
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
+    /**
+     * 判断这个class是否有@SPI注解
+     * @param type
+     * @param <T>
+     * @return
+     */
     private static <T> boolean withExtensionAnnotation(Class<T> type) {
         return type.isAnnotationPresent(SPI.class);
     }
 
+    /**
+     * 如果入参 type 不是SPI接口，则会抛出异常
+     *
+     * @param type  表示一个SPI的扩展接口
+     * @param <T>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         if (type == null)
@@ -545,6 +646,11 @@ public class ExtensionLoader<T> {
         return clazz;
     }
 
+    /**
+     * 返回这个{@link type}对应的SPI接口的扩展实现
+     *
+     * @return  key:扩展实现名称，value:对应的扩展实现的类型
+     */
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
@@ -559,8 +665,15 @@ public class ExtensionLoader<T> {
         return classes;
     }
 
-    // synchronized in getExtensionClasses
+    /**
+     * synchronized in getExtensionClasses
+     *
+     * 返回这个{@link type}对应的SPI接口的扩展实现
+     *
+     * @return  key:扩展实现名称，value:对应的扩展实现的类型
+     */
     private Map<String, Class<?>> loadExtensionClasses() {
+        // 获取SPI接口的配置信息
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
             String value = defaultAnnotation.value();
@@ -581,7 +694,16 @@ public class ExtensionLoader<T> {
         return extensionClasses;
     }
 
+    /**
+     * 扫描SPI接口实现类时，如果类上有{@link Adaptive}注解则将类的class对象缓存到{@link cachedAdaptiveClass}。
+     * 然后在调用{@link ExtensionLoader#getAdaptiveExtension()}方法时，如果cachedAdaptiveClass不为空，则返回缓存否则调
+     * 用{@link ExtensionLoader#createAdaptiveExtensionClassCode()} 方法生成扩展类
+     *
+     * @param extensionClasses
+     * @param dir
+     */
     private void loadFile(Map<String, Class<?>> extensionClasses, String dir) {
+        // 表示这个SPI接口对应的扩展文件
         String fileName = dir + type.getName();
         try {
             Enumeration<java.net.URL> urls;
@@ -719,7 +841,69 @@ public class ExtensionLoader<T> {
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 生成一个动态的扩展点实现类，Dubbo将扩展点的扩展名保存到URL对象中，在调用时通过“扩展点自适应机制”找到对应的扩展
+     * 实现，这里的“ 扩展点自适应机制”就是在该方法中实现的，通过{@link ExtensionLoader#createAdaptiveExtensionClassCode()}
+     * 方法生成代码，在通过{@link com.alibaba.dubbo.common.compiler.support.AdaptiveCompiler}生成动态类的编译类
+     *
+     * 1. 获取某个SPI接口的adaptive实现类的规则是：
+     *  （1）实现类的类上面有Adaptive注解的，那么这个类就是adaptive类
+     *  （2）实现类的类上面没有Adaptive注解，但是在方法上有Adaptive注解，则会动态生成adaptive类
+     *
+     *  2 .生成的动态类的编译类是：com.alibaba.dubbo.common.compiler.support.AdaptiveCompiler类
+     *  3. 动态类的本质是可以做到一个SPI中的不同的Adaptive方法可以去调不同的SPI实现类去处理。使得程序的灵活性大大提高。这才是整套SPI设计的一个精华之所在
+     *
+     * @return
+     */
     private Class<?> createAdaptiveExtensionClass() {
+/*
+public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
+    public void destroy() {
+        throw new UnsupportedOperationException(
+            "method public abstract void com.alibaba.dubbo.rpc.Protocol.destroy() of interface com.alibaba.dubbo.rpc"
+                + ".Protocol is not adaptive method!");
+    }
+
+    public int getDefaultPort() {
+        throw new UnsupportedOperationException(
+            "method public abstract int com.alibaba.dubbo.rpc.Protocol.getDefaultPort() of interface com.alibaba"
+                + ".dubbo.rpc.Protocol is not adaptive method!");
+    }
+
+    public com.alibaba.dubbo.rpc.Exporter export(com.alibaba.dubbo.rpc.Invoker arg0) throws com.alibaba.dubbo.rpc.RpcException {
+
+        if (arg0 == null) { throw new IllegalArgumentException("com.alibaba.dubbo.rpc.Invoker argument == null"); }
+        if (arg0.getUrl() == null) {
+            throw new IllegalArgumentException("com.alibaba.dubbo.rpc.Invoker argument getUrl() == null");
+        }
+        com.alibaba.dubbo.common.URL url = arg0.getUrl();
+        String extName = (url.getProtocol() == null ? "dubbo" : url.getProtocol());
+        if (extName == null) {
+            throw new IllegalStateException(
+                "Fail to get extension(com.alibaba.dubbo.rpc.Protocol) name from url(" + url.toString()
+                    + ") use keys([protocol])");
+        }
+        com.alibaba.dubbo.rpc.Protocol extension = (com.alibaba.dubbo.rpc.Protocol)ExtensionLoader.getExtensionLoader(
+            com.alibaba.dubbo.rpc.Protocol.class).getExtension(extName);
+        return extension.export(arg0);
+    }
+
+    public com.alibaba.dubbo.rpc.Invoker refer(java.lang.Class arg0, com.alibaba.dubbo.common.URL arg1) throws com.alibaba.dubbo.rpc.RpcException {
+        if (arg1 == null) { throw new IllegalArgumentException("url == null"); }
+        com.alibaba.dubbo.common.URL url = arg1;
+        String extName = (url.getProtocol() == null ? "dubbo" : url.getProtocol());
+        if (extName == null) {
+            throw new IllegalStateException(
+                "Fail to get extension(com.alibaba.dubbo.rpc.Protocol) name from url(" + url.toString()
+                    + ") use keys([protocol])");
+        }
+        com.alibaba.dubbo.rpc.Protocol extension = (com.alibaba.dubbo.rpc.Protocol)ExtensionLoader.getExtensionLoader(
+            com.alibaba.dubbo.rpc.Protocol.class).getExtension(extName);
+        return extension.refer(arg0, arg1);
+    }
+}
+*/
+        // 上面是这里生成的动态类代码的示例
         String code = createAdaptiveExtensionClassCode();
         ClassLoader classLoader = findClassLoader();
         com.alibaba.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
