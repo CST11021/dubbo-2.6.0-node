@@ -42,6 +42,16 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
     }
 
+    /**
+     * create invoker.
+     * 根据入参将要暴露的服务封装为一个{@link Invoker}对象
+     *
+     * @param <T>
+     * @param proxy     一般这个代理对象就是服务接口的实现对象
+     * @param type      要代理的服务接口类型
+     * @param url       要暴露的 URL
+     * @return invoker
+     */
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
         // 将代理接口包装为一个 Wrapper 对象
@@ -49,13 +59,13 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
         return new AbstractProxyInvoker<T>(proxy, type, url) {
 
             /**
-             * 远程调用就是在该方法中实现的
+             * 调用代理对象{@param proxy}的目标方法
              *
              * @param proxy             代理后的对象
-             * @param methodName
-             * @param parameterTypes
-             * @param arguments
-             * @return
+             * @param methodName        要执行的目标方法
+             * @param parameterTypes    方法参数类型
+             * @param arguments         方法入参
+             * @return                  返回目标方法执行结果
              * @throws Throwable
              */
             @Override

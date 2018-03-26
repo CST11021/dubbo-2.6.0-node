@@ -159,6 +159,7 @@ public class ExtensionLoader<T> {
     private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
+    /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型 */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
@@ -389,14 +390,26 @@ public class ExtensionLoader<T> {
     /**
      * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
      * will be thrown.
+     *
+     * 根据这个name返回对应的SPI实现类，注意，这里返回的SPI实现类，使用了装饰器模式，返回的实现类可能不是直接指定的实现
+     * 类，比如：使用dubbo协议时，按说这里的返回的实现类应该是{@link DubboProtocol}，但是实际上可能并不是，这里返回的
+     * 有可能是{@link ProtocolListenerWrapper}类。
+     *
+     * filter=com.alibaba.dubbo.rpc.protocol.ProtocolFilterWrapper
+     listener=com.alibaba.dubbo.rpc.protocol.ProtocolListenerWrapper
+     mock=com.alibaba.dubbo.rpc.support.MockProtocol
+     *
+     *
      */
     @SuppressWarnings("unchecked")
     public T getExtension(String name) {
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Extension name == null");
+
         if ("true".equals(name)) {
             return getDefaultExtension();
         }
+
         Holder<Object> holder = cachedInstances.get(name);
         if (holder == null) {
             cachedInstances.putIfAbsent(name, new Holder<Object>());

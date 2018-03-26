@@ -34,6 +34,10 @@ import java.util.regex.Matcher;
 
 /**
  * Wrapper.
+ *
+ * 通过{@link #makeWrapper(Class)}方法，利用反射技术为目标类型创建一个实例，然后通过{@link #invokeMethod(Object, String, Class[], Object[])}
+ * 方法来调用目标方法
+ *
  */
 public abstract class Wrapper {
     /** class wrapper map */
@@ -41,6 +45,7 @@ public abstract class Wrapper {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     /** Object 对象方法 */
     private static final String[] OBJECT_METHODS = new String[]{"getClass", "hashCode", "toString", "equals"};
+    /** 表示{@link Object}这个对象对应的Wrapper（即：{@link #OBJECT_WRAPPER}这个对象包装的对象是Object） */
     private static final Wrapper OBJECT_WRAPPER = new Wrapper() {
         public String[] getMethodNames() {
             return OBJECT_METHODS;
@@ -104,6 +109,11 @@ public abstract class Wrapper {
         return ret;
     }
 
+    /**
+     * 创建一个入参 c 对应的Wrapper实例
+     * @param c
+     * @return
+     */
     private static Wrapper makeWrapper(Class<?> c) {
         if (c.isPrimitive())
             throw new IllegalArgumentException("Can not create wrapper for primitive type: " + c);
@@ -407,12 +417,13 @@ public abstract class Wrapper {
 
     /**
      * invoke method.
+     * 调用指定对象的目标方法
      *
-     * @param instance instance.
-     * @param mn       method name.
-     * @param types
-     * @param args     argument array.
-     * @return return value.
+     * @param instance instance.        要调用的方法的所在实例
+     * @param mn       method name.     要调用的方法名
+     * @param types                     入参类型
+     * @param args     argument array.  入参值
+     * @return return value.            返回目标方法执行后的返回值
      */
     abstract public Object invokeMethod(Object instance, String mn, Class<?>[] types, Object[] args) throws NoSuchMethodException, InvocationTargetException;
 }

@@ -30,10 +30,13 @@ import java.lang.reflect.InvocationTargetException;
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
 
+    /** 表示服务接口对应实现类 */
     private final T proxy;
 
+    /** 对应{@link #proxy}的类型 */
     private final Class<T> type;
 
+    /** 服务接口相关的配置信息 */
     private final URL url;
 
     public AbstractProxyInvoker(T proxy, Class<T> type, URL url) {
@@ -76,6 +79,15 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
         }
     }
 
+    /**
+     * 用于子类扩展，真正的目标方法调用
+     * @param proxy             要调用目标方法的所属目标对象
+     * @param methodName        要调用的目标方法
+     * @param parameterTypes    方法入参类型
+     * @param arguments         方法入参
+     * @return                  方法调用的执行结果
+     * @throws Throwable
+     */
     protected abstract Object doInvoke(T proxy, String methodName, Class<?>[] parameterTypes, Object[] arguments) throws Throwable;
 
     @Override
