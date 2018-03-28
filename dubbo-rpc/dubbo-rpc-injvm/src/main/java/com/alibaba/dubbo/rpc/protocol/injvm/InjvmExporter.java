@@ -27,8 +27,10 @@ import java.util.Map;
  */
 class InjvmExporter<T> extends AbstractExporter<T> {
 
+    /** 表示暴露到本地的服务接口key，例如：com.alibaba.dubbo.demo.DemoService */
     private final String key;
 
+    /** 保存已经暴露了的服务，key：对应{@link #key}，value：已经暴露的服务会封装为一个{@link Exporter} 对象*/
     private final Map<String, Exporter<?>> exporterMap;
 
     InjvmExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {
@@ -38,6 +40,9 @@ class InjvmExporter<T> extends AbstractExporter<T> {
         exporterMap.put(key, this);
     }
 
+    /**
+     * 从已经暴露的服务中移除对应的服务
+     */
     public void unexport() {
         super.unexport();
         exporterMap.remove(key);

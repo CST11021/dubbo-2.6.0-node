@@ -158,6 +158,7 @@ public class ExtensionLoader<T> {
     private static final String SERVICES_DIRECTORY = "META-INF/services/";
     private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
+
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
     /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型 */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
@@ -166,12 +167,14 @@ public class ExtensionLoader<T> {
     // ==============================
     /** 表示一个SPI接口的类型 */
     private final Class<?> type;
+    /** 扩展点工厂，用于创建扩展点的实现类 */
     private final ExtensionFactory objectFactory;
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
-    /** 保存{@link type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
+    /** 保存{@link #type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
+    /** 缓存这个{@link #type} 对应的扩展点实例 */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
     private volatile Class<?> cachedAdaptiveClass = null;
     /** 表示这个SPI接口的默认实现，对应@SPI注解的value值，参见{@link ExtensionLoader#loadExtensionClasses()}*/
@@ -542,6 +545,10 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 返回类型 T 对应的扩展点实例
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
         Object instance = cachedAdaptiveInstance.get();
@@ -551,6 +558,7 @@ public class ExtensionLoader<T> {
                     instance = cachedAdaptiveInstance.get();
                     if (instance == null) {
                         try {
+                            // 创建一个扩展点实例
                             instance = createAdaptiveExtension();
                             cachedAdaptiveInstance.set(instance);
                         } catch (Throwable t) {
@@ -618,6 +626,13 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 为这个扩展点实例注入相应的实例，一个SPI接口可能存在多个不同的扩展点实例，这里使用了反射技术和装饰器的设计模式，
+     * 修饰这个扩展点实例，需要注意的是，每个扩展点实例内部都存在一个指向同类型的SPI接口的引用
+     *
+     * @param instance  要被装饰的扩展点实例（SPI接口实现类）
+     * @return          返回被装饰后的扩展点实例
+     */
     private T injectExtension(T instance) {
         try {
             if (objectFactory != null) {
@@ -657,7 +672,15 @@ public class ExtensionLoader<T> {
     }
 
     /**
+     * synchronized in getExtensionClasses
+     *
      * 返回这个{@link type}对应的SPI接口的扩展实现
+     *
+     * 分别从"META-INF/services/"、"META-INF/dubbo/" 和 "META-INF/dubbo/internal/" 这三个目录下去加载扩展点
+     *
+     * @see #SERVICES_DIRECTORY          "META-INF/services/"
+     * @see #DUBBO_DIRECTORY             "META-INF/dubbo/"
+     * @see #DUBBO_INTERNAL_DIRECTORY    "META-INF/dubbo/internal/"
      *
      * @return  key:扩展实现名称，value:对应的扩展实现的类型
      */
@@ -678,7 +701,13 @@ public class ExtensionLoader<T> {
     /**
      * synchronized in getExtensionClasses
      *
-     * 返回这个{@link type}对应的SPI接口的扩展实现
+     * 返回这个{@link #type}对应的SPI接口的扩展实现
+     *
+     * 分别从"META-INF/services/"、"META-INF/dubbo/" 和 "META-INF/dubbo/internal/" 这三个目录下去加载扩展点
+     *
+     * @see #SERVICES_DIRECTORY          "META-INF/services/"
+     * @see #DUBBO_DIRECTORY             "META-INF/dubbo/"
+     * @see #DUBBO_INTERNAL_DIRECTORY    "META-INF/dubbo/internal/"
      *
      * @return  key:扩展实现名称，value:对应的扩展实现的类型
      */
@@ -834,6 +863,11 @@ public class ExtensionLoader<T> {
         return extension.value();
     }
 
+    /**
+     * 创建扩展点实例
+     *
+     * @return  返回 T 对应的扩展点实例
+     */
     @SuppressWarnings("unchecked")
     private T createAdaptiveExtension() {
         try {
@@ -866,7 +900,8 @@ public class ExtensionLoader<T> {
      * @return
      */
     private Class<?> createAdaptiveExtensionClass() {
-/*
+/* 示例：
+
 public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
     public void destroy() {
         throw new UnsupportedOperationException(

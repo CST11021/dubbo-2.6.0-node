@@ -63,6 +63,7 @@ public class ProtocolListenerWrapper implements Protocol {
 
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
+            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务
             return protocol.export(invoker);
         }
         return new ListenerExporterWrapper<T>(protocol.export(invoker),

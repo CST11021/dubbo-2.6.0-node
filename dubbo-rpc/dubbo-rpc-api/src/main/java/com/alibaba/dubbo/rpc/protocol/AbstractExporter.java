@@ -46,6 +46,7 @@ public abstract class AbstractExporter<T> implements Exporter<T> {
         return invoker;
     }
 
+    /** 从已经暴露的服务中移除对应的服务 */
     public void unexport() {
         if (unexported) {
             return;

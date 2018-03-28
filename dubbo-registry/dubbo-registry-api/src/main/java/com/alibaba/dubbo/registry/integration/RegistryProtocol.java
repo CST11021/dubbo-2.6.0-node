@@ -52,12 +52,16 @@ public class RegistryProtocol implements Protocol {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistryProtocol.class);
     private static RegistryProtocol INSTANCE;
+    /** 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调 */
     private final Map<URL, NotifyListener> overrideListeners = new ConcurrentHashMap<URL, NotifyListener>();
-    //To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
-    //providerurl <--> exporter
+    /** To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
+        providerurl <--> exporter
+        缓存已经暴露的服务，key：{@link URL#toFullString()} ，value：{@link Exporter} */
     private final Map<String, ExporterChangeableWrapper<?>> bounds = new ConcurrentHashMap<String, ExporterChangeableWrapper<?>>();
     private Cluster cluster;
+    /** 表示要暴露该服务所使用的协议实现 */
     private Protocol protocol;
+    /** 用于构建注册中心实现的工厂类 */
     private RegistryFactory registryFactory;
     private ProxyFactory proxyFactory;
 
@@ -154,6 +158,9 @@ public class RegistryProtocol implements Protocol {
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
+        // 注册器向注册中心订阅overrideProviderUrl,同时将overrideSubscribeListener暴露为回调服务，当注册中心的
+        // overrideProviderUrl数据发生变化时回调，注册器DubboRegistry的registry,subscribe, unRegistry, unSubscribe都类似，
+        // 是一个dubbo的远程服务调用
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
         //Ensure that a new exporter instance is returned every time export
         //保证每次export都返回一个新的exporter实例
@@ -185,6 +192,7 @@ public class RegistryProtocol implements Protocol {
 
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
+        // 这里的缓存key直接使用URL的fullString，例如：dubbo://30.6.28.128:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=30.6.28.128&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1225680&side=provider&timestamp=1522221254113
         String key = getCacheKey(originInvoker);
         ExporterChangeableWrapper<T> exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
         if (exporter == null) {
@@ -192,6 +200,7 @@ public class RegistryProtocol implements Protocol {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
+                    // 使用最终指向的协议暴露服务
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     bounds.put(key, exporter);
                 }
@@ -230,6 +239,12 @@ public class RegistryProtocol implements Protocol {
         return registryFactory.getRegistry(registryUrl);
     }
 
+    /**
+     * 获取要注册到注册中心的URL
+     *
+     * @param originInvoker
+     * @return
+     */
     private URL getRegistryUrl(Invoker<?> originInvoker) {
         URL registryUrl = originInvoker.getUrl();
         if (Constants.REGISTRY_PROTOCOL.equals(registryUrl.getProtocol())) {
@@ -314,6 +329,15 @@ public class RegistryProtocol implements Protocol {
         return ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("mergeable");
     }
 
+    /**
+     * 获取这个服务的{@link Invoker}对象
+     * @param cluster       路由策略
+     * @param registry      注册中心
+     * @param type          服务接口
+     * @param url           服务对应的URL
+     * @param <T>
+     * @return
+     */
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);

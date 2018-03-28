@@ -107,6 +107,12 @@ public interface RegistryService {
      * @param url 订阅条件，不允许为空，如：consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
      * @param listener 变更事件监听器，不允许为空
      *
+     *
+     *
+     *
+     *
+     * 向注册中心订阅url，同时将listener暴露为回调服务，当注册中心的url数据发生变化时回调
+     *
      */
     void subscribe(URL url, NotifyListener listener);
 

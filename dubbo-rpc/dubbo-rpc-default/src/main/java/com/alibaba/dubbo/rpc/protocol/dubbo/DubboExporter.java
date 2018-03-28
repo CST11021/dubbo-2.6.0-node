@@ -27,8 +27,10 @@ import java.util.Map;
  */
 public class DubboExporter<T> extends AbstractExporter<T> {
 
+    /** 表示要暴露的服务key，例如：com.alibaba.dubbo.demo.DemoService:20880 */
     private final String key;
 
+    /** 保存已经暴露的服务，key：{@link #key} */
     private final Map<String, Exporter<?>> exporterMap;
 
     public DubboExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {
@@ -37,6 +39,7 @@ public class DubboExporter<T> extends AbstractExporter<T> {
         this.exporterMap = exporterMap;
     }
 
+    /** 从已经暴露的服务中移除对应的服务 */
     @Override
     public void unexport() {
         super.unexport();

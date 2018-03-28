@@ -66,17 +66,35 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     private static final RouterFactory routerFactory = ExtensionLoader.getExtensionLoader(RouterFactory.class).getAdaptiveExtension();
 
     private static final ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class).getAdaptiveExtension();
-    private final String serviceKey; // Initialization at construction time, assertion not null
-    private final Class<T> serviceType; // Initialization at construction time, assertion not null
-    private final Map<String, String> queryMap; // Initialization at construction time, assertion not null
-    private final URL directoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
+    /** 例如：com.alibaba.dubbo.registry.RegistryService，在构造器中初始化，不能为空*/
+    private final String serviceKey;
+    /** 服务接口类型，在构造器中初始化，不能为空*/
+    private final Class<T> serviceType;
+    /** 保存要获取的服务接口信息，在构造器中初始化，不能为空，例如：
+     0 = {HashMap$Node@2525} "side" -> "consumer"
+     1 = {HashMap$Node@2526} "application" -> "demo-consumer"
+     2 = {HashMap$Node@2527} "register.ip" -> "30.6.28.128"
+     3 = {HashMap$Node@2528} "methods" -> "sayHello"
+     4 = {HashMap$Node@2529} "dubbo" -> "2.0.0"
+     5 = {HashMap$Node@2530} "pid" -> "1230064"
+     6 = {HashMap$Node@2531} "check" -> "false"
+     7 = {HashMap$Node@2532} "interface" -> "com.alibaba.dubbo.demo.DemoService"
+     8 = {HashMap$Node@2533} "timestamp" -> "1522228545805"
+     * */
+    private final Map<String, String> queryMap;
+    // Initialization at construction time, assertion not null, and always assign non null value
+    private final URL directoryUrl;
+    /** 表示服务接口的方法名 */
     private final String[] serviceMethods;
     private final boolean multiGroup;
-    private Protocol protocol; // Initialization at the time of injection, the assertion is not null
-    private Registry registry; // Initialization at the time of injection, the assertion is not null
+    /** 表示暴露服务所使用的协议 */
+    private Protocol protocol;
+    /** 对应<dubbo:registry address="multicast://224.5.6.7:1234"/>配置 */
+    private Registry registry;
     private volatile boolean forbidden = false;
 
-    private volatile URL overrideDirectoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
+    /** 例如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer&check=false&dubbo=2.0.0&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1230064&register.ip=30.6.28.128&side=consumer&timestamp=1522228545805 */
+    private volatile URL overrideDirectoryUrl;
 
     /**
      * override rules

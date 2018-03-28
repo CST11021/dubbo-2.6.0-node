@@ -78,7 +78,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     /** 保存暴露的服务 */
     private final List<URL> urls = new ArrayList<URL>();
-    /** 服务暴露会封装为一个Exporter对象，并保存到该属性中，详见{@link ServiceConfig#doExportUrlsFor1Protocol(ProtocolConfig, List)}方法*/
+    /** 服务暴露后会封装为一个Exporter对象，并保存到该属性中，详见{@link ServiceConfig#doExportUrlsFor1Protocol(ProtocolConfig, List)}方法*/
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     /** 表示暴露的服务接口类型，这里使用接口的全限定类名 */
     private String interfaceName;

@@ -39,7 +39,8 @@ public interface Invoker<T> extends Node {
      * invoke.
      * 调用{@link Invocation}中封装的目标方法
      *
-     * @see Invocation 仅封装了调用方法的方法名、方法入参类型和方法入参等信息，并没有封装目标对象
+     * @see Invocation 仅封装了调用方法的方法名、方法入参类型和方法入参等信息，并没有封装目标对象，目标对象的载体在
+     * {@link Invoker}接口的实现类中
      *
      * @param invocation
      * @return result           返回服务方法的执行结果

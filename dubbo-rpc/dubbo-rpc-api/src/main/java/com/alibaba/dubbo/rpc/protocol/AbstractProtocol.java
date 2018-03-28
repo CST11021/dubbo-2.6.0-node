@@ -38,7 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractProtocol implements Protocol {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
-    /** 保存所有暴露的服务，Exporter封装了Invoker，Invoker封装了URL，URL封装了配置关系信息 */
+    /** 保存所有暴露的服务，Exporter封装了Invoker，Invoker封装了URL，URL封装了配置关系信息；
+     * key：暴露的服务，例如：com.alibaba.dubbo.demo.DemoService:20880 ，value：{@link Exporter}*/
     protected final Map<String, Exporter<?>> exporterMap = new ConcurrentHashMap<String, Exporter<?>>();
 
     //TODO SOFEREFENCE
