@@ -117,10 +117,21 @@ public class RegistryProtocol implements Protocol {
         registry.register(registedProviderUrl);
     }
 
+    /**
+     * 注册时应该是将 registedProviderUrl 传递到注册中心，注册中心记录相应信息；这里我们可以理解为，消费者访问注册中心时，
+     * 根据消费者需要获得的服务去读取服务提供者（url）；而订阅时，则是根据 overrideSubscribeUrl 地址和 overrideSubscribeListener
+     * 监听。overrideSubscribeListener 监听的作用是当提供者的 url 改变时，重新 export；
+     *
+     * @param originInvoker
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
         //export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
+        // 获取要注册到注册中心的URL
         URL registryUrl = getRegistryUrl(originInvoker);
 
         //registry provider
@@ -139,11 +150,13 @@ public class RegistryProtocol implements Protocol {
 
         // Subscribe the override data
         // FIXME When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service. Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
+        // FIXME 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
         //Ensure that a new exporter instance is returned every time export
+        //保证每次export都返回一个新的exporter实例
         return new Exporter<T>() {
             public Invoker<T> getInvoker() {
                 return exporter.getInvoker();
@@ -207,6 +220,7 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get an instance of registry based on the address of invoker
+     * 通过{@link #registryFactory}创建一个注册中心对象
      *
      * @param originInvoker
      * @return

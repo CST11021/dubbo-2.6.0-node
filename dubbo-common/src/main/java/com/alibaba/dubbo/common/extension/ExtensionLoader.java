@@ -393,12 +393,9 @@ public class ExtensionLoader<T> {
      *
      * 根据这个name返回对应的SPI实现类，注意，这里返回的SPI实现类，使用了装饰器模式，返回的实现类可能不是直接指定的实现
      * 类，比如：使用dubbo协议时，按说这里的返回的实现类应该是{@link DubboProtocol}，但是实际上可能并不是，这里返回的
-     * 有可能是{@link ProtocolListenerWrapper}类。
-     *
-     * filter=com.alibaba.dubbo.rpc.protocol.ProtocolFilterWrapper
-     listener=com.alibaba.dubbo.rpc.protocol.ProtocolListenerWrapper
-     mock=com.alibaba.dubbo.rpc.support.MockProtocol
-     *
+     * 可能是{@link ProtocolListenerWrapper}，ProtocolListenerWrapper内部存在一个Protocol引用，指向{@link ProtocolFilterWrapper}
+     * 然后，ProtocolFilterWrapper内部的Protocol引用指向{@link RegistryProtocol}，最后RegistryProtocol的内部Protocol才
+     * 指向{@link DubboProtocol}
      *
      */
     @SuppressWarnings("unchecked")

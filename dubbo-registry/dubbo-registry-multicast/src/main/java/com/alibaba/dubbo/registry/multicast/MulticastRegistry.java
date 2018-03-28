@@ -50,6 +50,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * MulticastRegistry
  * 当配置中使用如：<dubbo:registry address="multicast://224.5.6.7:1234"/>配置时，使用该注册中心实现
+ *
+ * Multicast注册中心有下面特点：
+ *      不需要启动任何中心节点，只要广播地址一样，就可以互相发现
+ *      组播受网络结构限制，只适合小规模应用或开发阶段使用
+ *      组播地址段: 224.0.0.0 - 239.255.255.255
  */
 public class MulticastRegistry extends FailbackRegistry {
 
