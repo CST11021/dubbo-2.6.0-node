@@ -41,6 +41,8 @@ public interface Directory<T> extends Node {
 
     /**
      * list invokers.
+     * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。
+     * {@link Cluster}会将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
      *
      * @return invokers
      */
