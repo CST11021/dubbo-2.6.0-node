@@ -56,6 +56,14 @@ public interface Protocol {
      * @param invoker           服务的执行体
      * @return exporter         暴露服务的引用，用于取消暴露
      * @throws RpcException     当暴露服务出错时抛出，比如端口已占用
+     *
+     *
+     *  Dubbo处理服务暴露的关键就在Invoker转换到Exporter的过程，我们以Dubbo和rmi这两种典型协议的实现来进行说明：
+     *      Dubbo的实现： Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，
+     *                    并接收客户端发来的各种请求，通讯细节由dubbo自己实现。
+     *      Rmi的实现：   RMI协议的Invoker转为Exporter发生在RmiProtocol类的export方法，他通过Spring或Dubbo或JDK来实现服务，
+     *                    通讯细节由JDK底层来实现。
+     *
      */
     @Adaptive
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;

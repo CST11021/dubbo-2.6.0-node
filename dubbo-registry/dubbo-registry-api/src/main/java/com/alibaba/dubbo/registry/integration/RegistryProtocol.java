@@ -52,7 +52,10 @@ public class RegistryProtocol implements Protocol {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistryProtocol.class);
     private static RegistryProtocol INSTANCE;
-    /** 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调 */
+    /**
+     * 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调。
+     *
+     */
     private final Map<URL, NotifyListener> overrideListeners = new ConcurrentHashMap<URL, NotifyListener>();
     /** To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
         providerurl <--> exporter
@@ -132,7 +135,7 @@ public class RegistryProtocol implements Protocol {
      * @throws RpcException
      */
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
-        //export invoker
+        // export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
         // 获取要注册到注册中心的URL
@@ -193,6 +196,8 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * 暴露服务，并将暴露的服务缓存到本地
+     * Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端发来的各
+     * 种请求，通讯细节由dubbo自己实现
      *
      * @param originInvoker
      * @param <T>
