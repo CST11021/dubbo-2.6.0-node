@@ -24,6 +24,8 @@ import java.util.Map;
 
 /**
  * DubboExporter
+ * 使用Dubbo协议暴露服务后会返回一个{@link Exporter}对象
+ *
  */
 public class DubboExporter<T> extends AbstractExporter<T> {
 

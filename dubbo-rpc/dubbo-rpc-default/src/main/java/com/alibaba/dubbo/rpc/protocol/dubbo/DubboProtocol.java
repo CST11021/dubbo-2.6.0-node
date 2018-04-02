@@ -216,6 +216,18 @@ public class DubboProtocol extends AbstractProtocol {
         return DEFAULT_PORT;
     }
 
+    /**
+     * dubbo从要暴漏的服务的URL中取得相关的配置（host，port等）进行服务端server的创建，通过
+     * server = Exchangers.bind(url, requestHandler) 正式创建服务。
+     *
+     * 所以基本的创建步骤是：
+     * export()  -->  openServer()  -->  createServer()  -->  server = Exchangers.bind(url, requestHandler);
+     *
+     * @param invoker           服务的执行体
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         URL url = invoker.getUrl();
 
@@ -245,7 +257,7 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private void openServer(URL url) {
-        // 获取服务地址：ip:port
+        // 获取服务提供者的地址：ip:port
         String key = url.getAddress();
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(Constants.IS_SERVER_KEY, true);
@@ -261,9 +273,9 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private ExchangeServer createServer(URL url) {
-        // send readonly event when server closes, it's enabled by default
+        // 默认开启server关闭时发送readonly事件
         url = url.addParameterIfAbsent(Constants.CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString());
-        // enable heartbeat by default
+        // 默认开启heartbeat
         url = url.addParameterIfAbsent(Constants.HEARTBEAT_KEY, String.valueOf(Constants.DEFAULT_HEARTBEAT));
         String str = url.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_SERVER);
 

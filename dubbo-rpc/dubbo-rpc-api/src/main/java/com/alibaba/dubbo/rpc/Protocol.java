@@ -28,6 +28,7 @@ public interface Protocol {
 
     /**
      * Get default port when user doesn't config the port.
+     * 获取默认的端口
      *
      * @return default port
      */

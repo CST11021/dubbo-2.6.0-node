@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RegistryProtocol
- * 服务地址发布到注册中心
+ * 服务地址发布到注册中心，注册中心通过{@link #getRegistry(Invoker)}获取
  *
  */
 public class RegistryProtocol implements Protocol {
@@ -138,8 +138,9 @@ public class RegistryProtocol implements Protocol {
         // 获取要注册到注册中心的URL
         URL registryUrl = getRegistryUrl(originInvoker);
 
-        //registry provider
+        // 获取一个注册中心实例
         final Registry registry = getRegistry(originInvoker);
+
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
         //to judge to delay publish whether or not
@@ -190,6 +191,13 @@ public class RegistryProtocol implements Protocol {
         };
     }
 
+    /**
+     * 暴露服务，并将暴露的服务缓存到本地
+     *
+     * @param originInvoker
+     * @param <T>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
         // 这里的缓存key直接使用URL的fullString，例如：dubbo://30.6.28.128:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=30.6.28.128&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1225680&side=provider&timestamp=1522221254113
@@ -279,6 +287,7 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get the address of the providerUrl through the url of the invoker
+     * 获取服务提供者的配置信息，其配置信息封装为URL对象返回
      *
      * @param origininvoker
      * @return
