@@ -71,8 +71,10 @@ limitations under the License.
 
     <!-- service implementation, as same as regular local bean -->
     <bean id="demoService" class="com.alibaba.dubbo.demo.provider.DemoServiceImpl"/>
+    <bean id="helloService" class="com.alibaba.dubbo.demo.provider.HelloServiceImpl"/>
 
     <!-- declare the service interface to be exported -->
     <dubbo:service interface="com.alibaba.dubbo.demo.DemoService" ref="demoService"/>
+    <dubbo:service interface="com.alibaba.dubbo.demo.HelloService" ref="helloService"/>
 
 </beans>

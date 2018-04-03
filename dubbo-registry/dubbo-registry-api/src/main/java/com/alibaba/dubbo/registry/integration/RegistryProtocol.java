@@ -408,10 +408,17 @@ public class RegistryProtocol implements Protocol {
      * 1.Ensure that the exporter returned by registryprotocol can be normal destroyed
      * 2.No need to re-register to the registry after notify
      * 3.The invoker passed by the export method , would better to be the invoker of exporter
+     *
+     * 注册器{@link Registry}会向注册中心订阅服务，当注册中心的服务信息发生变化时，会使用该接口进行回调
+     *
+     *
      */
     private class OverrideListener implements NotifyListener {
 
+        /** 注册器{@link Registry}向注册中心订阅服务 */
         private final URL subscribeUrl;
+
+        /** 服务提供者的Invoker对象 */
         private final Invoker originInvoker;
 
         public OverrideListener(URL subscribeUrl, Invoker originalInvoker) {
@@ -420,7 +427,8 @@ public class RegistryProtocol implements Protocol {
         }
 
         /**
-         * @param urls The list of registered information , is always not empty, The meaning is the same as the return value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
+         * @param urls The list of registered information , is always not empty,
+         *             The meaning is the same as the return value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
          */
         public synchronized void notify(List<URL> urls) {
             logger.debug("original override urls: " + urls);
@@ -485,7 +493,8 @@ public class RegistryProtocol implements Protocol {
     }
 
     /**
-     * exporter proxy, establish the corresponding relationship between the returned exporter and the exporter exported by the protocol, and can modify the relationship at the time of override.
+     * exporter proxy, establish the corresponding relationship between the returned exporter and the exporter exported by the protocol,
+     * and can modify the relationship at the time of override.
      *
      * @param <T>
      */
