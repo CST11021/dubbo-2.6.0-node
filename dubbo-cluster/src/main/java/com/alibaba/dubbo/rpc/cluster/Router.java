@@ -42,6 +42,11 @@ public interface Router extends Comparable<Router> {
 
     /**
      * route.
+     * Router 服务路由， 根据路由规则从多个 Invoker 中选出一个子集 AbstractDirectory 是所有目录服务实现的上层抽象，
+     * 它在 list 列举出所有 invokers 后，会在通过 Router 服务进行路由过滤。
+     *
+     * 注意与负载均衡的区别：LoadBalance负载均衡， 负责从多个 Invokers中选出具体的一个Invoker用于本次调用，调用过程中包含
+     * 了负载均衡的算法，调用失败后需要重新选择
      *
      * @param invokers
      * @param url        refer url
