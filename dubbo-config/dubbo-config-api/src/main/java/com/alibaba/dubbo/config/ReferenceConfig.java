@@ -424,7 +424,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
                 System.out.println();
             }
-            // 如果配置了多个注册中心，则需要使用路由策略
+            // 如果配置了多个注册中心
             else {
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;

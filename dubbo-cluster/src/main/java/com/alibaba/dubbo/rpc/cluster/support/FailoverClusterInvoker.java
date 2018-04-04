@@ -58,8 +58,13 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
             len = 1;
         }
         // retry loop.
-        RpcException le = null; // last exception.
-        List<Invoker<T>> invoked = new ArrayList<Invoker<T>>(copyinvokers.size()); // invoked invokers.
+
+        // last exception.
+        RpcException le = null;
+        // invoked invokers.
+        List<Invoker<T>> invoked = new ArrayList<Invoker<T>>(copyinvokers.size());
+
+        // 不同的invokrs对应的不同的服务提供者，providers用来保存调用失败的服务提供者
         Set<String> providers = new HashSet<String>(len);
         for (int i = 0; i < len; i++) {
             //Reselect before retry to avoid a change of candidate `invokers`.
@@ -70,6 +75,8 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 // check again
                 checkInvokers(copyinvokers, invocation);
             }
+
+            // 从多个invokers中选择一个invoker进行调用
             Invoker<T> invoker = select(loadbalance, invocation, copyinvokers, invoked);
             invoked.add(invoker);
             RpcContext.getContext().setInvokers((List) invoked);
@@ -88,7 +95,8 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 }
                 return result;
             } catch (RpcException e) {
-                if (e.isBiz()) { // biz exception.
+                // biz exception.
+                if (e.isBiz()) {
                     throw e;
                 }
                 le = e;

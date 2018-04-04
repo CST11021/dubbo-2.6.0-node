@@ -41,12 +41,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
-    private static final Logger logger = LoggerFactory
-            .getLogger(AbstractClusterInvoker.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractClusterInvoker.class);
+
+    /** 封装了一个服务对应多个提供者的Invoker */
     protected final Directory<T> directory;
 
     protected final boolean availablecheck;
 
+    /** 用于表示服务是否已经停用，当服务停用是会调用{@link AbstractClusterInvoker#destroy()}方法，将该属性置为true*/
     private AtomicBoolean destroyed = new AtomicBoolean(false);
 
     private volatile Invoker<T> stickyInvoker = null;
@@ -169,9 +171,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
      * @return
      * @throws RpcException
      */
-    private Invoker<T> reselect(LoadBalance loadbalance, Invocation invocation,
-                                List<Invoker<T>> invokers, List<Invoker<T>> selected, boolean availablecheck)
-            throws RpcException {
+    private Invoker<T> reselect(LoadBalance loadbalance, Invocation invocation, List<Invoker<T>> invokers, List<Invoker<T>> selected, boolean availablecheck) throws RpcException {
 
         //Allocating one in advance, this list is certain to be used.
         List<Invoker<T>> reselectInvokers = new ArrayList<Invoker<T>>(invokers.size() > 1 ? (invokers.size() - 1) : invokers.size());
@@ -217,12 +217,14 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
     public Result invoke(final Invocation invocation) throws RpcException {
 
+        // 判断服务是否已经停用，如果已经停用则抛出 RpcException 异常
         checkWhetherDestroyed();
 
         LoadBalance loadbalance;
 
         List<Invoker<T>> invokers = list(invocation);
         if (invokers != null && invokers.size() > 0) {
+
             loadbalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension(invokers.get(0).getUrl()
                     .getMethodParameter(invocation.getMethodName(), Constants.LOADBALANCE_KEY, Constants.DEFAULT_LOADBALANCE));
         } else {
@@ -258,9 +260,14 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
         }
     }
 
-    protected abstract Result doInvoke(Invocation invocation, List<Invoker<T>> invokers,
-                                       LoadBalance loadbalance) throws RpcException;
+    protected abstract Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException;
 
+    /**
+     * 根据invocation调用信息，返回{@link #directory}的invokers
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     protected List<Invoker<T>> list(Invocation invocation) throws RpcException {
         List<Invoker<T>> invokers = directory.list(invocation);
         return invokers;
