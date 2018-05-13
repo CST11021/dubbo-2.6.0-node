@@ -33,6 +33,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
+ * 线程池拒绝策略，该类扩展了ThreadPoolExecutor.AbortPolicy，记录日志，然后抛出异常信息
+ * ThreadPoolExecutor.AbortPolicy 的处理策略是：直接抛出异常
+ *
  * Abort Policy.
  * Log warn info when abort.
  */
@@ -40,9 +43,12 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbortPolicyWithReport.class);
 
+    /** 表示这次服务的调用信息 */
+    private final URL url;
+    /** 表示执行该服务线程 */
     private final String threadName;
 
-    private final URL url;
+
 
     private static volatile long lastPrintTime = 0;
 
@@ -53,6 +59,11 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
         this.url = url;
     }
 
+    /**
+     * 当队列已满，并且线程池无法再创建新的线程时，执行该方法
+     * @param r
+     * @param e
+     */
     @Override
     public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
         String msg = String.format("Thread pool is EXHAUSTED!" +
@@ -85,6 +96,7 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
 
                 SimpleDateFormat sdf;
 
+                // 获取当前运行的系统
                 String OS = System.getProperty("os.name").toLowerCase();
 
                 // window system don't support ":" in file name

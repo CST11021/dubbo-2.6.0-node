@@ -24,15 +24,15 @@ import com.alibaba.dubbo.common.extension.SPI;
 import java.util.concurrent.Executor;
 
 /**
- * ThreadPool
+ * ThreadPool，对应的配置：<dubbo:protocol threadpool="xxx" />
  */
 @SPI("fixed")
 public interface ThreadPool {
 
     /**
-     * Thread pool
+     * 从URL中提取线程池的配置信息，创建一个线程池服务
      *
-     * @param url URL contains thread parameter
+     * @param url 提供了创建线程池的参数信息
      * @return thread pool
      */
     @Adaptive({Constants.THREADPOOL_KEY})

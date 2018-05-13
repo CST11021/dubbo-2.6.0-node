@@ -31,14 +31,10 @@ import com.alibaba.dubbo.common.extension.SPI;
 @SPI("spring")
 public interface Container {
 
-    /**
-     * start.
-     */
+    /** start. */
     void start();
 
-    /**
-     * stop.
-     */
+    /** stop. */
     void stop();
 
 }

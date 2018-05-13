@@ -41,7 +41,6 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
     public AbstractProxyProtocol() {
     }
-
     public AbstractProxyProtocol(Class<?>... exceptions) {
         for (Class<?> exception : exceptions) {
             addRpcException(exception);
@@ -67,6 +66,7 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         if (exporter != null) {
             return exporter;
         }
+
         final Runnable runnable = doExport(proxyFactory.getProxy(invoker), invoker.getInterface(), invoker.getUrl());
         exporter = new AbstractExporter<T>(invoker) {
             public void unexport() {

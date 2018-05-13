@@ -48,6 +48,10 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
      * 通知实现了ApplicationListener的类进行回调onApplicationEvent，dubbo会在这个方法中发布服务。
      *
      * 使用export初始化的时候会将Bean对象转换成URL格式，所有Bean属性转换成URL的参数。
+     *
+     * 一般情况下，如果你的服务需要预热时间，比如初始化缓存，等待相关资源就位等，可以使用 delay 进行延迟暴露，例如：
+     * ① 延迟 5 秒暴露服务：<dubbo:service delay="5000" />
+     * ② 延迟到 Spring 初始化完成后，再暴露服务：<dubbo:service delay="-1" />
      */
     protected Integer delay;
     // whether to export the service

@@ -57,7 +57,7 @@ import java.lang.annotation.Target;
 public @interface SPI {
 
     /**
-     * default extension name
+     * 表示默认的扩展实现名，在META-INF/services目录下的SPI扩展文件中，可以使用简短的name表示SPI接口具体实现类的权限定类名
      */
     String value() default "";
 

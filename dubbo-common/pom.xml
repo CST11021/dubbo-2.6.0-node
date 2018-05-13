@@ -31,6 +31,7 @@ limitations under the License.
         <skip_maven_deploy>true</skip_maven_deploy>
     </properties>
     <dependencies>
+        <!--日志-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -45,18 +46,25 @@ limitations under the License.
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-        </dependency>
+
+        <!--Hessian：Hessian是一个轻量级的RPC框架，它基于HTTP协议传输，使用Hessian二进制序列化，对于数据包比较大的情况比较友好。但是它的参数和返回值都需要实现Serializable接口-->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>hessian-lite</artifactId>
         </dependency>
+
+        <!--fastjson：用于序列化-->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
         </dependency>
+
+        <!--javassist-->
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
@@ -74,6 +82,8 @@ limitations under the License.
             <artifactId>sorcerer-javac</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!--测试-->
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib-nodep</artifactId>

@@ -22,19 +22,36 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 该类用来描述一个java对象的元素数据信息
+ */
 public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entry<Object, Object>> {
+
+    private static final long serialVersionUID = -8505586483570518029L;
+
+    // 表示要描述对象的类型
 
     public static final int TYPE_CLASS = 1;
     public static final int TYPE_ENUM = 2;
     public static final int TYPE_COLLECTION = 3;
     public static final int TYPE_MAP = 4;
     public static final int TYPE_ARRAY = 5;
-    /**
-     * @see com.alibaba.dubbo.common.utils.ReflectUtils#isPrimitive(Class)
-     */
+    /** @see com.alibaba.dubbo.common.utils.ReflectUtils#isPrimitive(Class) */
     public static final int TYPE_PRIMITIVE = 6;
     public static final int TYPE_BEAN = 7;
-    private static final long serialVersionUID = -8505586483570518029L;
+
+    /**
+     * 表示对象类，对应如下常量的值
+     * @see #TYPE_CLASS
+     * @see #TYPE_ENUM
+     * @see #TYPE_COLLECTION
+     * @see #TYPE_MAP
+     * @see #TYPE_ARRAY
+     * @see #TYPE_PRIMITIVE
+     * @see #TYPE_BEAN
+     */
+    private int type;
+
     private static final String ENUM_PROPERTY_NAME = "name";
 
     private static final String CLASS_PROPERTY_NAME = "name";
@@ -55,15 +72,16 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
      */
     private static final int TYPE_MIN = TYPE_CLASS;
 
+
     private String className;
 
-    private int type;
+
 
     private Map<Object, Object> properties = new LinkedHashMap<Object, Object>();
 
+
     public JavaBeanDescriptor() {
     }
-
     public JavaBeanDescriptor(String className, int type) {
         notEmpty(className, "class name is empty");
         if (!isValidType(type)) {
@@ -75,6 +93,15 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         this.className = className;
         this.type = type;
     }
+
+    /**
+     * 实现迭代器接口
+     * @return
+     */
+    public Iterator<Map.Entry<Object, Object>> iterator() {
+        return properties.entrySet().iterator();
+    }
+
 
     public boolean isClassType() {
         return TYPE_CLASS == type;
@@ -184,9 +211,7 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         return properties.containsKey(propertyName);
     }
 
-    public Iterator<Map.Entry<Object, Object>> iterator() {
-        return properties.entrySet().iterator();
-    }
+
 
     public int propertySize() {
         return properties.size();
