@@ -19,6 +19,7 @@ package com.alibaba.dubbo.rpc;
 import com.alibaba.dubbo.common.Node;
 
 /**
+ * 可以通过该接口返回服务的接口类型或返回目标服务的调用结果
  * Invoker. (API/SPI, Prototype, ThreadSafe)
  *
  * @see com.alibaba.dubbo.rpc.Protocol#refer(Class, com.alibaba.dubbo.common.URL)

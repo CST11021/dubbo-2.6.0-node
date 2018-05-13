@@ -39,6 +39,7 @@ import java.util.Map;
 
 import static com.alibaba.dubbo.rpc.protocol.dubbo.CallbackServiceCodec.decodeInvocationArgument;
 
+/** 继承了{@link RpcInvocation}该类在RpcInvocation基础上对方法调用的入参多加了一层编解码，这样就能将序列化和dubbo进行解耦了 */
 public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Decodeable {
 
     private static final Logger log = LoggerFactory.getLogger(DecodeableRpcInvocation.class);

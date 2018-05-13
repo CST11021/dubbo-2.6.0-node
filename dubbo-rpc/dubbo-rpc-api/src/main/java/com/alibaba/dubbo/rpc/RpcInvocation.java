@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * RPC Invocation.
+ * 用于封装RPC调用的方法名、方法入参等调用信息
  *
  * @serial Don't change the class name and properties.
  */
@@ -34,19 +34,22 @@ public class RpcInvocation implements Invocation, Serializable {
 
     private static final long serialVersionUID = -4355285085441097045L;
 
+    /** 表示要调用的目标方法名 */
     private String methodName;
 
+    /** 表示目标方法的入参类型 */
     private Class<?>[] parameterTypes;
 
+    /** 表示调用的目标方法 */
     private Object[] arguments;
 
     private Map<String, String> attachments;
 
+    /** 封装了服务实现的目标类 */
     private transient Invoker<?> invoker;
 
     public RpcInvocation() {
     }
-
     public RpcInvocation(Invocation invocation, Invoker<?> invoker) {
         this(invocation.getMethodName(), invocation.getParameterTypes(),
                 invocation.getArguments(), new HashMap<String, String>(invocation.getAttachments()),
@@ -74,28 +77,22 @@ public class RpcInvocation implements Invocation, Serializable {
             }
         }
     }
-
     public RpcInvocation(Invocation invocation) {
         this(invocation.getMethodName(), invocation.getParameterTypes(),
                 invocation.getArguments(), invocation.getAttachments(), invocation.getInvoker());
     }
-
     public RpcInvocation(Method method, Object[] arguments) {
         this(method.getName(), method.getParameterTypes(), arguments, null, null);
     }
-
     public RpcInvocation(Method method, Object[] arguments, Map<String, String> attachment) {
         this(method.getName(), method.getParameterTypes(), arguments, attachment, null);
     }
-
     public RpcInvocation(String methodName, Class<?>[] parameterTypes, Object[] arguments) {
         this(methodName, parameterTypes, arguments, null, null);
     }
-
     public RpcInvocation(String methodName, Class<?>[] parameterTypes, Object[] arguments, Map<String, String> attachments) {
         this(methodName, parameterTypes, arguments, attachments, null);
     }
-
     public RpcInvocation(String methodName, Class<?>[] parameterTypes, Object[] arguments, Map<String, String> attachments, Invoker<?> invoker) {
         this.methodName = methodName;
         this.parameterTypes = parameterTypes == null ? new Class<?>[0] : parameterTypes;
@@ -104,37 +101,6 @@ public class RpcInvocation implements Invocation, Serializable {
         this.invoker = invoker;
     }
 
-    public Invoker<?> getInvoker() {
-        return invoker;
-    }
-
-    public void setInvoker(Invoker<?> invoker) {
-        this.invoker = invoker;
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
-
-    public Class<?>[] getParameterTypes() {
-        return parameterTypes;
-    }
-
-    public void setParameterTypes(Class<?>[] parameterTypes) {
-        this.parameterTypes = parameterTypes == null ? new Class<?>[0] : parameterTypes;
-    }
-
-    public Object[] getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(Object[] arguments) {
-        this.arguments = arguments == null ? new Object[0] : arguments;
-    }
 
     public Map<String, String> getAttachments() {
         return attachments;
@@ -195,6 +161,35 @@ public class RpcInvocation implements Invocation, Serializable {
             return defaultValue;
         }
         return value;
+    }
+
+
+
+    // getter and setter ...
+
+    public Invoker<?> getInvoker() {
+        return invoker;
+    }
+    public void setInvoker(Invoker<?> invoker) {
+        this.invoker = invoker;
+    }
+    public String getMethodName() {
+        return methodName;
+    }
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+    public Class<?>[] getParameterTypes() {
+        return parameterTypes;
+    }
+    public void setParameterTypes(Class<?>[] parameterTypes) {
+        this.parameterTypes = parameterTypes == null ? new Class<?>[0] : parameterTypes;
+    }
+    public Object[] getArguments() {
+        return arguments;
+    }
+    public void setArguments(Object[] arguments) {
+        this.arguments = arguments == null ? new Object[0] : arguments;
     }
 
     @Override

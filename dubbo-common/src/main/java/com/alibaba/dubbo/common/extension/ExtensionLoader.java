@@ -160,25 +160,29 @@ public class ExtensionLoader<T> {
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
-    /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型 */
+    /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型，value：SPI接口对应的ExtensionLoader */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
+    /** 缓存SPI接口类型对应的扩展点实现类 */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
     /** 表示一个SPI接口的类型 */
     private final Class<?> type;
-    /** 扩展点工厂，用于创建扩展点的实现类 */
+    /** 扩展点工厂，用于创建扩展点的实现类，即SPI接口的实现类 */
     private final ExtensionFactory objectFactory;
+    /** 缓存（key：扩展点实现类型，value：扩展点名称），同{@link #cachedClasses}*/
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
     /** 保存{@link #type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
+    /** 缓存扩展点名称，及对应的扩展点实例*/
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     /** 缓存这个{@link #type} 对应的扩展点实例 */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
     private volatile Class<?> cachedAdaptiveClass = null;
     /** 表示这个SPI接口的默认实现，对应@SPI注解的value值，参见{@link ExtensionLoader#loadExtensionClasses()}*/
     private String cachedDefaultName;
+    /** 表示创建扩展点实例过程中出现的异常 */
     private volatile Throwable createAdaptiveInstanceError;
     private Set<Class<?>> cachedWrapperClasses;
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
@@ -187,24 +191,18 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
-        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+
+        objectFactory = (type == ExtensionFactory.class ? null :
+                ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
-    /**
-     * 判断这个class是否有@SPI注解
-     * @param type
-     * @param <T>
-     * @return
-     */
-    private static <T> boolean withExtensionAnnotation(Class<T> type) {
-        return type.isAnnotationPresent(SPI.class);
-    }
 
     /**
-     * 如果入参 type 不是SPI接口，则会抛出异常
+     * 根据SPI接口返回一个ExtensionLoader实例，然后在调用{@link #getAdaptiveExtension()}方法返回该SPI接口的实现
+     * 在dubbo中，每个SPI接口都对应一个不同的ExtensionLoader实例，实例化后的ExtensionLoader实例会保存在{@link #EXTENSION_LOADERS}中
      *
-     * @param type  表示一个SPI的扩展接口
-     * @param <T>
+     * @param type  表示一个SPI的扩展接口，如果入参 type 不是SPI接口，则会抛出异常
+     * @param <T>   表示该SPI接口的一个实现实例
      * @return
      */
     @SuppressWarnings("unchecked")
@@ -227,137 +225,98 @@ public class ExtensionLoader<T> {
         return loader;
     }
 
-    private static ClassLoader findClassLoader() {
-        return ExtensionLoader.class.getClassLoader();
+
+    /**
+     * 表示这个SPI接口的默认实现，对应@SPI注解的value值，如果没有配置的话，返回null
+     */
+    public String getDefaultExtensionName() {
+        getExtensionClasses();
+        return cachedDefaultName;
+    }
+    /**
+     * 返回该ExtensionLoader已经加载的所有扩展点名称
+     *
+     * Return the list of extensions which are already loaded.
+     * <p>
+     * Usually {@link #getSupportedExtensions()} should be called in order to get all extensions.
+     *
+     * @see #getSupportedExtensions()
+     */
+    public Set<String> getLoadedExtensions() {
+        return Collections.unmodifiableSet(new TreeSet<String>(cachedInstances.keySet()));
+    }
+    public Set<String> getSupportedExtensions() {
+        Map<String, Class<?>> clazzes = getExtensionClasses();
+        return Collections.unmodifiableSet(new TreeSet<String>(clazzes.keySet()));
+    }
+    /**
+     * 判断这个name是有对应的扩展点实现
+     * @param name  这里的name使用的是简称，比如：协议扩展dubbo、rmi、http等
+     * @return
+     */
+    public boolean hasExtension(String name) {
+        if (name == null || name.length() == 0)
+            throw new IllegalArgumentException("Extension name == null");
+        try {
+            return getExtensionClass(name) != null;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+    /**
+     * 获取name对应的扩展点实现
+     * @param name  这里的name使用的是简称，比如：协议扩展dubbo、rmi、http等
+     * @return
+     */
+    private Class<?> getExtensionClass(String name) {
+        if (type == null)
+            throw new IllegalArgumentException("Extension type == null");
+        if (name == null)
+            throw new IllegalArgumentException("Extension name == null");
+        Class<?> clazz = getExtensionClasses().get(name);
+        if (clazz == null)
+            throw new IllegalStateException("No such extension \"" + name + "\" for " + type.getName() + "!");
+        return clazz;
+    }
+    /**
+     * 判断这个class是否有@SPI注解
+     * @param type
+     * @param <T>
+     * @return
+     */
+    private static <T> boolean withExtensionAnnotation(Class<T> type) {
+        return type.isAnnotationPresent(SPI.class);
     }
 
+
+
+    // -------------------------------
+    // 根据扩展点实现实例获取扩展点名称
+    // -------------------------------
+
+    /**
+     * 根据扩展点实例，获取该扩展点名称
+     * @param extensionInstance
+     * @return
+     */
     public String getExtensionName(T extensionInstance) {
         return getExtensionName(extensionInstance.getClass());
     }
-
+    /**
+     * 根据扩展点实例类型，获取该扩展点名称
+     * @param extensionClass
+     * @return
+     */
     public String getExtensionName(Class<?> extensionClass) {
         return cachedNames.get(extensionClass);
     }
 
-    /**
-     * This is equivalent to {@code getActivateExtension(url, key, null)}
-     *
-     * @param url url
-     * @param key url parameter key which used to get extension point names
-     * @return extension list which are activated.
-     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String, String)
-     */
-    public List<T> getActivateExtension(URL url, String key) {
-        return getActivateExtension(url, key, null);
-    }
 
-    /**
-     * This is equivalent to {@code getActivateExtension(url, values, null)}
-     *
-     * @param url    url
-     * @param values extension point names
-     * @return extension list which are activated
-     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
-     */
-    public List<T> getActivateExtension(URL url, String[] values) {
-        return getActivateExtension(url, values, null);
-    }
 
-    /**
-     * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
-     *
-     * @param url   url
-     * @param key   url parameter key which used to get extension point names
-     * @param group group
-     * @return extension list which are activated.
-     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
-     */
-    public List<T> getActivateExtension(URL url, String key, String group) {
-        String value = url.getParameter(key);
-        return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
-    }
 
-    /**
-     * Get activate extensions.
-     *
-     * @param url    url
-     * @param values extension point names
-     * @param group  group
-     * @return extension list which are activated
-     * @see com.alibaba.dubbo.common.extension.Activate
-     */
-    public List<T> getActivateExtension(URL url, String[] values, String group) {
-        List<T> exts = new ArrayList<T>();
-        List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
-        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
-            getExtensionClasses();
-            for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
-                String name = entry.getKey();
-                Activate activate = entry.getValue();
-                if (isMatchGroup(group, activate.group())) {
-                    T ext = getExtension(name);
-                    if (!names.contains(name)
-                            && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
-                            && isActive(activate, url)) {
-                        exts.add(ext);
-                    }
-                }
-            }
-            Collections.sort(exts, ActivateComparator.COMPARATOR);
-        }
-        List<T> usrs = new ArrayList<T>();
-        for (int i = 0; i < names.size(); i++) {
-            String name = names.get(i);
-            if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX)
-                    && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
-                if (Constants.DEFAULT_KEY.equals(name)) {
-                    if (usrs.size() > 0) {
-                        exts.addAll(0, usrs);
-                        usrs.clear();
-                    }
-                } else {
-                    T ext = getExtension(name);
-                    usrs.add(ext);
-                }
-            }
-        }
-        if (usrs.size() > 0) {
-            exts.addAll(usrs);
-        }
-        return exts;
-    }
-
-    private boolean isMatchGroup(String group, String[] groups) {
-        if (group == null || group.length() == 0) {
-            return true;
-        }
-        if (groups != null && groups.length > 0) {
-            for (String g : groups) {
-                if (group.equals(g)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean isActive(Activate activate, URL url) {
-        String[] keys = activate.value();
-        if (keys == null || keys.length == 0) {
-            return true;
-        }
-        for (String key : keys) {
-            for (Map.Entry<String, String> entry : url.getParameters().entrySet()) {
-                String k = entry.getKey();
-                String v = entry.getValue();
-                if ((k.equals(key) || k.endsWith("." + key))
-                        && ConfigUtils.isNotEmpty(v)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+    // -------------------------------
+    // 根据扩展点名称获取扩展点实现实例
+    // -------------------------------
 
     /**
      * Get extension's instance. Return <code>null</code> if extension is not found or is not initialized. Pls. note
@@ -378,28 +337,17 @@ public class ExtensionLoader<T> {
         }
         return (T) holder.get();
     }
-
     /**
-     * Return the list of extensions which are already loaded.
-     * <p>
-     * Usually {@link #getSupportedExtensions()} should be called in order to get all extensions.
-     *
-     * @see #getSupportedExtensions()
-     */
-    public Set<String> getLoadedExtensions() {
-        return Collections.unmodifiableSet(new TreeSet<String>(cachedInstances.keySet()));
-    }
-
-    /**
-     * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
-     * will be thrown.
+     * 根据给与的扩展点名称获取扩展点实例：
      *
      * 根据这个name返回对应的SPI实现类，注意，这里返回的SPI实现类，使用了装饰器模式，返回的实现类可能不是直接指定的实现
-     * 类，比如：使用dubbo协议时，按说这里的返回的实现类应该是{@link DubboProtocol}，但是实际上可能并不是，这里返回的
-     * 可能是{@link ProtocolListenerWrapper}，ProtocolListenerWrapper内部存在一个Protocol引用，指向{@link ProtocolFilterWrapper}
-     * 然后，ProtocolFilterWrapper内部的Protocol引用指向{@link RegistryProtocol}，最后RegistryProtocol的内部Protocol才
-     * 指向{@link DubboProtocol}
+     * 类，比如：使用dubbo协议时，按说这里的返回的实现类应该是 DubboProtocol ，但是实际上可能并不是，这里返回的
+     * 可能是 ProtocolListenerWrapper ，ProtocolListenerWrapper内部存在一个Protocol引用，指向 ProtocolFilterWrapper
+     * 然后，ProtocolFilterWrapper内部的Protocol引用指向 RegistryProtocol ，最后RegistryProtocol的内部Protocol才
+     * 指向 DubboProtocol
      *
+     * @param name  如果name是“true”的话，则返回默认的扩展点实例
+     * @return
      */
     @SuppressWarnings("unchecked")
     public T getExtension(String name) {
@@ -427,9 +375,8 @@ public class ExtensionLoader<T> {
         }
         return (T) instance;
     }
-
     /**
-     * Return default extension, return <code>null</code> if it's not configured.
+     * 该扩展加载器，默认的扩展点实例
      */
     public T getDefaultExtension() {
         getExtensionClasses();
@@ -439,35 +386,69 @@ public class ExtensionLoader<T> {
         }
         return getExtension(cachedDefaultName);
     }
-
-    public boolean hasExtension(String name) {
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Extension name == null");
+    @SuppressWarnings("unchecked")
+    private T createExtension(String name) {
+        Class<?> clazz = getExtensionClasses().get(name);
+        if (clazz == null) {
+            throw findException(name);
+        }
         try {
-            return getExtensionClass(name) != null;
+            T instance = (T) EXTENSION_INSTANCES.get(clazz);
+            if (instance == null) {
+                EXTENSION_INSTANCES.putIfAbsent(clazz, (T) clazz.newInstance());
+                instance = (T) EXTENSION_INSTANCES.get(clazz);
+            }
+            injectExtension(instance);
+            Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+            if (wrapperClasses != null && wrapperClasses.size() > 0) {
+                for (Class<?> wrapperClass : wrapperClasses) {
+                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
+                }
+            }
+            return instance;
         } catch (Throwable t) {
-            return false;
+            throw new IllegalStateException("Extension instance(name: " + name + ", class: " +
+                    type + ")  could not be instantiated: " + t.getMessage(), t);
         }
     }
+    private IllegalStateException findException(String name) {
+        for (Map.Entry<String, IllegalStateException> entry : exceptions.entrySet()) {
+            if (entry.getKey().toLowerCase().contains(name.toLowerCase())) {
+                return entry.getValue();
+            }
+        }
+        StringBuilder buf = new StringBuilder("No such extension " + type.getName() + " by name " + name);
 
-    public Set<String> getSupportedExtensions() {
-        Map<String, Class<?>> clazzes = getExtensionClasses();
-        return Collections.unmodifiableSet(new TreeSet<String>(clazzes.keySet()));
+
+        int i = 1;
+        for (Map.Entry<String, IllegalStateException> entry : exceptions.entrySet()) {
+            if (i == 1) {
+                buf.append(", possible causes: ");
+            }
+
+            buf.append("\r\n(");
+            buf.append(i++);
+            buf.append(") ");
+            buf.append(entry.getKey());
+            buf.append(":\r\n");
+            buf.append(StringUtils.toString(entry.getValue()));
+        }
+        return new IllegalStateException(buf.toString());
     }
 
-    /**
-     * Return default extension name, return <code>null</code> if not configured.
-     */
-    public String getDefaultExtensionName() {
-        getExtensionClasses();
-        return cachedDefaultName;
-    }
+
+
+
+    // ----------------------------------------
+    // 自定义扩展点（用于扩展自定义的扩展点实现）
+    // ----------------------------------------
 
     /**
+     * 添加一个新扩展点实现，该方法用于扩展
      * Register new extension via API
      *
-     * @param name  extension name
-     * @param clazz extension class
+     * @param name  表示扩展点名称
+     * @param clazz 表示该扩展点名称对应的实现类的类型，如果扩展点没有@Adaptive注解修饰的话，加载时会异常
      * @throws IllegalStateException when extension with the same name has already been registered.
      */
     public void addExtension(String name, Class<?> clazz) {
@@ -501,7 +482,6 @@ public class ExtensionLoader<T> {
             cachedAdaptiveClass = clazz;
         }
     }
-
     /**
      * Replace the existing extension via API
      *
@@ -545,136 +525,18 @@ public class ExtensionLoader<T> {
         }
     }
 
-    /**
-     * 返回类型 T 对应的扩展点实例
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public T getAdaptiveExtension() {
-        Object instance = cachedAdaptiveInstance.get();
-        if (instance == null) {
-            if (createAdaptiveInstanceError == null) {
-                synchronized (cachedAdaptiveInstance) {
-                    instance = cachedAdaptiveInstance.get();
-                    if (instance == null) {
-                        try {
-                            // 创建一个扩展点实例
-                            instance = createAdaptiveExtension();
-                            cachedAdaptiveInstance.set(instance);
-                        } catch (Throwable t) {
-                            createAdaptiveInstanceError = t;
-                            throw new IllegalStateException("fail to create adaptive instance: " + t.toString(), t);
-                        }
-                    }
-                }
-            } else {
-                throw new IllegalStateException("fail to create adaptive instance: " + createAdaptiveInstanceError.toString(), createAdaptiveInstanceError);
-            }
-        }
-
-        return (T) instance;
-    }
-
-    private IllegalStateException findException(String name) {
-        for (Map.Entry<String, IllegalStateException> entry : exceptions.entrySet()) {
-            if (entry.getKey().toLowerCase().contains(name.toLowerCase())) {
-                return entry.getValue();
-            }
-        }
-        StringBuilder buf = new StringBuilder("No such extension " + type.getName() + " by name " + name);
 
 
-        int i = 1;
-        for (Map.Entry<String, IllegalStateException> entry : exceptions.entrySet()) {
-            if (i == 1) {
-                buf.append(", possible causes: ");
-            }
 
-            buf.append("\r\n(");
-            buf.append(i++);
-            buf.append(") ");
-            buf.append(entry.getKey());
-            buf.append(":\r\n");
-            buf.append(StringUtils.toString(entry.getValue()));
-        }
-        return new IllegalStateException(buf.toString());
-    }
 
-    @SuppressWarnings("unchecked")
-    private T createExtension(String name) {
-        Class<?> clazz = getExtensionClasses().get(name);
-        if (clazz == null) {
-            throw findException(name);
-        }
-        try {
-            T instance = (T) EXTENSION_INSTANCES.get(clazz);
-            if (instance == null) {
-                EXTENSION_INSTANCES.putIfAbsent(clazz, (T) clazz.newInstance());
-                instance = (T) EXTENSION_INSTANCES.get(clazz);
-            }
-            injectExtension(instance);
-            Set<Class<?>> wrapperClasses = cachedWrapperClasses;
-            if (wrapperClasses != null && wrapperClasses.size() > 0) {
-                for (Class<?> wrapperClass : wrapperClasses) {
-                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
-                }
-            }
-            return instance;
-        } catch (Throwable t) {
-            throw new IllegalStateException("Extension instance(name: " + name + ", class: " +
-                    type + ")  could not be instantiated: " + t.getMessage(), t);
-        }
-    }
-
-    /**
-     * 为这个扩展点实例注入相应的实例，一个SPI接口可能存在多个不同的扩展点实例，这里使用了反射技术和装饰器的设计模式，
-     * 修饰这个扩展点实例，需要注意的是，每个扩展点实例内部都存在一个指向同类型的SPI接口的引用
-     *
-     * @param instance  要被装饰的扩展点实例（SPI接口实现类）
-     * @return          返回被装饰后的扩展点实例
-     */
-    private T injectExtension(T instance) {
-        try {
-            if (objectFactory != null) {
-                for (Method method : instance.getClass().getMethods()) {
-                    if (method.getName().startsWith("set")
-                            && method.getParameterTypes().length == 1
-                            && Modifier.isPublic(method.getModifiers())) {
-                        Class<?> pt = method.getParameterTypes()[0];
-                        try {
-                            String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
-                            Object object = objectFactory.getExtension(pt, property);
-                            if (object != null) {
-                                method.invoke(instance, object);
-                            }
-                        } catch (Exception e) {
-                            logger.error("fail to inject via method " + method.getName()
-                                    + " of interface " + type.getName() + ": " + e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return instance;
-    }
-
-    private Class<?> getExtensionClass(String name) {
-        if (type == null)
-            throw new IllegalArgumentException("Extension type == null");
-        if (name == null)
-            throw new IllegalArgumentException("Extension name == null");
-        Class<?> clazz = getExtensionClasses().get(name);
-        if (clazz == null)
-            throw new IllegalStateException("No such extension \"" + name + "\" for " + type.getName() + "!");
-        return clazz;
-    }
+    // -----------------
+    // 读取扩展点配置文件
+    // -----------------
 
     /**
      * synchronized in getExtensionClasses
      *
-     * 返回这个{@link type}对应的SPI接口的扩展实现
+     * 返回这个{@link #type}对应的SPI接口的扩展实现
      *
      * 分别从"META-INF/services/"、"META-INF/dubbo/" 和 "META-INF/dubbo/internal/" 这三个目录下去加载扩展点
      *
@@ -682,7 +544,7 @@ public class ExtensionLoader<T> {
      * @see #DUBBO_DIRECTORY             "META-INF/dubbo/"
      * @see #DUBBO_INTERNAL_DIRECTORY    "META-INF/dubbo/internal/"
      *
-     * @return  key:扩展实现名称，value:对应的扩展实现的类型
+     * @return  key:扩展实现名称(这里使用的是简称，比如：协议扩展dubbo、rmi、http等)，value:对应的扩展实现的类型
      */
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
@@ -697,7 +559,6 @@ public class ExtensionLoader<T> {
         }
         return classes;
     }
-
     /**
      * synchronized in getExtensionClasses
      *
@@ -732,11 +593,10 @@ public class ExtensionLoader<T> {
         loadFile(extensionClasses, SERVICES_DIRECTORY);
         return extensionClasses;
     }
-
     /**
-     * 扫描SPI接口实现类时，如果类上有{@link Adaptive}注解则将类的class对象缓存到{@link cachedAdaptiveClass}。
-     * 然后在调用{@link ExtensionLoader#getAdaptiveExtension()}方法时，如果cachedAdaptiveClass不为空，则返回缓存否则调
-     * 用{@link ExtensionLoader#createAdaptiveExtensionClassCode()} 方法生成扩展类
+     * 扫描SPI接口实现类时，如果类上有{@link Adaptive}注解则将类的class对象缓存到{@link #cachedAdaptiveClass}。
+     * 然后在调用{@link #getAdaptiveExtension()}方法时，如果cachedAdaptiveClass不为空，则返回缓存否则调
+     * 用{@link #createAdaptiveExtensionClassCode()} 方法生成扩展类
      *
      * @param extensionClasses
      * @param dir
@@ -849,7 +709,9 @@ public class ExtensionLoader<T> {
                     type + ", description file: " + fileName + ").", t);
         }
     }
-
+    private static ClassLoader findClassLoader() {
+        return ExtensionLoader.class.getClassLoader();
+    }
     @SuppressWarnings("deprecation")
     private String findAnnotationName(Class<?> clazz) {
         com.alibaba.dubbo.common.Extension extension = clazz.getAnnotation(com.alibaba.dubbo.common.Extension.class);
@@ -863,6 +725,42 @@ public class ExtensionLoader<T> {
         return extension.value();
     }
 
+
+
+
+    // --------------
+    // 创建扩展点实例
+    // --------------
+
+    /**
+     * 返回类型 T（SPI接口） 对应的扩展点实例
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public T getAdaptiveExtension() {
+        Object instance = cachedAdaptiveInstance.get();
+        if (instance == null) {
+            if (createAdaptiveInstanceError == null) {
+                synchronized (cachedAdaptiveInstance) {
+                    instance = cachedAdaptiveInstance.get();
+                    if (instance == null) {
+                        try {
+                            // 创建一个扩展点实例
+                            instance = createAdaptiveExtension();
+                            cachedAdaptiveInstance.set(instance);
+                        } catch (Throwable t) {
+                            createAdaptiveInstanceError = t;
+                            throw new IllegalStateException("fail to create adaptive instance: " + t.toString(), t);
+                        }
+                    }
+                }
+            } else {
+                throw new IllegalStateException("fail to create adaptive instance: " + createAdaptiveInstanceError.toString(), createAdaptiveInstanceError);
+            }
+        }
+
+        return (T) instance;
+    }
     /**
      * 创建扩展点实例
      *
@@ -876,7 +774,10 @@ public class ExtensionLoader<T> {
             throw new IllegalStateException("Can not create adaptive extension " + type + ", cause: " + e.getMessage(), e);
         }
     }
-
+    /**
+     * 获取这个扩展点的实现类型
+     * @return
+     */
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
         if (cachedAdaptiveClass != null) {
@@ -884,10 +785,9 @@ public class ExtensionLoader<T> {
         }
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
-
     /**
      * 生成一个动态的扩展点实现类，Dubbo将扩展点的扩展名保存到URL对象中，在调用时通过“扩展点自适应机制”找到对应的扩展
-     * 实现，这里的“ 扩展点自适应机制”就是在该方法中实现的，通过{@link ExtensionLoader#createAdaptiveExtensionClassCode()}
+     * 实现，这里的“扩展点自适应机制”就是在该方法中实现的，通过{@link #createAdaptiveExtensionClassCode()}
      * 方法生成代码，在通过{@link com.alibaba.dubbo.common.compiler.support.AdaptiveCompiler}生成动态类的编译类
      *
      * 1. 获取某个SPI接口的adaptive实现类的规则是：
@@ -954,7 +854,6 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
         com.alibaba.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
         return compiler.compile(code, classLoader);
     }
-
     private String createAdaptiveExtensionClassCode() {
         StringBuilder codeBuidler = new StringBuilder();
         Method[] methods = type.getMethods();
@@ -1157,6 +1056,160 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
         }
         return codeBuidler.toString();
     }
+    /**
+     * 为这个扩展点实例注入相应的实例，一个SPI接口可能存在多个不同的扩展点实例，这里使用了反射技术和装饰器的设计模式，
+     * 修饰这个扩展点实例，需要注意的是，每个扩展点实例内部都存在一个指向同类型的SPI接口的引用
+     *
+     * @param instance  要被装饰的扩展点实例（SPI接口实现类）
+     * @return          返回被装饰后的扩展点实例
+     */
+    private T injectExtension(T instance) {
+        try {
+            if (objectFactory != null) {
+                for (Method method : instance.getClass().getMethods()) {
+                    if (method.getName().startsWith("set")
+                            && method.getParameterTypes().length == 1
+                            && Modifier.isPublic(method.getModifiers())) {
+                        Class<?> pt = method.getParameterTypes()[0];
+                        try {
+                            String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
+                            Object object = objectFactory.getExtension(pt, property);
+                            if (object != null) {
+                                method.invoke(instance, object);
+                            }
+                        } catch (Exception e) {
+                            logger.error("fail to inject via method " + method.getName()
+                                    + " of interface " + type.getName() + ": " + e.getMessage(), e);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return instance;
+    }
+
+
+
+
+    /**
+     * This is equivalent to {@code getActivateExtension(url, key, null)}
+     *
+     * @param url url
+     * @param key url parameter key which used to get extension point names
+     * @return extension list which are activated.
+     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String, String)
+     */
+    public List<T> getActivateExtension(URL url, String key) {
+        return getActivateExtension(url, key, null);
+    }
+    /**
+     * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
+     *
+     * @param url   url
+     * @param key   url parameter key which used to get extension point names
+     * @param group group
+     * @return extension list which are activated.
+     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
+     */
+    public List<T> getActivateExtension(URL url, String key, String group) {
+        String value = url.getParameter(key);
+        return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
+    }
+    /**
+     * Get activate extensions.
+     *
+     * @param url    url
+     * @param values extension point names
+     * @param group  group
+     * @return extension list which are activated
+     * @see com.alibaba.dubbo.common.extension.Activate
+     */
+    public List<T> getActivateExtension(URL url, String[] values, String group) {
+        List<T> exts = new ArrayList<T>();
+        List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
+        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
+            getExtensionClasses();
+            for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
+                String name = entry.getKey();
+                Activate activate = entry.getValue();
+                if (isMatchGroup(group, activate.group())) {
+                    T ext = getExtension(name);
+                    if (!names.contains(name)
+                            && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
+                            && isActive(activate, url)) {
+                        exts.add(ext);
+                    }
+                }
+            }
+            Collections.sort(exts, ActivateComparator.COMPARATOR);
+        }
+        List<T> usrs = new ArrayList<T>();
+        for (int i = 0; i < names.size(); i++) {
+            String name = names.get(i);
+            if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX)
+                    && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
+                if (Constants.DEFAULT_KEY.equals(name)) {
+                    if (usrs.size() > 0) {
+                        exts.addAll(0, usrs);
+                        usrs.clear();
+                    }
+                } else {
+                    T ext = getExtension(name);
+                    usrs.add(ext);
+                }
+            }
+        }
+        if (usrs.size() > 0) {
+            exts.addAll(usrs);
+        }
+        return exts;
+    }
+    /**
+     * This is equivalent to {@code getActivateExtension(url, values, null)}
+     *
+     * @param url    url
+     * @param values extension point names
+     * @return extension list which are activated
+     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
+     */
+    public List<T> getActivateExtension(URL url, String[] values) {
+        return getActivateExtension(url, values, null);
+    }
+    private boolean isMatchGroup(String group, String[] groups) {
+        if (group == null || group.length() == 0) {
+            return true;
+        }
+        if (groups != null && groups.length > 0) {
+            for (String g : groups) {
+                if (group.equals(g)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    private boolean isActive(Activate activate, URL url) {
+        String[] keys = activate.value();
+        if (keys == null || keys.length == 0) {
+            return true;
+        }
+        for (String key : keys) {
+            for (Map.Entry<String, String> entry : url.getParameters().entrySet()) {
+                String k = entry.getKey();
+                String v = entry.getValue();
+                if ((k.equals(key) || k.endsWith("." + key))
+                        && ConfigUtils.isNotEmpty(v)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+
 
     @Override
     public String toString() {

@@ -21,7 +21,7 @@ import com.alibaba.dubbo.common.utils.StringUtils;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Request.
+ * 用于表示一个请求对象
  */
 public class Request {
 

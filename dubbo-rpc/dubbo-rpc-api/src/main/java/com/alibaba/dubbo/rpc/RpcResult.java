@@ -32,17 +32,17 @@ public class RpcResult implements Result, Serializable {
     /** 表示远程方法调用的执行结果 */
     private Object result;
 
+    /** 表示调用服务方法时出现的异常信息 */
     private Throwable exception;
 
+    /** 用于获取此次调用一些额外信息，比如dubbo版本，分组，设置的超时信息等 */
     private Map<String, String> attachments = new HashMap<String, String>();
 
     public RpcResult() {
     }
-
     public RpcResult(Object result) {
         this.result = result;
     }
-
     public RpcResult(Throwable exception) {
         this.exception = exception;
     }
@@ -54,6 +54,46 @@ public class RpcResult implements Result, Serializable {
         return result;
     }
 
+    public Map<String, String> getAttachments() {
+        return attachments;
+    }
+    public void setAttachments(Map<String, String> map) {
+        if (map != null && map.size() > 0) {
+            attachments.putAll(map);
+        }
+    }
+    public String getAttachment(String key) {
+        return attachments.get(key);
+    }
+    public String getAttachment(String key, String defaultValue) {
+        String result = attachments.get(key);
+        if (result == null || result.length() == 0) {
+            result = defaultValue;
+        }
+        return result;
+    }
+    public void setAttachment(String key, String value) {
+        attachments.put(key, value);
+    }
+
+
+    // getter and setter ...
+
+    public Throwable getException() {
+        return exception;
+    }
+    public void setException(Throwable e) {
+        this.exception = e;
+    }
+    public boolean hasException() {
+        return exception != null;
+    }
+    public Object getValue() {
+        return result;
+    }
+    public void setValue(Object value) {
+        this.result = value;
+    }
     /**
      * @see com.alibaba.dubbo.rpc.RpcResult#getValue()
      * @deprecated Replace to getValue()
@@ -62,7 +102,6 @@ public class RpcResult implements Result, Serializable {
     public Object getResult() {
         return getValue();
     }
-
     /**
      * @see com.alibaba.dubbo.rpc.RpcResult#setValue(Object)
      * @deprecated Replace to setValue()
@@ -70,52 +109,6 @@ public class RpcResult implements Result, Serializable {
     @Deprecated
     public void setResult(Object result) {
         setValue(result);
-    }
-
-    public Object getValue() {
-        return result;
-    }
-
-    public void setValue(Object value) {
-        this.result = value;
-    }
-
-    public Throwable getException() {
-        return exception;
-    }
-
-    public void setException(Throwable e) {
-        this.exception = e;
-    }
-
-    public boolean hasException() {
-        return exception != null;
-    }
-
-    public Map<String, String> getAttachments() {
-        return attachments;
-    }
-
-    public void setAttachments(Map<String, String> map) {
-        if (map != null && map.size() > 0) {
-            attachments.putAll(map);
-        }
-    }
-
-    public String getAttachment(String key) {
-        return attachments.get(key);
-    }
-
-    public String getAttachment(String key, String defaultValue) {
-        String result = attachments.get(key);
-        if (result == null || result.length() == 0) {
-            result = defaultValue;
-        }
-        return result;
-    }
-
-    public void setAttachment(String key, String value) {
-        attachments.put(key, value);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.alibaba.dubbo.rpc;
 import com.alibaba.dubbo.common.extension.SPI;
 
 /**
+ * 用来监听服务的暴露和关闭
  * ExporterListener. (SPI, Singleton, ThreadSafe)
  */
 @SPI

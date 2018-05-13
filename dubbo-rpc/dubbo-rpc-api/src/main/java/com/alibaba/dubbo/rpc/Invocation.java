@@ -28,7 +28,7 @@ import java.util.Map;
 public interface Invocation {
 
     /**
-     * get method name.
+     * 获取调用的方法名
      *
      * @return method name.
      * @serial
@@ -36,7 +36,7 @@ public interface Invocation {
     String getMethodName();
 
     /**
-     * get parameter types.
+     * 获取调用目标方法的入参类型
      *
      * @return parameter types.
      * @serial
@@ -44,7 +44,7 @@ public interface Invocation {
     Class<?>[] getParameterTypes();
 
     /**
-     * get arguments.
+     * 获取调用目标方法的入参
      *
      * @return arguments.
      * @serial
@@ -52,35 +52,21 @@ public interface Invocation {
     Object[] getArguments();
 
     /**
-     * get attachments.
-     *
-     * @return attachments.
-     * @serial
-     */
-    Map<String, String> getAttachments();
-
-    /**
-     * get attachment by key.
-     *
-     * @return attachment value.
-     * @serial
-     */
-    String getAttachment(String key);
-
-    /**
-     * get attachment by key with default value.
-     *
-     * @return attachment value.
-     * @serial
-     */
-    String getAttachment(String key, String defaultValue);
-
-    /**
-     * get the invoker in current context.
+     * 返回当前调用的上下文，即目标对象
      *
      * @return invoker.
      * @transient
      */
     Invoker<?> getInvoker();
+
+    // ----------------------------------------------------------------
+    // 用于获取此次调用一些额外信息，比如dubbo版本，分组，设置的超时信息等
+    // ----------------------------------------------------------------
+
+    Map<String, String> getAttachments();
+    String getAttachment(String key);
+    String getAttachment(String key, String defaultValue);
+
+
 
 }

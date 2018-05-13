@@ -47,7 +47,6 @@ public interface Transporter {
      * @param handler
      * @return server
      * @throws RemotingException
-     * @see com.alibaba.dubbo.remoting.Transporters#bind(URL, Receiver, ChannelHandler)
      */
     @Adaptive({Constants.SERVER_KEY, Constants.TRANSPORTER_KEY})
     Server bind(URL url, ChannelHandler handler) throws RemotingException;

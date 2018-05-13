@@ -20,6 +20,7 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.SPI;
 
 /**
+ * 用于监听服务调用
  * InvokerListener. (SPI, Singleton, ThreadSafe)
  */
 @SPI

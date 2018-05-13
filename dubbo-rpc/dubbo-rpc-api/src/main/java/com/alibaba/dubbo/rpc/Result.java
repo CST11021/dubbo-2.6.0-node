@@ -19,6 +19,9 @@ package com.alibaba.dubbo.rpc;
 import java.util.Map;
 
 /**
+ *
+ * 用于封装RPC接口调用的返回值
+ *
  * RPC invoke result. (API, Prototype, NonThreadSafe)
  *
  * @serial Don't change the class name and package name.
@@ -28,34 +31,34 @@ import java.util.Map;
 public interface Result {
 
     /**
-     * Get invoke result.
+     * 获取调用的返回值
      *
-     * @return result. if no result return null.
+     * @return result. 如果没有返回值，则返回null
      */
     Object getValue();
 
     /**
-     * Get exception.
+     * 如果调用服务异常，则通过该方法返回异常信息
      *
      * @return exception. if no exception return null.
      */
     Throwable getException();
 
     /**
-     * Has exception.
+     * 判断调用的RPC服务是否异常
      *
      * @return has exception.
      */
     boolean hasException();
 
     /**
-     * Recreate.
+     * 有异常的话抛出异常，没有异常的话返回执行结果值，实现逻辑如下
      * <p>
      * <code>
      * if (hasException()) {
-     * throw getException();
+     *      throw getException();
      * } else {
-     * return getValue();
+     *      return getValue();
      * }
      * </code>
      *
@@ -72,25 +75,12 @@ public interface Result {
     Object getResult();
 
 
-    /**
-     * get attachments.
-     *
-     * @return attachments.
-     */
+    // ----------------------------------------------------------------
+    // 用于获取此次调用一些额外信息，比如dubbo版本，分组，设置的超时信息等
+    // ----------------------------------------------------------------
+
     Map<String, String> getAttachments();
-
-    /**
-     * get attachment by key.
-     *
-     * @return attachment value.
-     */
     String getAttachment(String key);
-
-    /**
-     * get attachment by key with default value.
-     *
-     * @return attachment value.
-     */
     String getAttachment(String key, String defaultValue);
 
 }

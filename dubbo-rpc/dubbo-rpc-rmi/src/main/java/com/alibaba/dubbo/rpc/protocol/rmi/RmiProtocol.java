@@ -52,6 +52,7 @@ public class RmiProtocol extends AbstractProxyProtocol {
         rmiServiceExporter.setServiceInterface(type);
         rmiServiceExporter.setService(impl);
         try {
+            // 通过后置处理器来暴露服务
             rmiServiceExporter.afterPropertiesSet();
         } catch (RemoteException e) {
             throw new RpcException(e.getMessage(), e);
@@ -81,6 +82,8 @@ public class RmiProtocol extends AbstractProxyProtocol {
         rmiProxyFactoryBean.setCacheStub(true);
         rmiProxyFactoryBean.setLookupStubOnStartup(true);
         rmiProxyFactoryBean.setRefreshStubOnConnectFailure(true);
+
+        // 通过后置处理器方法创建服务接口的代理实现，然后在通过实现ObjectFactory接口方法返回这个代理实例
         rmiProxyFactoryBean.afterPropertiesSet();
         return (T) rmiProxyFactoryBean.getObject();
     }

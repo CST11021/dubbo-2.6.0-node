@@ -217,7 +217,7 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     /**
-     * dubbo从要暴漏的服务的URL中取得相关的配置（host，port等）进行服务端server的创建，通过
+     * dubbo从要暴露的服务的URL中取得相关的配置（host，port等）进行服务端server的创建，通过
      * server = Exchangers.bind(url, requestHandler) 正式创建服务。
      *
      * 所以基本的创建步骤是：
@@ -255,7 +255,7 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
         return exporter;
     }
-
+    /** 开启服务，等待客户端连接 */
     private void openServer(URL url) {
         // 获取服务提供者的地址：ip:port
         String key = url.getAddress();
