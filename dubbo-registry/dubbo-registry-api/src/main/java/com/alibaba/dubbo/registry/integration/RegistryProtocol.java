@@ -55,15 +55,23 @@ public class RegistryProtocol implements Protocol {
     /** 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调。 */
     private final Map<URL, NotifyListener> overrideListeners = new ConcurrentHashMap<URL, NotifyListener>();
     /** To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
-        providerurl <--> exporter
-        缓存已经暴露的服务，key：{@link URL#toFullString()} ，value：{@link Exporter} */
+        providerUrl <--> exporter
+        缓存已经暴露的服务，key：{@link URL#toFullString()} ，value：{@link Exporter}
+        通过协议暴露后会返回一个Exporter对象，然后包装为一个ExporterChangeableWrapper对象缓存到这里，详见：{@link #doLocalExport(Invoker)}方法
+     */
     private final Map<String, ExporterChangeableWrapper<?>> bounds = new ConcurrentHashMap<String, ExporterChangeableWrapper<?>>();
+
+
+    // 以下，通过{@link ExtensionLoader#injectExtension(Object)}方法实现自动注入
+
+    /** 用于将多个Invoker伪装为一个 */
     private Cluster cluster;
     /** 表示要暴露该服务所使用的协议实现 */
     private Protocol protocol;
     /** 用于构建注册中心实现的工厂类 */
     private RegistryFactory registryFactory;
     private ProxyFactory proxyFactory;
+
 
     public RegistryProtocol() {
         INSTANCE = this;
@@ -94,12 +102,13 @@ public class RegistryProtocol implements Protocol {
         // export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
-        // 获取要注册到注册中心的URL
+        // 获取要注册到注册中心的URL：比如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659&pid=5892&timestamp=1526286422635
         URL registryUrl = getRegistryUrl(originInvoker);
 
         // 获取一个注册中心实例
         final Registry registry = getRegistry(originInvoker);
 
+        // 比如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider&timestamp=1526286422659
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
         //to judge to delay publish whether or not
@@ -108,13 +117,15 @@ public class RegistryProtocol implements Protocol {
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);
 
         if (register) {
+            // 向注册中心注册服务
             register(registryUrl, registedProviderUrl);
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
 
         // Subscribe the override data
-        // FIXME When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service. Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
-        // FIXME 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
+        // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
+        // FIXME：Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
+        // FIXME： 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
@@ -122,7 +133,7 @@ public class RegistryProtocol implements Protocol {
         // overrideProviderUrl数据发生变化时回调，注册器DubboRegistry的registry,subscribe, unRegistry, unSubscribe都类似，
         // 是一个dubbo的远程服务调用
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
-        //Ensure that a new exporter instance is returned every time export
+
         //保证每次export都返回一个新的exporter实例
         return new Exporter<T>() {
             public Invoker<T> getInvoker() {
@@ -152,7 +163,7 @@ public class RegistryProtocol implements Protocol {
     /**
      * 暴露服务，并将暴露的服务缓存到本地
      * Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端发来的各
-     * 种请求，通讯细节由dubbo自己实现
+     * 种请求，通讯细节由dubbo框架自己实现
      *
      * @param originInvoker
      * @param <T>
@@ -242,7 +253,6 @@ public class RegistryProtocol implements Protocol {
             return new String[]{};
         }
     }
-
     /**
      * Get the address of the providerUrl through the url of the invoker
      * 获取服务提供者的配置信息，其配置信息封装为URL对象返回
@@ -281,8 +291,11 @@ public class RegistryProtocol implements Protocol {
             exporter.setExporter(protocol.export(invokerDelegete));
         }
     }
+    /** 向注册中心暴露服务 */
     public void register(URL registryUrl, URL registedProviderUrl) {
+        // 根据配置的注册中心信息registryUrl，创建一个注册中心，registryUrl例如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659&pid=5892&timestamp=1526286422635
         Registry registry = registryFactory.getRegistry(registryUrl);
+        // 根据服务提供者的信息向注册中心暴露服务，registedProviderUrl例如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider&timestamp=1526286422659
         registry.register(registedProviderUrl);
     }
 
@@ -494,6 +507,10 @@ public class RegistryProtocol implements Protocol {
     /**
      * exporter proxy, establish the corresponding relationship between the returned exporter and the exporter exported by the protocol,
      * and can modify the relationship at the time of override.
+     *
+     * 调用相应的协议暴露服务后，会将{@link Protocol#export(Invoker)}的放回值，{@link Exporter}包装为一个ExporterChangeableWrapper
+     * 对象，然后缓存到{@link #bounds}
+     * 具体代码，参见{@link #doLocalExport(Invoker)}方法
      *
      * @param <T>
      */

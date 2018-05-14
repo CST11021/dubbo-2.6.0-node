@@ -1094,7 +1094,7 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
         try {
             if (objectFactory != null) {
                 for (Method method : instance.getClass().getMethods()) {
-                    // 判断是否例如：public void setProtocol(Protocol protocol){}这种方法
+                    // 遍历所有set方法，实现自动注入
                     if (method.getName().startsWith("set") && method.getParameterTypes().length == 1 && Modifier.isPublic(method.getModifiers())) {
 
                         Class<?> pt = method.getParameterTypes()[0];

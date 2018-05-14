@@ -161,6 +161,7 @@ public class Constants {
 
     public static final String CLUSTER_KEY = "cluster";
 
+    // 表示注册中心类型
     public static final String REGISTRY_KEY = "registry";
 
     public static final String MONITOR_KEY = "monitor";

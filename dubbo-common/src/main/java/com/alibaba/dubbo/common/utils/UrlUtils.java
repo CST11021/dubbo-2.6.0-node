@@ -356,6 +356,8 @@ public class UrlUtils {
     public static boolean isMatch(URL consumerUrl, URL providerUrl) {
         String consumerInterface = consumerUrl.getServiceInterface();
         String providerInterface = providerUrl.getServiceInterface();
+
+        // 如果consumerInterface不是providerInterface，也不是*，则返回false
         if (!(Constants.ANY_VALUE.equals(consumerInterface) || StringUtils.isEquals(consumerInterface, providerInterface)))
             return false;
 
@@ -363,6 +365,7 @@ public class UrlUtils {
                 consumerUrl.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY))) {
             return false;
         }
+
         if (!providerUrl.getParameter(Constants.ENABLED_KEY, true)
                 && !Constants.ANY_VALUE.equals(consumerUrl.getParameter(Constants.ENABLED_KEY))) {
             return false;
@@ -375,6 +378,8 @@ public class UrlUtils {
         String providerGroup = providerUrl.getParameter(Constants.GROUP_KEY);
         String providerVersion = providerUrl.getParameter(Constants.VERSION_KEY);
         String providerClassifier = providerUrl.getParameter(Constants.CLASSIFIER_KEY, Constants.ANY_VALUE);
+
+
         return (Constants.ANY_VALUE.equals(consumerGroup) || StringUtils.isEquals(consumerGroup, providerGroup) || StringUtils.isContains(consumerGroup, providerGroup))
                 && (Constants.ANY_VALUE.equals(consumerVersion) || StringUtils.isEquals(consumerVersion, providerVersion))
                 && (consumerClassifier == null || Constants.ANY_VALUE.equals(consumerClassifier) || StringUtils.isEquals(consumerClassifier, providerClassifier));

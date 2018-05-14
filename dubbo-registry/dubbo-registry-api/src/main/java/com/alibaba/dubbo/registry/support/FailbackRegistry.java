@@ -42,15 +42,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class FailbackRegistry extends AbstractRegistry {
 
-    // Scheduled executor service
+
     private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboRegistryFailedRetryTimer", true));
-    // Timer for failure retry, regular check if there is a request for failure, and if there is, an unlimited retry
+    /** 用于失败重试的计时器，定期检查是否存在失败请求，如果存在，则进行无限重试 */
     private final ScheduledFuture<?> retryFuture;
+    /** 用于保存注册失败的URL */
     private final Set<URL> failedRegistered = new ConcurrentHashSet<URL>();
     private final Set<URL> failedUnregistered = new ConcurrentHashSet<URL>();
     private final ConcurrentMap<URL, Set<NotifyListener>> failedSubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
     private final ConcurrentMap<URL, Set<NotifyListener>> failedUnsubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
     private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = new ConcurrentHashMap<URL, Map<NotifyListener, List<URL>>>();
+    /** 用于判断该注册中心是否可用，如果注册中心挂掉了那就不可用了 */
     private AtomicBoolean destroyed = new AtomicBoolean(false);
 
     public FailbackRegistry(URL url) {
@@ -68,59 +70,13 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);
     }
 
-    public Future<?> getRetryFuture() {
-        return retryFuture;
-    }
-
-    public Set<URL> getFailedRegistered() {
-        return failedRegistered;
-    }
-
-    public Set<URL> getFailedUnregistered() {
-        return failedUnregistered;
-    }
-
-    public Map<URL, Set<NotifyListener>> getFailedSubscribed() {
-        return failedSubscribed;
-    }
-
-    public Map<URL, Set<NotifyListener>> getFailedUnsubscribed() {
-        return failedUnsubscribed;
-    }
-
-    public Map<URL, Map<NotifyListener, List<URL>>> getFailedNotified() {
-        return failedNotified;
-    }
-
-    private void addFailedSubscribed(URL url, NotifyListener listener) {
-        Set<NotifyListener> listeners = failedSubscribed.get(url);
-        if (listeners == null) {
-            failedSubscribed.putIfAbsent(url, new ConcurrentHashSet<NotifyListener>());
-            listeners = failedSubscribed.get(url);
-        }
-        listeners.add(listener);
-    }
-
-    private void removeFailedSubscribed(URL url, NotifyListener listener) {
-        Set<NotifyListener> listeners = failedSubscribed.get(url);
-        if (listeners != null) {
-            listeners.remove(listener);
-        }
-        listeners = failedUnsubscribed.get(url);
-        if (listeners != null) {
-            listeners.remove(listener);
-        }
-        Map<NotifyListener, List<URL>> notified = failedNotified.get(url);
-        if (notified != null) {
-            notified.remove(listener);
-        }
-    }
 
     @Override
     public void register(URL url) {
         if (destroyed.get()){
             return;
         }
+
         super.register(url);
         failedRegistered.remove(url);
         failedUnregistered.remove(url);
@@ -465,11 +421,53 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     // ==== Template method ====
 
     protected abstract void doRegister(URL url);
-
     protected abstract void doUnregister(URL url);
-
     protected abstract void doSubscribe(URL url, NotifyListener listener);
-
     protected abstract void doUnsubscribe(URL url, NotifyListener listener);
+
+
+    // ==== getter and setter ... ====
+
+    private void addFailedSubscribed(URL url, NotifyListener listener) {
+        Set<NotifyListener> listeners = failedSubscribed.get(url);
+        if (listeners == null) {
+            failedSubscribed.putIfAbsent(url, new ConcurrentHashSet<NotifyListener>());
+            listeners = failedSubscribed.get(url);
+        }
+        listeners.add(listener);
+    }
+    private void removeFailedSubscribed(URL url, NotifyListener listener) {
+        Set<NotifyListener> listeners = failedSubscribed.get(url);
+        if (listeners != null) {
+            listeners.remove(listener);
+        }
+        listeners = failedUnsubscribed.get(url);
+        if (listeners != null) {
+            listeners.remove(listener);
+        }
+        Map<NotifyListener, List<URL>> notified = failedNotified.get(url);
+        if (notified != null) {
+            notified.remove(listener);
+        }
+    }
+
+    public Future<?> getRetryFuture() {
+        return retryFuture;
+    }
+    public Set<URL> getFailedRegistered() {
+        return failedRegistered;
+    }
+    public Set<URL> getFailedUnregistered() {
+        return failedUnregistered;
+    }
+    public Map<URL, Set<NotifyListener>> getFailedSubscribed() {
+        return failedSubscribed;
+    }
+    public Map<URL, Set<NotifyListener>> getFailedUnsubscribed() {
+        return failedUnsubscribed;
+    }
+    public Map<URL, Map<NotifyListener, List<URL>>> getFailedNotified() {
+        return failedNotified;
+    }
 
 }

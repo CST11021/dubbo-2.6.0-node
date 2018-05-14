@@ -26,6 +26,9 @@ import com.alibaba.dubbo.common.extension.SPI;
  * ① 先将服务暴露到本地：ProtocolFilterWrapper -> ProtocolListenerWrapper -> InjvmProtocol
  * ② 将服务暴露到注册中心：ProtocolFilterWrapper -> ProtocolListenerWrapper -> RegistryProtocol
  * ③ 根据协议创建服务监听，等待消费者调用：ProtocolFilterWrapper -> ProtocolListenerWrapper -> DubboProtocol
+ *
+ * 注意：RegistryProtocol内部存在存在一个指向DubboProtocol的引用，程序执行时会先将服务暴露出来等待调用，然后在暴露到注册中心
+ *
  */
 @SPI("dubbo")
 public interface Protocol {

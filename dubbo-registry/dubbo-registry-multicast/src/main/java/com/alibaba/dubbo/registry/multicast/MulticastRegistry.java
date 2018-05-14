@@ -75,17 +75,21 @@ import java.util.concurrent.TimeUnit;
  */
 public class MulticastRegistry extends FailbackRegistry {
 
-    // logging output
     private static final Logger logger = LoggerFactory.getLogger(MulticastRegistry.class);
+    /** 默认的广播端口 */
     private static final int DEFAULT_MULTICAST_PORT = 1234;
-    private final InetAddress mutilcastAddress;
-    private final MulticastSocket mutilcastSocket;
+    /** 广播端口 */
     private final int mutilcastPort;
+    private final InetAddress mutilcastAddress;
+    /** 用于广播暴露的服务 */
+    private final MulticastSocket mutilcastSocket;
     private final ConcurrentMap<URL, Set<URL>> received = new ConcurrentHashMap<URL, Set<URL>>();
+
     private final ScheduledExecutorService cleanExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboMulticastRegistryCleanTimer", true));
     private final ScheduledFuture<?> cleanFuture;
     private final int cleanPeriod;
     private volatile boolean admin = false;
+
 
     public MulticastRegistry(URL url) {
         super(url);
@@ -95,18 +99,23 @@ public class MulticastRegistry extends FailbackRegistry {
         if (!isMulticastAddress(url.getHost())) {
             throw new IllegalArgumentException("Invalid multicast address " + url.getHost() + ", scope: 224.0.0.0 - 239.255.255.255");
         }
+
         try {
             mutilcastAddress = InetAddress.getByName(url.getHost());
             mutilcastPort = url.getPort() <= 0 ? DEFAULT_MULTICAST_PORT : url.getPort();
+
             mutilcastSocket = new MulticastSocket(mutilcastPort);
             mutilcastSocket.setLoopbackMode(false);
             mutilcastSocket.joinGroup(mutilcastAddress);
+
+            // 创建一个线程用来监听是否有服务发布
             Thread thread = new Thread(new Runnable() {
                 public void run() {
                     byte[] buf = new byte[2048];
                     DatagramPacket recv = new DatagramPacket(buf, buf.length);
                     while (!mutilcastSocket.isClosed()) {
                         try {
+                            // receive()是阻塞方法，会等待客户端发送过来的信息
                             mutilcastSocket.receive(recv);
                             String msg = new String(recv.getData()).trim();
                             int i = msg.indexOf('\n');
@@ -114,6 +123,7 @@ public class MulticastRegistry extends FailbackRegistry {
                                 msg = msg.substring(0, i).trim();
                             }
                             MulticastRegistry.this.receive(msg, (InetSocketAddress) recv.getSocketAddress());
+                            // 将buff数组中的每个元素填充为0
                             Arrays.fill(buf, (byte) 0);
                         } catch (Throwable e) {
                             if (!mutilcastSocket.isClosed()) {
@@ -123,17 +133,23 @@ public class MulticastRegistry extends FailbackRegistry {
                     }
                 }
             }, "DubboMulticastRegistryReceiver");
+            // java中线程分为两种类型：用户线程和守护线程。
+            // 通过Thread.setDaemon(false)设置为用户线程；
+            // 通过Thread.setDaemon(true)设置为守护线程。
+            // 如果不设置次属性，默认为用户线程。
             thread.setDaemon(true);
             thread.start();
         } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
+
         this.cleanPeriod = url.getParameter(Constants.SESSION_TIMEOUT_KEY, Constants.DEFAULT_SESSION_TIMEOUT);
         if (url.getParameter("clean", true)) {
             this.cleanFuture = cleanExecutor.scheduleWithFixedDelay(new Runnable() {
                 public void run() {
                     try {
-                        clean(); // Remove the expired
+                        // Remove the expired
+                        clean();
                     } catch (Throwable t) { // Defensive fault tolerance
                         logger.error("Unexpected exception occur at clean expired provider, cause: " + t.getMessage(), t);
                     }
@@ -143,6 +159,170 @@ public class MulticastRegistry extends FailbackRegistry {
             this.cleanFuture = null;
         }
     }
+
+
+
+    public boolean isAvailable() {
+        try {
+            return mutilcastSocket != null;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+    public void destroy() {
+        super.destroy();
+        try {
+            if (cleanFuture != null) {
+                cleanFuture.cancel(true);
+            }
+        } catch (Throwable t) {
+            logger.warn(t.getMessage(), t);
+        }
+        try {
+            mutilcastSocket.leaveGroup(mutilcastAddress);
+            mutilcastSocket.close();
+        } catch (Throwable t) {
+            logger.warn(t.getMessage(), t);
+        }
+    }
+    public List<URL> lookup(URL url) {
+        List<URL> urls = new ArrayList<URL>();
+        Map<String, List<URL>> notifiedUrls = getNotified().get(url);
+        if (notifiedUrls != null && notifiedUrls.size() > 0) {
+            for (List<URL> values : notifiedUrls.values()) {
+                urls.addAll(values);
+            }
+        }
+        if (urls == null || urls.size() == 0) {
+            List<URL> cacheUrls = getCacheUrls(url);
+            if (cacheUrls != null && cacheUrls.size() > 0) {
+                urls.addAll(cacheUrls);
+            }
+        }
+        if (urls == null || urls.size() == 0) {
+            for (URL u : getRegistered()) {
+                if (UrlUtils.isMatch(url, u)) {
+                    urls.add(u);
+                }
+            }
+        }
+        if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+            for (URL u : getSubscribed().keySet()) {
+                if (UrlUtils.isMatch(url, u)) {
+                    urls.add(u);
+                }
+            }
+        }
+        return urls;
+    }
+
+
+    // ==== 暴露服务 ====
+
+    public void register(URL url) {
+        super.register(url);
+        registered(url);
+    }
+    protected void registered(URL url) {
+        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
+            URL key = entry.getKey();
+            if (UrlUtils.isMatch(key, url)) {
+                Set<URL> urls = received.get(key);
+                if (urls == null) {
+                    received.putIfAbsent(key, new ConcurrentHashSet<URL>());
+                    urls = received.get(key);
+                }
+                urls.add(url);
+                List<URL> list = toList(urls);
+                for (NotifyListener listener : entry.getValue()) {
+                    notify(key, listener, list);
+                    synchronized (listener) {
+                        listener.notify();
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * 广播暴露的服务
+     * @param url
+     */
+    protected void doRegister(URL url) {
+        broadcast(Constants.REGISTER + " " + url.toFullString());
+    }
+
+
+    // ==== 注销服务 ====
+
+    public void unregister(URL url) {
+        super.unregister(url);
+        unregistered(url);
+    }
+    protected void unregistered(URL url) {
+        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
+            URL key = entry.getKey();
+            if (UrlUtils.isMatch(key, url)) {
+                Set<URL> urls = received.get(key);
+                if (urls != null) {
+                    urls.remove(url);
+                }
+                List<URL> list = toList(urls);
+                for (NotifyListener listener : entry.getValue()) {
+                    notify(key, listener, list);
+                }
+            }
+        }
+    }
+    protected void doUnregister(URL url) {
+        broadcast(Constants.UNREGISTER + " " + url.toFullString());
+    }
+
+
+    // ==== 订阅服务 ====
+
+    public void subscribe(URL url, NotifyListener listener) {
+        super.subscribe(url, listener);
+        subscribed(url, listener);
+    }
+    protected void subscribed(URL url, NotifyListener listener) {
+        List<URL> urls = lookup(url);
+        notify(url, listener, urls);
+    }
+    protected void doSubscribe(URL url, NotifyListener listener) {
+        if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+            admin = true;
+        }
+        broadcast(Constants.SUBSCRIBE + " " + url.toFullString());
+        synchronized (listener) {
+            try {
+                listener.wait(url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT));
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+
+    // ==== 取消订阅 ====
+
+    public void unsubscribe(URL url, NotifyListener listener) {
+        super.unsubscribe(url, listener);
+        received.remove(url);
+    }
+    protected void doUnsubscribe(URL url, NotifyListener listener) {
+        if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
+                && url.getParameter(Constants.REGISTER_KEY, true)) {
+            unregister(url);
+        }
+        broadcast(Constants.UNSUBSCRIBE + " " + url.toFullString());
+    }
+
+
+
+
+
+
+
+
 
     private static boolean isMulticastAddress(String ip) {
         int i = ip.indexOf('.');
@@ -155,7 +335,6 @@ public class MulticastRegistry extends FailbackRegistry {
         }
         return false;
     }
-
     private void clean() {
         if (admin) {
             for (Set<URL> providers : new HashSet<Set<URL>>(received.values())) {
@@ -170,7 +349,6 @@ public class MulticastRegistry extends FailbackRegistry {
             }
         }
     }
-
     private boolean isExpired(URL url) {
         if (!url.getParameter(Constants.DYNAMIC_KEY, true)
                 || url.getPort() <= 0
@@ -210,7 +388,12 @@ public class MulticastRegistry extends FailbackRegistry {
         }
         return false;
     }
-
+    /**
+     * 当监听到有服务发布时，就会调用该方法，处理客户端发过来的信息
+     *
+     * @param msg               暴露的服务信息
+     * @param remoteAddress     服务暴露的时候广播到该地址，通过轮询的方式监听是否有服务发布
+     */
     private void receive(String msg, InetSocketAddress remoteAddress) {
         if (logger.isInfoEnabled()) {
             logger.info("Receive multicast message: " + msg + " from " + remoteAddress);
@@ -241,20 +424,19 @@ public class MulticastRegistry extends FailbackRegistry {
         }/* else if (msg.startsWith(UNSUBSCRIBE)) {
         }*/
     }
-
     private void broadcast(String msg) {
         if (logger.isInfoEnabled()) {
             logger.info("Send broadcast message: " + msg + " to " + mutilcastAddress + ":" + mutilcastPort);
         }
         try {
             byte[] data = (msg + "\n").getBytes();
+            // 将暴露的服务封装为一个DatagramPacket，然后通过MulticastSocket进行暴露
             DatagramPacket hi = new DatagramPacket(data, data.length, mutilcastAddress, mutilcastPort);
             mutilcastSocket.send(hi);
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-
     private void unicast(String msg, String host) {
         if (logger.isInfoEnabled()) {
             logger.info("Send unicast message: " + msg + " to " + host + ":" + mutilcastPort);
@@ -267,103 +449,6 @@ public class MulticastRegistry extends FailbackRegistry {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-
-    protected void doRegister(URL url) {
-        broadcast(Constants.REGISTER + " " + url.toFullString());
-    }
-
-    protected void doUnregister(URL url) {
-        broadcast(Constants.UNREGISTER + " " + url.toFullString());
-    }
-
-    protected void doSubscribe(URL url, NotifyListener listener) {
-        if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
-            admin = true;
-        }
-        broadcast(Constants.SUBSCRIBE + " " + url.toFullString());
-        synchronized (listener) {
-            try {
-                listener.wait(url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT));
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
-    protected void doUnsubscribe(URL url, NotifyListener listener) {
-        if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
-                && url.getParameter(Constants.REGISTER_KEY, true)) {
-            unregister(url);
-        }
-        broadcast(Constants.UNSUBSCRIBE + " " + url.toFullString());
-    }
-
-    public boolean isAvailable() {
-        try {
-            return mutilcastSocket != null;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
-    public void destroy() {
-        super.destroy();
-        try {
-            if (cleanFuture != null) {
-                cleanFuture.cancel(true);
-            }
-        } catch (Throwable t) {
-            logger.warn(t.getMessage(), t);
-        }
-        try {
-            mutilcastSocket.leaveGroup(mutilcastAddress);
-            mutilcastSocket.close();
-        } catch (Throwable t) {
-            logger.warn(t.getMessage(), t);
-        }
-    }
-
-    protected void registered(URL url) {
-        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
-            URL key = entry.getKey();
-            if (UrlUtils.isMatch(key, url)) {
-                Set<URL> urls = received.get(key);
-                if (urls == null) {
-                    received.putIfAbsent(key, new ConcurrentHashSet<URL>());
-                    urls = received.get(key);
-                }
-                urls.add(url);
-                List<URL> list = toList(urls);
-                for (NotifyListener listener : entry.getValue()) {
-                    notify(key, listener, list);
-                    synchronized (listener) {
-                        listener.notify();
-                    }
-                }
-            }
-        }
-    }
-
-    protected void unregistered(URL url) {
-        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
-            URL key = entry.getKey();
-            if (UrlUtils.isMatch(key, url)) {
-                Set<URL> urls = received.get(key);
-                if (urls != null) {
-                    urls.remove(url);
-                }
-                List<URL> list = toList(urls);
-                for (NotifyListener listener : entry.getValue()) {
-                    notify(key, listener, list);
-                }
-            }
-        }
-    }
-
-    protected void subscribed(URL url, NotifyListener listener) {
-        List<URL> urls = lookup(url);
-        notify(url, listener, urls);
-    }
-
     private List<URL> toList(Set<URL> urls) {
         List<URL> list = new ArrayList<URL>();
         if (urls != null && urls.size() > 0) {
@@ -374,61 +459,10 @@ public class MulticastRegistry extends FailbackRegistry {
         return list;
     }
 
-    public void register(URL url) {
-        super.register(url);
-        registered(url);
-    }
-
-    public void unregister(URL url) {
-        super.unregister(url);
-        unregistered(url);
-    }
-
-    public void subscribe(URL url, NotifyListener listener) {
-        super.subscribe(url, listener);
-        subscribed(url, listener);
-    }
-
-    public void unsubscribe(URL url, NotifyListener listener) {
-        super.unsubscribe(url, listener);
-        received.remove(url);
-    }
-
-    public List<URL> lookup(URL url) {
-        List<URL> urls = new ArrayList<URL>();
-        Map<String, List<URL>> notifiedUrls = getNotified().get(url);
-        if (notifiedUrls != null && notifiedUrls.size() > 0) {
-            for (List<URL> values : notifiedUrls.values()) {
-                urls.addAll(values);
-            }
-        }
-        if (urls == null || urls.size() == 0) {
-            List<URL> cacheUrls = getCacheUrls(url);
-            if (cacheUrls != null && cacheUrls.size() > 0) {
-                urls.addAll(cacheUrls);
-            }
-        }
-        if (urls == null || urls.size() == 0) {
-            for (URL u : getRegistered()) {
-                if (UrlUtils.isMatch(url, u)) {
-                    urls.add(u);
-                }
-            }
-        }
-        if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
-            for (URL u : getSubscribed().keySet()) {
-                if (UrlUtils.isMatch(url, u)) {
-                    urls.add(u);
-                }
-            }
-        }
-        return urls;
-    }
 
     public MulticastSocket getMutilcastSocket() {
         return mutilcastSocket;
     }
-
     public Map<URL, Set<URL>> getReceived() {
         return received;
     }
