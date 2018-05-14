@@ -25,6 +25,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+    Activate：可以被框架中自动激活加载扩展，此注解用于配置扩展被自动激活加载条件。
+    Activate，看起来有点不好理解，它的意思是条件激活，用户通过group和value配置激活条件。被该注解修饰的扩展点在满足某种条件时会被激活，它一般用来配合filter和Invokelistener
+
+    对于集合类扩展点，比如：Filter, InvokerListener, ExportListener, TelnetHandler, StatusChecker等， 可以同时加载多个实现，此时，可以用自动激活来简化配置。
+
  * Activate. This annotation is useful for automatically activate certain extensions with the given criteria,
  * for examples: <code>@Activate</code> can be used to load certain <code>Filter</code> extension when there are
  * multiple implementations.
@@ -80,9 +85,7 @@ public @interface Activate {
     String[] after() default {};
 
     /**
-     * Absolute ordering info, optional
-     *
-     * @return absolute ordering info
+     * 值越小优先级越高
      */
     int order() default 0;
 }

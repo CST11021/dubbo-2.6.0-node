@@ -85,9 +85,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private Class<?> interfaceClass;
     /** reference to interface impl （表示服务接口的实现类） */
     private T ref;
-    // service name
+    /** service name, e.g: com.alibaba.dubbo.demo.DemoService */
     private String path;
-    // method configuration
+   /**
+    * 对应方法配置，例如
+      <dubbo:service interface="com.alibaba.dubbo.demo.HelloService" ref="helloService">
+            <dubbo:method name="sayHello"/>
+      </dubbo:service>
+    */
     private List<MethodConfig> methods;
     /** 表示提供服务的应用配置 */
     private ProviderConfig provider;
@@ -387,7 +392,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 根据 URL 的协议头，进行不同协议的服务暴露
      *
      * @param protocolConfig    使用的协议配置
-     * @param registryURLs      注册中心配置信息
+     * @param registryURLs      注册中心配置信息，集合类型，表示可能存在多个注册中心
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         // 如果没有配置暴露服务的协议，则默认使用dubbo，对应实现类是DubboProtocol
@@ -520,8 +525,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // don't export when none is configured
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
-            // export to local if the config is not remote (export to remote only when config is remote)
-            // 如果这个服务的作用域不是remote的话，就将服务暴露到本地
+            // 如果这个服务的作用域不是remote的话，就将服务暴露到本地：调用一次ProtocolFilterWrapper -> ProtocolListener -> InjvmProtocol
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }

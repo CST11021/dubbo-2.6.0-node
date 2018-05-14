@@ -22,6 +22,10 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Protocol. (API/SPI, Singleton, ThreadSafe)
+ * 当使用dubbo协议的时候，它的一个执行顺序是：
+ * ① 先将服务暴露到本地：ProtocolFilterWrapper -> ProtocolListenerWrapper -> InjvmProtocol
+ * ② 将服务暴露到注册中心：ProtocolFilterWrapper -> ProtocolListenerWrapper -> RegistryProtocol
+ * ③ 根据协议创建服务监听，等待消费者调用：ProtocolFilterWrapper -> ProtocolListenerWrapper -> DubboProtocol
  */
 @SPI("dubbo")
 public interface Protocol {

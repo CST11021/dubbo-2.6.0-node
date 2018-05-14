@@ -138,18 +138,19 @@ ExtensionLoader
 
 Dubbo的扩展点主要有adaptive和wrapper两种：
 
-（1）adaptive，因为dubbo底层会大量使用反射，出于性能考虑默认使用javassist字节码编译生成一个adaptive，由它动态委派处理。用户可以自己实现一个adaptive，只需要对某个类打上@adaptive即可。对于默认编译生成Adaptive的方案，需要使用@Adaptive声明接口上的哪些方法是adaptive方法。扩展点名称的key默认是接口类型上@SPI#value，方法上的@Adaptive#value有更高优先级。
+（1）adaptive，因为dubbo底层会大量使用反射，出于性能考虑默认使用javassist字节码编译生成一个adaptive，由它动态委派处理。用户可以
+    自己实现一个adaptive，只需要对某个类打上@adaptive即可。对于默认编译生成Adaptive的方案，需要使用@Adaptive声明接口上的哪些方
+    法是adaptive方法。扩展点名称的key默认是接口类型上@SPI#value，方法上的@Adaptive#value有更高优先级。
 
-（2）包装类必须有一个参数为spi接口类型的构造函数，否则不能正常工作。判断warpper的标准是class有没有一个参数为接口类型的构造参数。Wrapper可以有多个，会被按顺序依次覆盖，假设spi定义如下：
+（2）包装类必须有一个参数为spi接口类型的构造函数，否则不能正常工作。判断warpper的标准是class有没有一个参数为接口类型的构造参数。
+    Wrapper可以有多个，会被按顺序依次覆盖，假设spi定义如下：
 
-A=a.b.c
-B=a.b.wrapper1
-C=a.b.wrapper2
+    A=a.b.c
+    B=a.b.wrapper1
+    C=a.b.wrapper2
 
-wrapper的最终结构则为B-C-A
+    wrapper的最终结构则为B-C-A
 
- *
- *
  */
 public class ExtensionLoader<T> {
 
@@ -168,22 +169,29 @@ public class ExtensionLoader<T> {
     // ==============================
     /** 表示一个SPI接口的类型 */
     private final Class<?> type;
-    /** 扩展点工厂，用于创建扩展点的实现类，即SPI接口的实现类 */
+    /** 扩展点工厂，用于创建扩展点的实现类，即SPI接口的实现类(该扩展点工厂本身也是一个SPI接口，) */
     private final ExtensionFactory objectFactory;
     /** 缓存（key：扩展点实现类型，value：扩展点名称），同{@link #cachedClasses}*/
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
     /** 保存{@link #type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
+    /** 如果扩展点实现有被@Activate修饰，则会被缓存到这里，key：表示扩展点名称，value：修饰的该扩展点的@Activate注解对象 */
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
     /** 缓存扩展点名称，及对应的扩展点实例*/
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     /** 缓存这个{@link #type} 对应的扩展点实例 */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
+    /** 表示有被@Adaptive注解修饰的扩展点，目前整个系统只有2个，AdaptiveCompiler、AdaptiveExtensionFactory */
     private volatile Class<?> cachedAdaptiveClass = null;
     /** 表示这个SPI接口的默认实现，对应@SPI注解的value值，参见{@link ExtensionLoader#loadExtensionClasses()}*/
     private String cachedDefaultName;
     /** 表示创建扩展点实例过程中出现的异常 */
     private volatile Throwable createAdaptiveInstanceError;
+    /**
+     * 用于缓存包装器的扩展点，例如：ProtocolListenerWrapper和ProtocolFilterWrapper
+     * 判断是否为包装器的依据是，是否带有例如如下的构造器：public ProtocolFilterWrapper(Protocol protocol){};
+     *
+     */
     private Set<Class<?>> cachedWrapperClasses;
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
 
@@ -395,12 +403,15 @@ public class ExtensionLoader<T> {
         try {
             T instance = (T) EXTENSION_INSTANCES.get(clazz);
             if (instance == null) {
+                // 比如扩展点名为dubbo，则这里会创建一个DubboProtocol的实例
                 EXTENSION_INSTANCES.putIfAbsent(clazz, (T) clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+            // 扩展点的装饰器模式就是在这里实现，注入被装饰的扩展点实例
             injectExtension(instance);
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && wrapperClasses.size() > 0) {
+                // 如果有包装器的话，这里返回实例前都会用包装器一层一层的包装，最终调用的扩展点的真正实现
                 for (Class<?> wrapperClass : wrapperClasses) {
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
@@ -628,7 +639,9 @@ public class ExtensionLoader<T> {
                                         String name = null;
                                         int i = line.indexOf('=');
                                         if (i > 0) {
+                                            // 扩展点名称
                                             name = line.substring(0, i).trim();
+                                            // 扩展点实现类
                                             line = line.substring(i + 1).trim();
                                         }
                                         if (line.length() > 0) {
@@ -638,6 +651,8 @@ public class ExtensionLoader<T> {
                                                         type + ", class line: " + clazz.getName() + "), class "
                                                         + clazz.getName() + "is not subtype of interface.");
                                             }
+
+                                            // 判断这个clazz是否被Adaptive注解修饰：目前整个系统只有2个，AdaptiveCompiler、AdaptiveExtensionFactory
                                             if (clazz.isAnnotationPresent(Adaptive.class)) {
                                                 if (cachedAdaptiveClass == null) {
                                                     cachedAdaptiveClass = clazz;
@@ -648,6 +663,8 @@ public class ExtensionLoader<T> {
                                                 }
                                             } else {
                                                 try {
+                                                    // 获取一个例如：public DubboProtocol(Protocol protocol){}这样的构造器
+                                                    // 例如：ProtocolListenerWrapper和ProtocolFilterWrapper才有这样的构造器
                                                     clazz.getConstructor(type);
                                                     Set<Class<?>> wrappers = cachedWrapperClasses;
                                                     if (wrappers == null) {
@@ -656,7 +673,10 @@ public class ExtensionLoader<T> {
                                                     }
                                                     wrappers.add(clazz);
                                                 } catch (NoSuchMethodException e) {
+                                                    // 获取默认的构造器，一般的SPI扩展点都会有这个构造器
                                                     clazz.getConstructor();
+                                                    // 如果这个扩展点没有名称的情况，比如：HttpProtocol这个扩展点，则直接使用http这个前缀作为扩展点名称
+                                                    // 另外，如果HttpProtocol这个扩展点有被@Extension这个注解修饰的话，会使用注解值作为扩展点名称
                                                     if (name == null || name.length() == 0) {
                                                         name = findAnnotationName(clazz);
                                                         if (name == null || name.length() == 0) {
@@ -668,6 +688,7 @@ public class ExtensionLoader<T> {
                                                             }
                                                         }
                                                     }
+
                                                     String[] names = NAME_SEPARATOR.split(name);
                                                     if (names != null && names.length > 0) {
                                                         Activate activate = clazz.getAnnotation(Activate.class);
@@ -712,6 +733,12 @@ public class ExtensionLoader<T> {
     private static ClassLoader findClassLoader() {
         return ExtensionLoader.class.getClassLoader();
     }
+
+    /**
+     * 如果clazz这个扩展点有@Extension修饰，则直接获取这个注解的值，如果没有，比如：HttpProtocol，则返回http这个前缀
+     * @param clazz
+     * @return
+     */
     @SuppressWarnings("deprecation")
     private String findAnnotationName(Class<?> clazz) {
         com.alibaba.dubbo.common.Extension extension = clazz.getAnnotation(com.alibaba.dubbo.common.Extension.class);
@@ -1067,13 +1094,16 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
         try {
             if (objectFactory != null) {
                 for (Method method : instance.getClass().getMethods()) {
-                    if (method.getName().startsWith("set")
-                            && method.getParameterTypes().length == 1
-                            && Modifier.isPublic(method.getModifiers())) {
+                    // 判断是否例如：public void setProtocol(Protocol protocol){}这种方法
+                    if (method.getName().startsWith("set") && method.getParameterTypes().length == 1 && Modifier.isPublic(method.getModifiers())) {
+
                         Class<?> pt = method.getParameterTypes()[0];
+
                         try {
                             String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
                             Object object = objectFactory.getExtension(pt, property);
+
+                            // 通过反射技术注入
                             if (object != null) {
                                 method.invoke(instance, object);
                             }

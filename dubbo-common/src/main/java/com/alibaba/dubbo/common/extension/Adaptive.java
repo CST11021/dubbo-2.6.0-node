@@ -25,6 +25,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+
+    为什么要设计adaptive？注解在类上和注解在方法上的区别？ adaptive设计的目的是为了识别固定已知类和扩展未知类。
+    1.注解在类上：代表人工实现，实现一个装饰类（设计模式中的装饰模式），它主要作用于固定已知类，
+    目前整个系统只有2个，AdaptiveCompiler、AdaptiveExtensionFactory。
+    a.为什么AdaptiveCompiler这个类是固定已知的？因为整个框架仅支持Javassist和JdkCompiler。
+    a.为什么AdaptiveExtensionFactory这个类是固定已知的？因为整个框架仅支持2个objFactory,一个是spi,另一个是spring
+
+    2.注解在方法上：代表自动生成和编译一个动态的Adpative类，它主要是用于SPI，因为spi的类是不固定、未知的扩展类，所以设计了动态
+    $Adaptive类.例如 Protocol的spi类有 injvm dubbo registry filter listener等等 很多扩展未知类，它设计了Protocol$Adaptive的
+    类，通过ExtensionLoader.getExtensionLoader(Protocol.class).getExtension(spi类);来提取对象
+
+
  * Provide helpful information for {@link ExtensionLoader} to inject dependency extension instance.
  *
  * @see ExtensionLoader

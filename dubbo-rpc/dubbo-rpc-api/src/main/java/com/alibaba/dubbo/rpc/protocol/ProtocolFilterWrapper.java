@@ -31,10 +31,11 @@ import java.util.List;
 
 /**
  * FilterProtocol
- * 使用装饰器模式来包装Protocol对象
+ * 使用装饰器模式来包装Protocol对象，所有的协议实现都会用该包装器来包装：该包装器优先于{@link ProtocolListenerWrapper}执行
  */
 public class ProtocolFilterWrapper implements Protocol {
 
+    /** 指向对应的协议实现类 */
     private final Protocol protocol;
 
     public ProtocolFilterWrapper(Protocol protocol) {
@@ -88,10 +89,12 @@ public class ProtocolFilterWrapper implements Protocol {
     }
 
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 如果协议是"registry"说明，该请求是要将服务暴露到注册中心的
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
-            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务
+            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务，这里的扩展点是RegistryProtocol
             return protocol.export(invoker);
         }
+        // 服务暴露前会调用一系列的过滤器
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
