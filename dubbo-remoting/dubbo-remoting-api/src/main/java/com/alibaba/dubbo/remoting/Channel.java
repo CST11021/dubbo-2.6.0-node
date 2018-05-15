@@ -30,48 +30,23 @@ import java.net.InetSocketAddress;
 public interface Channel extends Endpoint {
 
     /**
-     * get remote address.
+     * 获取通道连接的远程地址
      *
      * @return remote address.
      */
     InetSocketAddress getRemoteAddress();
 
     /**
-     * is connected.
+     * 判断是否已经建立连接
      *
      * @return connected
      */
     boolean isConnected();
 
-    /**
-     * has attribute.
-     *
-     * @param key key.
-     * @return has or has not.
-     */
+
     boolean hasAttribute(String key);
-
-    /**
-     * get attribute.
-     *
-     * @param key key.
-     * @return value.
-     */
     Object getAttribute(String key);
-
-    /**
-     * set attribute.
-     *
-     * @param key   key.
-     * @param value value.
-     */
     void setAttribute(String key, Object value);
-
-    /**
-     * remove attribute.
-     *
-     * @param key key.
-     */
     void removeAttribute(String key);
 
 }

@@ -39,7 +39,7 @@ public interface NotifyListener {
      *
      * @param urls The list of registered information , is always not empty. The meaning is the same as the return value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
      *
-     * 当收到服务变更通知时触发。
+     * 当收到服务变更通知时触发
      *
      * 通知需处理契约：<br>
      * 1. 总是以服务接口和数据类型为维度全量通知，即不会通知一个服务的同类型的部分数据，用户不需要对比上一次通知结果。<br>
@@ -49,6 +49,8 @@ public interface NotifyListener {
      * 5. 通知者(即注册中心实现)需保证通知的顺序，比如：单线程推送，队列串行化，带版本对比。<br>
      *
      * @param urls 已注册信息列表，总不为空，含义同{@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}的返回值。
+     *              一个服务可能存在多个服务提供者，只要有一个服务发生变化，就会触发该方法通知服务订阅者，入参是一个List，是因为
+     *              只要有一个服务发生变化，就会进行全量通知
      *
      */
     void notify(List<URL> urls);

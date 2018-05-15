@@ -37,19 +37,16 @@ public class DelegateProviderMetaDataInvoker<T> implements Invoker {
     public Class<T> getInterface() {
         return invoker.getInterface();
     }
-
-    public URL getUrl() {
-        return invoker.getUrl();
-    }
-
-    public boolean isAvailable() {
-        return invoker.isAvailable();
-    }
-
     public Result invoke(Invocation invocation) throws RpcException {
         return invoker.invoke(invocation);
     }
 
+    public URL getUrl() {
+        return invoker.getUrl();
+    }
+    public boolean isAvailable() {
+        return invoker.isAvailable();
+    }
     public void destroy() {
         invoker.destroy();
     }

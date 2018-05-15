@@ -45,12 +45,10 @@ public class ChannelBufferOutputStream extends OutputStream {
 
         buffer.writeBytes(b, off, len);
     }
-
     @Override
     public void write(byte[] b) throws IOException {
         buffer.writeBytes(b);
     }
-
     @Override
     public void write(int b) throws IOException {
         buffer.writeByte((byte) b);

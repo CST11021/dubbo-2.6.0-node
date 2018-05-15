@@ -26,37 +26,26 @@ import java.util.regex.Pattern;
 public class Constants {
 
     public static final String PROVIDER = "provider";
-
     public static final String CONSUMER = "consumer";
 
     public static final String REGISTER = "register";
-
     public static final String UNREGISTER = "unregister";
-
     public static final String SUBSCRIBE = "subscribe";
-
     public static final String UNSUBSCRIBE = "unsubscribe";
 
     public static final String CATEGORY_KEY = "category";
 
     public static final String PROVIDERS_CATEGORY = "providers";
-
     public static final String CONSUMERS_CATEGORY = "consumers";
-
     public static final String ROUTERS_CATEGORY = "routers";
-
     public static final String CONFIGURATORS_CATEGORY = "configurators";
-
     public static final String DEFAULT_CATEGORY = PROVIDERS_CATEGORY;
 
     public static final String ENABLED_KEY = "enabled";
-
     public static final String DISABLED_KEY = "disabled";
-
     public static final String VALIDATION_KEY = "validation";
 
     public static final String CACHE_KEY = "cache";
-
     public static final String DYNAMIC_KEY = "dynamic";
 
     public static final String DUBBO_PROPERTIES_KEY = "dubbo.properties.file";
@@ -381,25 +370,20 @@ public class Constants {
 
     public static final String CHANNEL_SEND_READONLYEVENT_KEY = "channel.readonly.send";
 
+
+
     public static final String COUNT_PROTOCOL = "count";
-
     public static final String TRACE_PROTOCOL = "trace";
-
     public static final String EMPTY_PROTOCOL = "empty";
-
     public static final String ADMIN_PROTOCOL = "admin";
-
     public static final String PROVIDER_PROTOCOL = "provider";
-
     public static final String CONSUMER_PROTOCOL = "consumer";
-
     public static final String ROUTE_PROTOCOL = "route";
-
     public static final String SCRIPT_PROTOCOL = "script";
-
     public static final String CONDITION_PROTOCOL = "condition";
-
     public static final String MOCK_PROTOCOL = "mock";
+
+
 
     public static final String RETURN_PREFIX = "return ";
 

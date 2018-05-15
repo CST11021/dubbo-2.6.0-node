@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * ZookeeperRegistry
+ * ZookeeperRegistry:负责与zookeeper进行交互
  *
  */
 public class ZookeeperRegistry extends FailbackRegistry {
@@ -96,6 +96,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
         if (url == null) {
             throw new IllegalArgumentException("lookup url == null");
         }
+
         try {
             List<String> providers = new ArrayList<String>();
             for (String path : toCategoriesPath(url)) {
@@ -111,6 +112,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
     protected void doRegister(URL url) {
         try {
+            // 在ZooKeeper上创建一个节点，将toUrlPath(url)返回的结果保存在ZooKeeper上
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);

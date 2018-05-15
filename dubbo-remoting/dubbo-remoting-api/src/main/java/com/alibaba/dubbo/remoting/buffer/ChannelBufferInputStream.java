@@ -29,7 +29,6 @@ public class ChannelBufferInputStream extends InputStream {
     public ChannelBufferInputStream(ChannelBuffer buffer) {
         this(buffer, buffer.readableBytes());
     }
-
     public ChannelBufferInputStream(ChannelBuffer buffer, int length) {
         if (buffer == null) {
             throw new NullPointerException("buffer");
@@ -47,25 +46,22 @@ public class ChannelBufferInputStream extends InputStream {
         buffer.markReaderIndex();
     }
 
+
     public int readBytes() {
         return buffer.readerIndex() - startIndex;
     }
-
     @Override
     public int available() throws IOException {
         return endIndex - buffer.readerIndex();
     }
-
     @Override
     public void mark(int readlimit) {
         buffer.markReaderIndex();
     }
-
     @Override
     public boolean markSupported() {
         return true;
     }
-
     @Override
     public int read() throws IOException {
         if (!buffer.readable()) {
@@ -73,7 +69,6 @@ public class ChannelBufferInputStream extends InputStream {
         }
         return buffer.readByte() & 0xff;
     }
-
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int available = available();
@@ -85,12 +80,10 @@ public class ChannelBufferInputStream extends InputStream {
         buffer.readBytes(b, off, len);
         return len;
     }
-
     @Override
     public void reset() throws IOException {
         buffer.resetReaderIndex();
     }
-
     @Override
     public long skip(long n) throws IOException {
         if (n > Integer.MAX_VALUE) {
@@ -99,7 +92,6 @@ public class ChannelBufferInputStream extends InputStream {
             return skipBytes((int) n);
         }
     }
-
     private int skipBytes(int n) throws IOException {
         int nBytes = Math.min(available(), n);
         buffer.skipBytes(nBytes);

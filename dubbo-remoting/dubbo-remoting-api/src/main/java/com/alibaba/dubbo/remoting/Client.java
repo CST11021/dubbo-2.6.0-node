@@ -27,9 +27,7 @@ import com.alibaba.dubbo.common.Resetable;
  */
 public interface Client extends Endpoint, Channel, Resetable {
 
-    /**
-     * reconnect.
-     */
+    /** 重置连接 */
     void reconnect() throws RemotingException;
 
     @Deprecated

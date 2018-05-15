@@ -41,7 +41,7 @@ import javax.sound.midi.Receiver;
 public interface Transporter {
 
     /**
-     * Bind a server.
+     * 服务端通过该方法监听通道消息，ChannelHandler本质上也是一个监听器，用于监听通道消息
      *
      * @param url     server url
      * @param handler
@@ -52,13 +52,13 @@ public interface Transporter {
     Server bind(URL url, ChannelHandler handler) throws RemotingException;
 
     /**
-     * Connect to a server.
+     * 客户端通过URL与服务端建立连接
      *
      * @param url     server url
      * @param handler
      * @return client
      * @throws RemotingException
-     * @see com.alibaba.dubbo.remoting.Transporters#connect(URL, Receiver, ChannelListener)
+     * @see com.alibaba.dubbo.remoting.Transporters#connect(URL, ChannelHandler...)
      */
     @Adaptive({Constants.CLIENT_KEY, Constants.TRANSPORTER_KEY})
     Client connect(URL url, ChannelHandler handler) throws RemotingException;

@@ -30,11 +30,7 @@ import java.util.Collection;
  */
 public interface Server extends Endpoint, Resetable {
 
-    /**
-     * is bound.
-     *
-     * @return bound
-     */
+    /** 判断是否已经建立了用于收发消息的通道 */
     boolean isBound();
 
     /**
@@ -45,7 +41,7 @@ public interface Server extends Endpoint, Resetable {
     Collection<Channel> getChannels();
 
     /**
-     * get channel.
+     * 与远程机器建立连接，返回一个用于收发消息的通道对象
      *
      * @param remoteAddress
      * @return channel

@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * RegistryDirectory
+ * RegistryDirectory：维护着所有可用的远程Invoker或者本地的Invoker
  *
  */
 public class RegistryDirectory<T> extends AbstractDirectory<T> implements NotifyListener {
@@ -66,9 +66,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * 默认实现是FailOverCluster，当出现失败重试其他服务的策略
      */
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
-
     private static final RouterFactory routerFactory = ExtensionLoader.getExtensionLoader(RouterFactory.class).getAdaptiveExtension();
-
     private static final ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class).getAdaptiveExtension();
     /** 例如：com.alibaba.dubbo.registry.RegistryService，在构造器中初始化，不能为空*/
     private final String serviceKey;
@@ -96,10 +94,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     /** 对应<dubbo:registry address="multicast://224.5.6.7:1234"/>配置 */
     private Registry registry;
     private volatile boolean forbidden = false;
-
     /** 例如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer&check=false&dubbo=2.0.0&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1230064&register.ip=30.6.28.128&side=consumer&timestamp=1522228545805 */
     private volatile URL overrideDirectoryUrl;
-
     /**
      * override rules
      * Priority: override>-D>consumer>provider
@@ -109,23 +105,17 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * The initial value is null and the midway may be assigned to null, please use the local variable reference
      */
     private volatile List<Configurator> configurators;
-    /**
-     * Map<url, Invoker> cache service url to invoker mapping.
-     * The initial value is null and the midway may be assigned to null, please use the local variable reference
-     */
+    /** Map<url, Invoker> 缓存服务接口道Invoker的映射关系 */
     private volatile Map<String, Invoker<T>> urlInvokerMap;
-
-    /**
-     * Map<methodName, Invoker> cache service method to invokers mapping.
-     * The initial value is null and the midway may be assigned to null, please use the local variable reference
-     */
+    /** Map<methodName, Invoker> 缓存服务方法到Invoker的映射关系 */
     private volatile Map<String, List<Invoker<T>>> methodInvokerMap;
-
     /**
      * Set<invokerUrls> cache invokeUrls to invokers mapping.
      * The initial value is null and the midway may be assigned to null, please use the local variable reference
      */
     private volatile Set<URL> cachedInvokerUrls;
+
+
 
     public RegistryDirectory(Class<T> serviceType, URL url) {
         super(url);
@@ -297,7 +287,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             }
         }
     }
-
     private Map<String, List<Invoker<T>>> toMergeMethodInvokerMap(Map<String, List<Invoker<T>>> methodMap) {
         Map<String, List<Invoker<T>>> result = new HashMap<String, List<Invoker<T>>>();
         for (Map.Entry<String, List<Invoker<T>>> entry : methodMap.entrySet()) {
@@ -327,7 +316,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return result;
     }
-
     /**
      * @param urls
      * @return null : no routers ,do nothing
@@ -358,7 +346,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return routers;
     }
-
     /**
      * Turn urls into invokers, and if url has been refer, will not re-reference.
      *
@@ -429,7 +416,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         keys.clear();
         return newUrlInvokerMap;
     }
-
     /**
      * Merge url parameters. the order is: override > -D >Consumer > Provider
      *
@@ -469,7 +455,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return providerUrl;
     }
-
     private List<Invoker<T>> route(List<Invoker<T>> invokers, String method) {
         Invocation invocation = new RpcInvocation(method, new Class<?>[0], new Object[0]);
         List<Router> routers = getRouters();
@@ -482,7 +467,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return invokers;
     }
-
     /**
      * Transform the invokers list into a mapping relationship with a method
      *
@@ -534,10 +518,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return Collections.unmodifiableMap(newMethodInvokerMap);
     }
-
-    /**
-     * Close all invokers
-     */
+    /** Close all invokers */
     private void destroyAllInvokers() {
         Map<String, Invoker<T>> localUrlInvokerMap = this.urlInvokerMap; // local reference
         if (localUrlInvokerMap != null) {
@@ -552,7 +533,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         methodInvokerMap = null;
     }
-
     /**
      * Check whether the invoker in the cache needs to be destroyed
      * If set attribute of url: refer.autodestroy=false, the invokers will only increase without decreasing,there may be a refer leak
@@ -598,6 +578,11 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
     }
 
+    /**
+     * 根据方法调用信息，查找所有可以调用的Invoker对象
+     * @param invocation
+     * @return
+     */
     public List<Invoker<T>> doList(Invocation invocation) {
         if (forbidden) {
             // 1. No service provider 2. Service providers are disabled
@@ -605,6 +590,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 "No provider available from registry " + getUrl().getAddress() + " for service " + getConsumerUrl().getServiceKey() + " on consumer " +  NetUtils.getLocalHost()
                     + " use dubbo version " + Version.getVersion() + ", may be providers disabled or not registered ?");
         }
+
         List<Invoker<T>> invokers = null;
         Map<String, List<Invoker<T>>> localMethodInvokerMap = this.methodInvokerMap; // local reference
         if (localMethodInvokerMap != null && localMethodInvokerMap.size() > 0) {
@@ -629,15 +615,12 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return invokers == null ? new ArrayList<Invoker<T>>(0) : invokers;
     }
-
     public Class<T> getInterface() {
         return serviceType;
     }
-
     public URL getUrl() {
         return this.overrideDirectoryUrl;
     }
-
     public boolean isAvailable() {
         if (isDestroyed()) {
             return false;
@@ -652,20 +635,18 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         return false;
     }
-
-    /**
-     * Haomin: added for test purpose
-     */
+    /** Haomin: added for test purpose */
     public Map<String, Invoker<T>> getUrlInvokerMap() {
         return urlInvokerMap;
     }
-
-    /**
-     * Haomin: added for test purpose
-     */
+    /** Haomin: added for test purpose */
     public Map<String, List<Invoker<T>>> getMethodInvokerMap() {
         return methodInvokerMap;
     }
+
+
+
+
 
     private static class InvokerComparator implements Comparator<Invoker<?>> {
 

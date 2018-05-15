@@ -34,7 +34,6 @@ public interface ChannelHandler {
      * @param channel channel.
      */
     void connected(Channel channel) throws RemotingException;
-
     /**
      * on channel disconnected.
      *
@@ -43,18 +42,17 @@ public interface ChannelHandler {
     void disconnected(Channel channel) throws RemotingException;
 
     /**
-     * on message sent.
+     * 发送一个消息
      *
-     * @param channel channel.
-     * @param message message.
+     * @param channel 用于发送消息的通道
+     * @param message 要发送的消息
      */
     void sent(Channel channel, Object message) throws RemotingException;
-
     /**
-     * on message received.
+     * 接收消息
      *
-     * @param channel channel.
-     * @param message message.
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
      */
     void received(Channel channel, Object message) throws RemotingException;
 

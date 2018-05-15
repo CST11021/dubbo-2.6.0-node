@@ -30,7 +30,7 @@ import com.alibaba.dubbo.remoting.transport.dispatcher.all.AllDispatcher;
  （1）AllChannelHandler：除发送消息之外，所有的事件都采用线程池处理。
  （2）ExecutionChannelHandler：与AllChannelHandler不同之处，若创建的线程池ExecutorService不可用，AllChannelHandler将使用
       共享线程池，而ExecutionChannelHandler只有报错。
- （3）ChannelHandler：所有事件都真接有channelhandler处理，不采用线程池。
+ （3）ChannelHandler：所有事件都直接由channelhandler处理，不采用线程池。
  （4）MessageOnlyChannelHandler：只有接受消息采用线程池。
  （5）ConnectionOrderedChannelHandler：单线程，排队处理。
  在上述的Handler的初始化过程中，会根据url的参数threadpool来创建线程份，目前支持的线程池类有三种，默认FixedThreadPool。
@@ -44,14 +44,13 @@ import com.alibaba.dubbo.remoting.transport.dispatcher.all.AllDispatcher;
 public interface Dispatcher {
 
     /**
-     * dispatch the message to threadpool.
+     * 将消息分发指定的线程池实现进行处理，ChannelHandler一般都采用线程池处理
      *
      * @param handler
      * @param url
      * @return channel handler
      */
     @Adaptive({Constants.DISPATCHER_KEY, "dispather", "channel.handler"})
-    // The last two parameters are reserved for compatibility with the old configuration
     ChannelHandler dispatch(ChannelHandler handler, URL url);
 
 }

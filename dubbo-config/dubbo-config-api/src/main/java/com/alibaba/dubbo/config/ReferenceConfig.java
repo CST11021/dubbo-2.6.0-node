@@ -115,10 +115,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     public ReferenceConfig() {
     }
-
     public ReferenceConfig(Reference reference) {
         appendAnnotation(Reference.class, reference);
     }
+
 
     private static void checkAndConvertImplicitConfig(MethodConfig method, Map<String, String> map, Map<Object, Object> attributes) {
         //check config conflict
@@ -358,7 +358,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     /**
      * 根据这个map创建一个代理该远程服务接口的代理对象
      *
-     * @param map   保存了服务接口的配置信息
+     * @param map   保存了服务接口的配置信息，e.g：
+     *              0 = {HashMap$Node@2496} "side" -> "consumer"
+     *              1 = {HashMap$Node@2497} "application" -> "demo-consumer"
+     *              2 = {HashMap$Node@2498} "register.ip" -> "192.168.85.1"
+     *              3 = {HashMap$Node@2499} "methods" -> "sayHello"
+     *              4 = {HashMap$Node@2500} "dubbo" -> "2.0.0"
+     *              5 = {HashMap$Node@2501} "pid" -> "20448"
+     *              6 = {HashMap$Node@2502} "check" -> "false"
+     *              7 = {HashMap$Node@2503} "interface" -> "com.alibaba.dubbo.demo.DemoService"
+     *              8 = {HashMap$Node@2504} "timestamp" -> "1526365223896"
      * @return
      */
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
@@ -403,7 +412,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     }
                 }
             } else {
-                // 获取注册中的配置信息
+                // 获取注册中的配置信息:
+                // registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer
+                // &dubbo=2.0.0&pid=20448&registry=multicast&timestamp=1526365457306
                 List<URL> us = loadRegistries(false);
                 if (us != null && us.size() > 0) {
                     for (URL u : us) {
@@ -411,7 +422,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         if (monitorUrl != null) {
                             map.put(Constants.MONITOR_KEY, URL.encode(monitorUrl.toFullString()));
                         }
-                        // 将要调用的服务接口信息追加到URL中
+                        // 将要调用的服务接口信息追加到URL中:
+                        // registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer
+                        // &dubbo=2.0.0&pid=14764&refer=application%3Ddemo-consumer%26check%3Dfalse%26dubbo%3D2.0.0%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D14764%26register.ip%3D192.168.85.1%26side%3Dconsumer%26timestamp%3D1526365549016&registry=multicast&timestamp=1526365551623
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }

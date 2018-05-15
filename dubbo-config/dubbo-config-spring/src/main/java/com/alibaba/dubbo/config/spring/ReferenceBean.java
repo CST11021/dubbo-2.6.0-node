@@ -184,7 +184,6 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
     public Object getObject() throws Exception {
         return get();
     }
-
     /**
      * FactoryBean 接口的方法，用于判断{@link FactoryBean#getObject()}方法返回的Bean类型
      * @return
@@ -192,7 +191,6 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
     public Class<?> getObjectType() {
         return getInterfaceClass();
     }
-
     /**
      * FactoryBean 接口的方法，用于判断{@link FactoryBean#getObject()}方法返回的Bean对象是否为单例对象
      * @return

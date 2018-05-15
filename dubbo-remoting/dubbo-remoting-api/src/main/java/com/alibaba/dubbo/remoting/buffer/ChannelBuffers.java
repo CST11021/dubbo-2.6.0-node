@@ -29,13 +29,10 @@ public final class ChannelBuffers {
     public static ChannelBuffer dynamicBuffer() {
         return dynamicBuffer(256);
     }
-
     public static ChannelBuffer dynamicBuffer(int capacity) {
         return new DynamicChannelBuffer(capacity);
     }
-
-    public static ChannelBuffer dynamicBuffer(int capacity,
-                                              ChannelBufferFactory factory) {
+    public static ChannelBuffer dynamicBuffer(int capacity, ChannelBufferFactory factory) {
         return new DynamicChannelBuffer(capacity, factory);
     }
 
@@ -57,7 +54,6 @@ public final class ChannelBuffers {
         System.arraycopy(array, offset, dest, 0, length);
         return wrappedBuffer(dest);
     }
-
     public static ChannelBuffer wrappedBuffer(byte[] array) {
         if (array == null) {
             throw new NullPointerException("array == null");
@@ -67,7 +63,6 @@ public final class ChannelBuffers {
         }
         return new HeapChannelBuffer(array);
     }
-
     public static ChannelBuffer wrappedBuffer(ByteBuffer buffer) {
         if (!buffer.hasRemaining()) {
             return EMPTY_BUFFER;
@@ -111,7 +106,6 @@ public final class ChannelBuffers {
 
         return true;
     }
-
     public static int compare(ChannelBuffer bufferA, ChannelBuffer bufferB) {
         final int aLen = bufferA.readableBytes();
         final int bLen = bufferB.readableBytes();

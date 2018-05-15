@@ -31,9 +31,9 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
 
     private static final long serialVersionUID = 1L;
 
-    // timeout for remote invocation in milliseconds
+    /** 表示一次远程调用的超时时间 */
     protected Integer timeout;
-    // retry times
+    /** retry times */
     protected Integer retries;
     // max concurrent invocations
     protected Integer actives;
@@ -54,10 +54,13 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     // customized parameters
     protected Map<String, String> parameters;
 
+
+
+
+
     public Integer getTimeout() {
         return timeout;
     }
-
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
     }
@@ -65,7 +68,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public Integer getRetries() {
         return retries;
     }
-
     public void setRetries(Integer retries) {
         this.retries = retries;
     }
@@ -73,7 +75,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public String getLoadbalance() {
         return loadbalance;
     }
-
     public void setLoadbalance(String loadbalance) {
         checkExtension(LoadBalance.class, "loadbalance", loadbalance);
         this.loadbalance = loadbalance;
@@ -82,7 +83,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public Boolean isAsync() {
         return async;
     }
-
     public void setAsync(Boolean async) {
         this.async = async;
     }
@@ -90,7 +90,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public Integer getActives() {
         return actives;
     }
-
     public void setActives(Integer actives) {
         this.actives = actives;
     }
@@ -98,7 +97,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public Boolean getSent() {
         return sent;
     }
-
     public void setSent(Boolean sent) {
         this.sent = sent;
     }
@@ -107,7 +105,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public String getMock() {
         return mock;
     }
-
     public void setMock(Boolean mock) {
         if (mock == null) {
             setMock((String) null);
@@ -115,7 +112,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
             setMock(String.valueOf(mock));
         }
     }
-
     public void setMock(String mock) {
         if (mock != null && mock.startsWith(Constants.RETURN_PREFIX)) {
             checkLength("mock", mock);
@@ -128,7 +124,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public String getMerger() {
         return merger;
     }
-
     public void setMerger(String merger) {
         this.merger = merger;
     }
@@ -136,7 +131,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public String getCache() {
         return cache;
     }
-
     public void setCache(String cache) {
         this.cache = cache;
     }
@@ -144,7 +138,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public String getValidation() {
         return validation;
     }
-
     public void setValidation(String validation) {
         this.validation = validation;
     }
@@ -152,7 +145,6 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public Map<String, String> getParameters() {
         return parameters;
     }
-
     public void setParameters(Map<String, String> parameters) {
         checkParameterName(parameters);
         this.parameters = parameters;

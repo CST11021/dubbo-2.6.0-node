@@ -39,10 +39,9 @@ final class NettyChannel extends AbstractChannel {
     private static final Logger logger = LoggerFactory.getLogger(NettyChannel.class);
 
     private static final ConcurrentMap<org.jboss.netty.channel.Channel, NettyChannel> channelMap = new ConcurrentHashMap<org.jboss.netty.channel.Channel, NettyChannel>();
-
     private final org.jboss.netty.channel.Channel channel;
-
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
+
 
     private NettyChannel(org.jboss.netty.channel.Channel channel, URL url, ChannelHandler handler) {
         super(url, handler);
@@ -51,6 +50,7 @@ final class NettyChannel extends AbstractChannel {
         }
         this.channel = channel;
     }
+
 
     static NettyChannel getOrAddChannel(org.jboss.netty.channel.Channel ch, URL url, ChannelHandler handler) {
         if (ch == null) {
@@ -158,6 +158,8 @@ final class NettyChannel extends AbstractChannel {
         attributes.remove(key);
     }
 
+
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -165,7 +167,6 @@ final class NettyChannel extends AbstractChannel {
         result = prime * result + ((channel == null) ? 0 : channel.hashCode());
         return result;
     }
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -177,7 +178,6 @@ final class NettyChannel extends AbstractChannel {
         } else if (!channel.equals(other.channel)) return false;
         return true;
     }
-
     @Override
     public String toString() {
         return "NettyChannel [channel=" + channel + "]";

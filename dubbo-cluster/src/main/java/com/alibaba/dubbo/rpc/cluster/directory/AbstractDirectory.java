@@ -24,6 +24,7 @@ import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.cluster.Cluster;
 import com.alibaba.dubbo.rpc.cluster.Directory;
 import com.alibaba.dubbo.rpc.cluster.Router;
 import com.alibaba.dubbo.rpc.cluster.RouterFactory;
@@ -39,25 +40,19 @@ import java.util.List;
  */
 public abstract class AbstractDirectory<T> implements Directory<T> {
 
-    // logger
     private static final Logger logger = LoggerFactory.getLogger(AbstractDirectory.class);
 
     private final URL url;
-
     private volatile boolean destroyed = false;
-
     private volatile URL consumerUrl;
-
     private volatile List<Router> routers;
 
     public AbstractDirectory(URL url) {
         this(url, null);
     }
-
     public AbstractDirectory(URL url, List<Router> routers) {
         this(url, url, routers);
     }
-
     public AbstractDirectory(URL url, URL consumerUrl, List<Router> routers) {
         if (url == null)
             throw new IllegalArgumentException("url == null");
@@ -66,10 +61,17 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         setRouters(routers);
     }
 
+    /**
+     * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。
+     * {@link Cluster}会将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
+     *
+     * @return invokers
+     */
     public List<Invoker<T>> list(Invocation invocation) throws RpcException {
         if (destroyed) {
             throw new RpcException("Directory already destroyed .url: " + getUrl());
         }
+
         List<Invoker<T>> invokers = doList(invocation);
         // local reference
         List<Router> localRouters = this.routers;
@@ -86,14 +88,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         }
         return invokers;
     }
-
-    public URL getUrl() {
-        return url;
-    }
-
-    public List<Router> getRouters() {
-        return routers;
-    }
+    protected abstract List<Invoker<T>> doList(Invocation invocation) throws RpcException;
 
     protected void setRouters(List<Router> routers) {
         // copy list
@@ -110,22 +105,27 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         this.routers = routers;
     }
 
-    public URL getConsumerUrl() {
-        return consumerUrl;
-    }
-
-    public void setConsumerUrl(URL consumerUrl) {
-        this.consumerUrl = consumerUrl;
+    public void destroy() {
+        destroyed = true;
     }
 
     public boolean isDestroyed() {
         return destroyed;
     }
-
-    public void destroy() {
-        destroyed = true;
+    public URL getUrl() {
+        return url;
+    }
+    public List<Router> getRouters() {
+        return routers;
+    }
+    public URL getConsumerUrl() {
+        return consumerUrl;
+    }
+    public void setConsumerUrl(URL consumerUrl) {
+        this.consumerUrl = consumerUrl;
     }
 
-    protected abstract List<Invoker<T>> doList(Invocation invocation) throws RpcException;
+
+
 
 }

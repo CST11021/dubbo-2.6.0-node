@@ -146,10 +146,11 @@ public interface RegistryService {
      * @see com.alibaba.dubbo.registry.NotifyListener#notify(List)
      *
      * 查询符合条件的已注册数据，与订阅的推模式相对应，这里为拉模式，只返回一次结果。
+     * 一个服务可能存在多个服务提供者，所以入参是一个URL，而返回值是一个URL的集合
      *
      * @see com.alibaba.dubbo.registry.NotifyListener#notify(List)
-     * @param url 查询条件，不允许为空，如：consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
-     * @return 已注册信息列表，可能为空，含义同{@link com.alibaba.dubbo.registry.NotifyListener#notify(List<URL>)}的参数。
+     * @param url   查询条件，不允许为空，如：consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
+     * @return      已注册信息列表，可能为空，含义同{@link com.alibaba.dubbo.registry.NotifyListener#notify(List<URL>)}的参数。
      *
      */
     List<URL> lookup(URL url);

@@ -40,7 +40,6 @@ public class DirectChannelBufferFactory implements ChannelBufferFactory {
         }
         return ChannelBuffers.directBuffer(capacity);
     }
-
     public ChannelBuffer getBuffer(byte[] array, int offset, int length) {
         if (array == null) {
             throw new NullPointerException("array");
@@ -59,7 +58,6 @@ public class DirectChannelBufferFactory implements ChannelBufferFactory {
         buf.writeBytes(array, offset, length);
         return buf;
     }
-
     public ChannelBuffer getBuffer(ByteBuffer nioBuffer) {
         if (!nioBuffer.isReadOnly() && nioBuffer.isDirect()) {
             return ChannelBuffers.wrappedBuffer(nioBuffer);

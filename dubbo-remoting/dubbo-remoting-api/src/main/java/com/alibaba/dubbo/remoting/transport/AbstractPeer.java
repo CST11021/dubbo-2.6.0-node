@@ -28,14 +28,15 @@ import com.alibaba.dubbo.remoting.RemotingException;
  */
 public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
+    /** 收发消息都是基于通道，表示通道消息处理 */
     private final ChannelHandler handler;
-
+    /** 表示机器节点的URL */
     private volatile URL url;
-
-    // closing closed means the process is being closed and close is finished
+    /** 表示进程正在关闭或关闭已完成 */
     private volatile boolean closing;
-
+    /** 为true表示通道已经关闭 */
     private volatile boolean closed;
+
 
     public AbstractPeer(URL url, ChannelHandler handler) {
         if (url == null) {
@@ -48,18 +49,22 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         this.handler = handler;
     }
 
-    public void send(Object message) throws RemotingException {
-        send(message, url.getParameter(Constants.SENT_KEY, false));
-    }
 
-    public void close() {
-        closed = true;
-    }
 
+    // 关于通道状态
+
+    public boolean isClosed() {
+        return closed;
+    }
+    public boolean isClosing() {
+        return closing && !closed;
+    }
     public void close(int timeout) {
         close();
     }
-
+    public void close() {
+        closed = true;
+    }
     public void startClose() {
         if (isClosed()) {
             return;
@@ -67,16 +72,20 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         closing = true;
     }
 
+    // URL
+
     public URL getUrl() {
         return url;
     }
-
     protected void setUrl(URL url) {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
         }
         this.url = url;
     }
+
+
+    // 消息通道处理器
 
     public ChannelHandler getChannelHandler() {
         if (handler instanceof ChannelHandlerDelegate) {
@@ -85,15 +94,10 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
             return handler;
         }
     }
-
-    /**
-     * @return ChannelHandler
-     */
     @Deprecated
     public ChannelHandler getHandler() {
         return getDelegateHandler();
     }
-
     /**
      * Return the final handler (which may have been wrapped). This method should be distinguished with getChannelHandler() method
      *
@@ -103,13 +107,8 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         return handler;
     }
 
-    public boolean isClosed() {
-        return closed;
-    }
 
-    public boolean isClosing() {
-        return closing && !closed;
-    }
+    // 连接或断开
 
     public void connected(Channel ch) throws RemotingException {
         if (closed) {
@@ -117,24 +116,30 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         }
         handler.connected(ch);
     }
-
     public void disconnected(Channel ch) throws RemotingException {
         handler.disconnected(ch);
     }
 
+
+    // 发送或接受消息
+
+    public void send(Object message) throws RemotingException {
+        send(message, url.getParameter(Constants.SENT_KEY, false));
+    }
     public void sent(Channel ch, Object msg) throws RemotingException {
         if (closed) {
             return;
         }
         handler.sent(ch, msg);
     }
-
     public void received(Channel ch, Object msg) throws RemotingException {
         if (closed) {
             return;
         }
         handler.received(ch, msg);
     }
+
+
 
     public void caught(Channel ch, Throwable ex) throws RemotingException {
         handler.caught(ch, ex);

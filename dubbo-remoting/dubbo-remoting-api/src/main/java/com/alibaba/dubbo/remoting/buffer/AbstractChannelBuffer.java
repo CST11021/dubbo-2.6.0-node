@@ -24,18 +24,16 @@ import java.nio.ByteBuffer;
 
 public abstract class AbstractChannelBuffer implements ChannelBuffer {
 
+    /** 表示从缓冲区开始读取数据的位置 */
     private int readerIndex;
-
+    /** 表示从缓冲区开始写入数据的位置 */
     private int writerIndex;
-
     private int markedReaderIndex;
-
     private int markedWriterIndex;
 
     public int readerIndex() {
         return readerIndex;
     }
-
     public void readerIndex(int readerIndex) {
         if (readerIndex < 0 || readerIndex > writerIndex) {
             throw new IndexOutOfBoundsException();
@@ -46,7 +44,6 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
     public int writerIndex() {
         return writerIndex;
     }
-
     public void writerIndex(int writerIndex) {
         if (writerIndex < readerIndex || writerIndex > capacity()) {
             throw new IndexOutOfBoundsException();
@@ -61,7 +58,6 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         this.readerIndex = readerIndex;
         this.writerIndex = writerIndex;
     }
-
     public void clear() {
         readerIndex = writerIndex = 0;
     }
@@ -69,11 +65,9 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
     public boolean readable() {
         return readableBytes() > 0;
     }
-
     public boolean writable() {
         return writableBytes() > 0;
     }
-
     public int readableBytes() {
         return writerIndex - readerIndex;
     }
@@ -108,21 +102,19 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         markedWriterIndex = Math.max(markedWriterIndex - readerIndex, 0);
         readerIndex = 0;
     }
-
     public void ensureWritableBytes(int writableBytes) {
         if (writableBytes > writableBytes()) {
             throw new IndexOutOfBoundsException();
         }
     }
 
+
     public void getBytes(int index, byte[] dst) {
         getBytes(index, dst, 0, dst.length);
     }
-
     public void getBytes(int index, ChannelBuffer dst) {
         getBytes(index, dst, dst.writableBytes());
     }
-
     public void getBytes(int index, ChannelBuffer dst, int length) {
         if (length > dst.writableBytes()) {
             throw new IndexOutOfBoundsException();
@@ -130,15 +122,12 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         getBytes(index, dst, dst.writerIndex(), length);
         dst.writerIndex(dst.writerIndex() + length);
     }
-
     public void setBytes(int index, byte[] src) {
         setBytes(index, src, 0, src.length);
     }
-
     public void setBytes(int index, ChannelBuffer src) {
         setBytes(index, src, src.readableBytes());
     }
-
     public void setBytes(int index, ChannelBuffer src, int length) {
         if (length > src.readableBytes()) {
             throw new IndexOutOfBoundsException();
@@ -147,13 +136,13 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         src.readerIndex(src.readerIndex() + length);
     }
 
+
     public byte readByte() {
         if (readerIndex == writerIndex) {
             throw new IndexOutOfBoundsException();
         }
         return getByte(readerIndex++);
     }
-
     public ChannelBuffer readBytes(int length) {
         checkReadableBytes(length);
         if (length == 0) {
@@ -164,21 +153,17 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         readerIndex += length;
         return buf;
     }
-
     public void readBytes(byte[] dst, int dstIndex, int length) {
         checkReadableBytes(length);
         getBytes(readerIndex, dst, dstIndex, length);
         readerIndex += length;
     }
-
     public void readBytes(byte[] dst) {
         readBytes(dst, 0, dst.length);
     }
-
     public void readBytes(ChannelBuffer dst) {
         readBytes(dst, dst.writableBytes());
     }
-
     public void readBytes(ChannelBuffer dst, int length) {
         if (length > dst.writableBytes()) {
             throw new IndexOutOfBoundsException();
@@ -186,25 +171,23 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         readBytes(dst, dst.writerIndex(), length);
         dst.writerIndex(dst.writerIndex() + length);
     }
-
     public void readBytes(ChannelBuffer dst, int dstIndex, int length) {
         checkReadableBytes(length);
         getBytes(readerIndex, dst, dstIndex, length);
         readerIndex += length;
     }
-
     public void readBytes(ByteBuffer dst) {
         int length = dst.remaining();
         checkReadableBytes(length);
         getBytes(readerIndex, dst);
         readerIndex += length;
     }
-
     public void readBytes(OutputStream out, int length) throws IOException {
         checkReadableBytes(length);
         getBytes(readerIndex, out, length);
         readerIndex += length;
     }
+
 
     public void skipBytes(int length) {
         int newReaderIndex = readerIndex + length;
@@ -214,23 +197,20 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         readerIndex = newReaderIndex;
     }
 
+
     public void writeByte(int value) {
         setByte(writerIndex++, value);
     }
-
     public void writeBytes(byte[] src, int srcIndex, int length) {
         setBytes(writerIndex, src, srcIndex, length);
         writerIndex += length;
     }
-
     public void writeBytes(byte[] src) {
         writeBytes(src, 0, src.length);
     }
-
     public void writeBytes(ChannelBuffer src) {
         writeBytes(src, src.readableBytes());
     }
-
     public void writeBytes(ChannelBuffer src, int length) {
         if (length > src.readableBytes()) {
             throw new IndexOutOfBoundsException();
@@ -238,18 +218,15 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         writeBytes(src, src.readerIndex(), length);
         src.readerIndex(src.readerIndex() + length);
     }
-
     public void writeBytes(ChannelBuffer src, int srcIndex, int length) {
         setBytes(writerIndex, src, srcIndex, length);
         writerIndex += length;
     }
-
     public void writeBytes(ByteBuffer src) {
         int length = src.remaining();
         setBytes(writerIndex, src);
         writerIndex += length;
     }
-
     public int writeBytes(InputStream in, int length) throws IOException {
         int writtenBytes = setBytes(writerIndex, in, length);
         if (writtenBytes > 0) {
@@ -257,6 +234,7 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         }
         return writtenBytes;
     }
+
 
     public ChannelBuffer copy() {
         return copy(readerIndex, readableBytes());
@@ -266,16 +244,24 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         return toByteBuffer(readerIndex, readableBytes());
     }
 
+    protected void checkReadableBytes(int minimumReadableBytes) {
+        if (readableBytes() < minimumReadableBytes) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+
+
+
+
     @Override
     public boolean equals(Object o) {
         return o instanceof ChannelBuffer
                 && ChannelBuffers.equals(this, (ChannelBuffer) o);
     }
-
     public int compareTo(ChannelBuffer that) {
         return ChannelBuffers.compare(this, that);
     }
-
     @Override
     public String toString() {
         return getClass().getSimpleName() + '(' +
@@ -283,11 +269,5 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
                 "widx=" + writerIndex + ", " +
                 "cap=" + capacity() +
                 ')';
-    }
-
-    protected void checkReadableBytes(int minimumReadableBytes) {
-        if (readableBytes() < minimumReadableBytes) {
-            throw new IndexOutOfBoundsException();
-        }
     }
 }

@@ -21,6 +21,8 @@ import com.alibaba.dubbo.common.URL;
 import java.net.InetSocketAddress;
 
 /**
+ * Endpoint用于抽象通信节点（机器节点），Client和Server都继承于Endpoint
+ *
  * Endpoint. (API/SPI, Prototype, ThreadSafe)
  *
  *
@@ -30,25 +32,11 @@ import java.net.InetSocketAddress;
  */
 public interface Endpoint {
 
-    /**
-     * get url.
-     *
-     * @return url
-     */
     URL getUrl();
 
-    /**
-     * get channel handler.
-     *
-     * @return channel handler
-     */
     ChannelHandler getChannelHandler();
 
-    /**
-     * get local address.
-     *
-     * @return local address.
-     */
+    /** 表示本地地址 */
     InetSocketAddress getLocalAddress();
 
     /**
@@ -58,7 +46,6 @@ public interface Endpoint {
      * @throws RemotingException
      */
     void send(Object message) throws RemotingException;
-
     /**
      * send message.
      *
@@ -67,23 +54,13 @@ public interface Endpoint {
      */
     void send(Object message, boolean sent) throws RemotingException;
 
-    /**
-     * close the channel.
-     */
+    /** 关闭通道 */
     void close();
-
-    /**
-     * Graceful close the channel.
-     */
+    /** 优雅的关闭通道 */
     void close(int timeout);
-
+    /** 开始关闭通道 */
     void startClose();
-
-    /**
-     * is closed.
-     *
-     * @return closed
-     */
+    /** 判断是否已经关闭通道*/
     boolean isClosed();
 
 }

@@ -102,13 +102,17 @@ public class RegistryProtocol implements Protocol {
         // export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
-        // 获取要注册到注册中心的URL：比如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659&pid=5892&timestamp=1526286422635
+        // 注册中心的相关信息：比如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider
+        // &dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659
+        // &pid=5892&timestamp=1526286422635
         URL registryUrl = getRegistryUrl(originInvoker);
 
         // 获取一个注册中心实例
         final Registry registry = getRegistry(originInvoker);
 
-        // 比如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider&timestamp=1526286422659
+        // 要暴露的服务信息，比如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
+        // &dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider
+        // &timestamp=1526286422659
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
         //to judge to delay publish whether or not
@@ -117,7 +121,7 @@ public class RegistryProtocol implements Protocol {
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);
 
         if (register) {
-            // 向注册中心注册服务
+            // 使用registryUrl创建一个注册中心，并向注册中心注册服务
             register(registryUrl, registedProviderUrl);
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
@@ -126,6 +130,9 @@ public class RegistryProtocol implements Protocol {
         // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
         // FIXME：Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
         // FIXME： 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
+        // 例如：provider://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
+        // &category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+        // &pid=19032&side=provider&timestamp=1526346368440
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
@@ -171,7 +178,9 @@ public class RegistryProtocol implements Protocol {
      */
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
-        // 这里的缓存key直接使用URL的fullString，例如：dubbo://30.6.28.128:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=30.6.28.128&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1225680&side=provider&timestamp=1522221254113
+        // 这里的缓存key直接使用URL的fullString，例如：dubbo://30.6.28.128:20880/com.alibaba.dubbo.demo.DemoService
+        // ?anyhost=true&application=demo-provider&bind.ip=30.6.28.128&bind.port=20880&dubbo=2.0.0&generic=false
+        // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1225680&side=provider&timestamp=1522221254113
         String key = getCacheKey(originInvoker);
         ExporterChangeableWrapper<T> exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
         if (exporter == null) {
@@ -199,7 +208,7 @@ public class RegistryProtocol implements Protocol {
         return key;
     }
     /**
-     * 获取要注册到注册中心的URL
+     * 返回注册中心相关的配置信息
      *
      * @param originInvoker
      * @return
@@ -300,7 +309,14 @@ public class RegistryProtocol implements Protocol {
     }
 
 
-
+    /**
+     *
+     * @param type              服务的类型
+     * @param url               远程服务的URL地址，该URL也包含了注册中心的配置信息
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
         url = url.setProtocol(url.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_REGISTRY)).removeParameter(Constants.REGISTRY_KEY);
@@ -344,6 +360,8 @@ public class RegistryProtocol implements Protocol {
             registry.register(subscribeUrl.addParameters(Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY,
                     Constants.CHECK_KEY, String.valueOf(false)));
         }
+
+        // 程序走到这里会去调用相应协议实现的refer方法，比如：DubboProtocol#refer()方法
         directory.subscribe(subscribeUrl.addParameter(Constants.CATEGORY_KEY,
                 Constants.PROVIDERS_CATEGORY
                         + "," + Constants.CONFIGURATORS_CATEGORY
@@ -427,7 +445,7 @@ public class RegistryProtocol implements Protocol {
      */
     private class OverrideListener implements NotifyListener {
 
-        /** 注册器{@link Registry}向注册中心订阅服务 */
+        /** 表示向注册中心订阅服务 */
         private final URL subscribeUrl;
 
         /** 服务提供者的Invoker对象 */
@@ -439,14 +457,16 @@ public class RegistryProtocol implements Protocol {
         }
 
         /**
-         * @param urls The list of registered information , is always not empty,
-         *             The meaning is the same as the return value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
+         * 一个服务可能存在多个服务提供者，只要有一个服务发生变化，就会触发该方法通知服务订阅者，入参是一个List，是因为只要有一
+         * 个服务发生变化，就会进行全量通知
+         *
+         * @param urls The list of registered information , is always not empty, The meaning is the same as the return
+         *              value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
          */
         public synchronized void notify(List<URL> urls) {
             logger.debug("original override urls: " + urls);
             List<URL> matchedUrls = getMatchedUrls(urls, subscribeUrl);
             logger.debug("subscribe url: " + subscribeUrl + ", override urls: " + matchedUrls);
-            // No matching results
             if (matchedUrls.isEmpty()) {
                 return;
             }
@@ -459,7 +479,7 @@ public class RegistryProtocol implements Protocol {
             } else {
                 invoker = originInvoker;
             }
-            //The origin invoker
+            // 获取这个Invoker对应服务提供者的服务配置信息
             URL originUrl = RegistryProtocol.this.getProviderUrl(invoker);
             String key = getCacheKey(originInvoker);
             ExporterChangeableWrapper<?> exporter = bounds.get(key);
@@ -476,7 +496,6 @@ public class RegistryProtocol implements Protocol {
                 logger.info("exported provider url changed, origin url: " + originUrl + ", old export url: " + currentUrl + ", new export url: " + newUrl);
             }
         }
-
         private List<URL> getMatchedUrls(List<URL> configuratorUrls, URL currentSubscribe) {
             List<URL> result = new ArrayList<URL>();
             for (URL url : configuratorUrls) {
@@ -494,8 +513,7 @@ public class RegistryProtocol implements Protocol {
             }
             return result;
         }
-
-        //Merge the urls of configurators
+        /** Merge the urls of configurators */
         private URL getConfigedInvokerUrl(List<Configurator> configurators, URL url) {
             for (Configurator configurator : configurators) {
                 url = configurator.configure(url);
