@@ -43,7 +43,6 @@ public class ProviderConsumerRegTable {
         }
         invokers.add(wrapperInvoker);
     }
-
     public static Set<ProviderInvokerWrapper> getProviderInvoker(String serviceUniqueName) {
         Set<ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);
         if (invokers == null) {
@@ -83,7 +82,6 @@ public class ProviderConsumerRegTable {
         }
         invokers.add(wrapperInvoker);
     }
-
     public static Set<ConsumerInvokerWrapper> getConsumerInvoker(String serviceUniqueName) {
         Set<ConsumerInvokerWrapper> invokers = consumerInvokers.get(serviceUniqueName);
         if (invokers == null) {

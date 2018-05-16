@@ -115,7 +115,7 @@ public class RegistryProtocol implements Protocol {
         // &timestamp=1526286422659
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
-        //to judge to delay publish whether or not
+        // 用于判断是否延迟发布
         boolean register = registedProviderUrl.getParameter("register", true);
 
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);
@@ -125,6 +125,7 @@ public class RegistryProtocol implements Protocol {
             register(registryUrl, registedProviderUrl);
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
+
 
         // Subscribe the override data
         // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
@@ -136,9 +137,9 @@ public class RegistryProtocol implements Protocol {
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
-        // 注册器向注册中心订阅overrideProviderUrl,同时将overrideSubscribeListener暴露为回调服务，当注册中心的
-        // overrideProviderUrl数据发生变化时回调，注册器DubboRegistry的registry,subscribe, unRegistry, unSubscribe都类似，
-        // 是一个dubbo的远程服务调用
+
+
+        // 订阅 overrideSubscribeUrl 这个服务
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
         //保证每次export都返回一个新的exporter实例
@@ -188,7 +189,7 @@ public class RegistryProtocol implements Protocol {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
-                    // 使用最终指向的协议暴露服务
+                    // 使用最终指向的协议暴露服务，比如DubboProtocol
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     bounds.put(key, exporter);
                 }
@@ -336,9 +337,6 @@ public class RegistryProtocol implements Protocol {
         }
         return doRefer(cluster, registry, type, url);
     }
-    private Cluster getMergeableCluster() {
-        return ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("mergeable");
-    }
     /**
      * 获取这个服务的{@link Invoker}对象
      * @param cluster       路由策略
@@ -372,6 +370,10 @@ public class RegistryProtocol implements Protocol {
         ProviderConsumerRegTable.registerConsuemr(invoker, url, subscribeUrl, directory);
         return invoker;
     }
+    private Cluster getMergeableCluster() {
+        return ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("mergeable");
+    }
+
 
 
     public void destroy() {
@@ -447,7 +449,6 @@ public class RegistryProtocol implements Protocol {
 
         /** 表示向注册中心订阅服务 */
         private final URL subscribeUrl;
-
         /** 服务提供者的Invoker对象 */
         private final Invoker originInvoker;
 
@@ -545,7 +546,6 @@ public class RegistryProtocol implements Protocol {
         public Invoker<T> getOriginInvoker() {
             return originInvoker;
         }
-
         public Invoker<T> getInvoker() {
             return exporter.getInvoker();
         }
@@ -553,7 +553,6 @@ public class RegistryProtocol implements Protocol {
         public void setExporter(Exporter<T> exporter) {
             this.exporter = exporter;
         }
-
         public void unexport() {
             String key = getCacheKey(this.originInvoker);
             bounds.remove(key);

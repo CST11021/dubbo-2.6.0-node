@@ -24,6 +24,8 @@ import com.alibaba.dubbo.rpc.RpcException;
 import java.util.List;
 
 /**
+ * 在Dubbo中，通过Router进行过滤后，会使用Directory封装多个服务提供者，最后通过负载均衡确定一个要用于本次调用的目标服务
+ *
  * Directory. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Directory_service">Directory Service</a>
@@ -33,16 +35,17 @@ import java.util.List;
 public interface Directory<T> extends Node {
 
     /**
-     * get service type.
+     * 表示本次调用目标服务接口
      *
      * @return service type.
      */
     Class<T> getInterface();
 
     /**
-     * list invokers.
-     * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。
-     * {@link Cluster}会将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
+     * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。 {@link Cluster}会将 Directory 中的
+     * 多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制。
+     *
+     * 通过Router进行过滤后，会使用Directory封装多个服务提供者，最后通过负载均衡确定一个要用于本次调用的目标服务
      *
      * @return invokers
      */

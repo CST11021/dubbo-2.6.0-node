@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * LeastActiveLoadBalance
+ * LeastActive LoadBalance：
+ 优点：最少活跃调用数，相同活跃数的随机，活跃数指调用前后计数差，使慢的机器收到更少请求
+ 缺点：不支持权重，在容量规划时，不能通过权重把压力导向一台机器压测容量
  *
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {

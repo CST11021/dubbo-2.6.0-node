@@ -49,18 +49,20 @@ public abstract class AbstractConfigurator implements Configurator {
     }
 
     public URL configure(URL url) {
-        if (configuratorUrl == null || configuratorUrl.getHost() == null
-                || url == null || url.getHost() == null) {
+        if (configuratorUrl == null || configuratorUrl.getHost() == null || url == null || url.getHost() == null) {
             return url;
         }
-        // If override url has port, means it is a provider address. We want to control a specific provider with this override url, it may take effect on the specific provider instance or on consumers holding this provider instance.
+        // If override url has port, means it is a provider address. We want to control a specific provider with this override url,
+        // it may take effect on the specific provider instance or on consumers holding this provider instance.
         if (configuratorUrl.getPort() != 0) {
             if (url.getPort() == configuratorUrl.getPort()) {
                 return configureIfMatch(url.getHost(), url);
             }
-        } else {// override url don't have a port, means the ip override url specify is a consumer address or 0.0.0.0
-            // 1.If it is a consumer ip address, the intention is to control a specific consumer instance, it must takes effect at the consumer side, any provider received this override url should ignore;
-            // 2.If the ip is 0.0.0.0, this override url can be used on consumer, and also can be used on provider
+        }
+        // override url don't have a port, means the ip override url specify is a consumer address or 0.0.0.0
+        // 1.If it is a consumer ip address, the intention is to control a specific consumer instance, it must takes effect at the consumer side, any provider received this override url should ignore;
+        // 2.If the ip is 0.0.0.0, this override url can be used on consumer, and also can be used on provider
+        else {
             if (url.getParameter(Constants.SIDE_KEY, Constants.PROVIDER).equals(Constants.CONSUMER)) {
                 return configureIfMatch(NetUtils.getLocalHost(), url);// NetUtils.getLocalHost is the ip address consumer registered to registry.
             } else if (url.getParameter(Constants.SIDE_KEY, Constants.CONSUMER).equals(Constants.PROVIDER)) {
@@ -69,7 +71,6 @@ public abstract class AbstractConfigurator implements Configurator {
         }
         return url;
     }
-
     private URL configureIfMatch(String host, URL url) {
         if (Constants.ANYHOST_VALUE.equals(configuratorUrl.getHost()) || host.equals(configuratorUrl.getHost())) {
             String configApplication = configuratorUrl.getParameter(Constants.APPLICATION_KEY,
@@ -98,15 +99,8 @@ public abstract class AbstractConfigurator implements Configurator {
         }
         return url;
     }
+    protected abstract URL doConfigure(URL currentUrl, URL configUrl);
 
-    /**
-     * Sort by host, priority
-     * 1. the url with a specific host ip should have higher priority than 0.0.0.0
-     * 2. if two url has the same host, compare by priority value；
-     *
-     * @param o
-     * @return
-     */
     public int compareTo(Configurator o) {
         if (o == null) {
             return -1;
@@ -129,7 +123,4 @@ public abstract class AbstractConfigurator implements Configurator {
 
 
     }
-
-    protected abstract URL doConfigure(URL currentUrl, URL configUrl);
-
 }

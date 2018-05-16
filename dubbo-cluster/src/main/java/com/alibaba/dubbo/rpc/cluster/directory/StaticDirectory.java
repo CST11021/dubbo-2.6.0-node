@@ -30,20 +30,18 @@ import java.util.List;
  */
 public class StaticDirectory<T> extends AbstractDirectory<T> {
 
+    /** 表示一个服务接口的所有可用Invoker */
     private final List<Invoker<T>> invokers;
 
     public StaticDirectory(List<Invoker<T>> invokers) {
         this(null, invokers, null);
     }
-
     public StaticDirectory(List<Invoker<T>> invokers, List<Router> routers) {
         this(null, invokers, routers);
     }
-
     public StaticDirectory(URL url, List<Invoker<T>> invokers) {
         this(url, invokers, null);
     }
-
     public StaticDirectory(URL url, List<Invoker<T>> invokers, List<Router> routers) {
         super(url == null && invokers != null && invokers.size() > 0 ? invokers.get(0).getUrl() : url, routers);
         if (invokers == null || invokers.size() == 0)
@@ -59,6 +57,8 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         if (isDestroyed()) {
             return false;
         }
+
+        // 只要存在一个可用的Invoker，就表示该服务可以被调用
         for (Invoker<T> invoker : invokers) {
             if (invoker.isAvailable()) {
                 return true;

@@ -30,6 +30,7 @@ public class ProviderInvokerWrapper<T> implements Invoker {
     private URL originUrl;
     private URL registryUrl;
     private URL providerUrl;
+    /** 用于表示该服务是否已经注册到注册中心 */
     private volatile boolean isReg;
 
     public ProviderInvokerWrapper(Invoker<T> invoker,URL registryUrl,URL providerUrl) {
@@ -42,43 +43,36 @@ public class ProviderInvokerWrapper<T> implements Invoker {
     public Class<T> getInterface() {
         return invoker.getInterface();
     }
-
     public URL getUrl() {
         return invoker.getUrl();
     }
-
     public boolean isAvailable() {
         return invoker.isAvailable();
     }
-
     public Result invoke(Invocation invocation) throws RpcException {
         return invoker.invoke(invocation);
     }
-
     public void destroy() {
         invoker.destroy();
     }
 
+
+
     public URL getOriginUrl() {
         return originUrl;
     }
-
     public URL getRegistryUrl() {
         return registryUrl;
     }
-
     public URL getProviderUrl() {
         return providerUrl;
     }
-
     public Invoker<T> getInvoker() {
         return invoker;
     }
-
     public boolean isReg() {
         return isReg;
     }
-
     public void setReg(boolean reg) {
         isReg = reg;
     }

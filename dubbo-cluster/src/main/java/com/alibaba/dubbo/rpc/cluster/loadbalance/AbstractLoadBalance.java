@@ -30,11 +30,6 @@ import java.util.List;
  */
 public abstract class AbstractLoadBalance implements LoadBalance {
 
-    static int calculateWarmupWeight(int uptime, int warmup, int weight) {
-        int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
-        return ww < 1 ? 1 : (ww > weight ? weight : ww);
-    }
-
     public <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) {
         if (invokers == null || invokers.size() == 0)
             return null;
@@ -42,7 +37,6 @@ public abstract class AbstractLoadBalance implements LoadBalance {
             return invokers.get(0);
         return doSelect(invokers, url, invocation);
     }
-
     protected abstract <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation);
 
     protected int getWeight(Invoker<?> invoker, Invocation invocation) {
@@ -58,6 +52,10 @@ public abstract class AbstractLoadBalance implements LoadBalance {
             }
         }
         return weight;
+    }
+    static int calculateWarmupWeight(int uptime, int warmup, int weight) {
+        int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
+        return ww < 1 ? 1 : (ww > weight ? weight : ww);
     }
 
 }

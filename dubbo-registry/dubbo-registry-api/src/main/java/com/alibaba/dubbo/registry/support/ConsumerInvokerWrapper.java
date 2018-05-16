@@ -44,19 +44,15 @@ public class ConsumerInvokerWrapper<T> implements Invoker {
     public Class<T> getInterface() {
         return invoker.getInterface();
     }
-
     public URL getUrl() {
         return invoker.getUrl();
     }
-
     public boolean isAvailable() {
         return invoker.isAvailable();
     }
-
     public Result invoke(Invocation invocation) throws RpcException {
         return invoker.invoke(invocation);
     }
-
     public void destroy() {
         invoker.destroy();
     }
@@ -64,19 +60,15 @@ public class ConsumerInvokerWrapper<T> implements Invoker {
     public URL getOriginUrl() {
         return originUrl;
     }
-
     public URL getRegistryUrl() {
         return registryUrl;
     }
-
     public Invoker<T> getInvoker() {
         return invoker;
     }
-
     public URL getConsumerUrl() {
         return consumerUrl;
     }
-
     public RegistryDirectory getRegistryDirectory() {
         return registryDirectory;
     }

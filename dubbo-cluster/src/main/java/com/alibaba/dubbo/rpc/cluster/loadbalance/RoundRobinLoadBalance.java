@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Round robin load balance.
+ * RoundRobin LoadBalance：
+ 优点：轮循，按公约后的权重设置轮循比率
+ 缺点：存在慢的机器累积请求问题，极端情况可能产生雪崩
  *
  */
 public class RoundRobinLoadBalance extends AbstractLoadBalance {

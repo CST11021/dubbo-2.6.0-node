@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ScriptRouter
+ * 脚本路由：
  *
  */
 public class ScriptRouter implements Router {
@@ -47,13 +47,9 @@ public class ScriptRouter implements Router {
     private static final Logger logger = LoggerFactory.getLogger(ScriptRouter.class);
 
     private static final Map<String, ScriptEngine> engines = new ConcurrentHashMap<String, ScriptEngine>();
-
     private final ScriptEngine engine;
-
     private final int priority;
-
     private final String rule;
-
     private final URL url;
 
     public ScriptRouter(URL url) {

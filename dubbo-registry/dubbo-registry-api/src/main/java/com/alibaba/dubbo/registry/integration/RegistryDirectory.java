@@ -202,24 +202,30 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     }
 
     public synchronized void notify(List<URL> urls) {
+
+        // 将urls分类保存
         List<URL> invokerUrls = new ArrayList<URL>();
         List<URL> routerUrls = new ArrayList<URL>();
         List<URL> configuratorUrls = new ArrayList<URL>();
         for (URL url : urls) {
             String protocol = url.getProtocol();
             String category = url.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);
-            if (Constants.ROUTERS_CATEGORY.equals(category)
-                    || Constants.ROUTE_PROTOCOL.equals(protocol)) {
+            // routers
+            if (Constants.ROUTERS_CATEGORY.equals(category) || Constants.ROUTE_PROTOCOL.equals(protocol)) {
                 routerUrls.add(url);
-            } else if (Constants.CONFIGURATORS_CATEGORY.equals(category)
-                    || Constants.OVERRIDE_PROTOCOL.equals(protocol)) {
+            }
+            // configurators
+            else if (Constants.CONFIGURATORS_CATEGORY.equals(category) || Constants.OVERRIDE_PROTOCOL.equals(protocol)) {
                 configuratorUrls.add(url);
-            } else if (Constants.PROVIDERS_CATEGORY.equals(category)) {
+            }
+            // provider
+            else if (Constants.PROVIDERS_CATEGORY.equals(category)) {
                 invokerUrls.add(url);
             } else {
                 logger.warn("Unsupported category " + category + " in notified url: " + url + " from registry " + getUrl().getAddress() + " to consumer " + NetUtils.getLocalHost());
             }
         }
+
         // configurators
         if (configuratorUrls != null && configuratorUrls.size() > 0) {
             this.configurators = toConfigurators(configuratorUrls);

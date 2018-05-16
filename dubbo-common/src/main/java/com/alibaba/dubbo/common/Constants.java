@@ -171,6 +171,7 @@ public class Constants {
 
     public static final String ANYHOST_KEY = "anyhost";
 
+    // 表示对所有 IP 地址生效
     public static final String ANYHOST_VALUE = "0.0.0.0";
 
     public static final String LOCALHOST_KEY = "localhost";
@@ -380,6 +381,7 @@ public class Constants {
     public static final String CONSUMER_PROTOCOL = "consumer";
     public static final String ROUTE_PROTOCOL = "route";
     public static final String SCRIPT_PROTOCOL = "script";
+    // 表示路由规则的类型，支持条件路由规则和脚本路由规则，可扩展
     public static final String CONDITION_PROTOCOL = "condition";
     public static final String MOCK_PROTOCOL = "mock";
 

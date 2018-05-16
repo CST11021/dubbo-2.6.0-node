@@ -24,13 +24,15 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * random load balance.
+ * Random LoadBalance：
+ 优点：随机，按权重设置随机概率（推荐使用）
+ 缺点：在一个截面上碰撞的概率高，重试时，可能出现瞬间压力不均
  *
  */
 public class RandomLoadBalance extends AbstractLoadBalance {
 
     public static final String NAME = "random";
-
+    /** 随机选择器 */
     private final Random random = new Random();
 
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {

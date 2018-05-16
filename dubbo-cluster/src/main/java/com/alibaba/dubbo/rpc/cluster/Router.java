@@ -34,24 +34,23 @@ import java.util.List;
 public interface Router extends Comparable<Router> {
 
     /**
-     * get the router url.
+     * 获取配置的路由规则，比如：host = 192.168.85.1 =>  host = 10.20.3.3
      *
      * @return url
      */
     URL getUrl();
 
     /**
-     * route.
-     * Router 服务路由， 根据路由规则从多个 Invoker 中选出一个子集 AbstractDirectory 是所有目录服务实现的上层抽象，
-     * 它在 list 列举出所有 invokers 后，会在通过 Router 服务进行路由过滤。
+     * Router 服务路由， 根据路由规则从多个 Invoker 中选出一个子集
+     * AbstractDirectory 是所有目录服务实现的上层抽象，它在 list 列举出所有 invokers 后，会在通过 Router 服务进行路由过滤。
      *
-     * 注意与负载均衡的区别：LoadBalance负载均衡， 负责从多个 Invokers中选出具体的一个Invoker用于本次调用，调用过程中包含
+     * 注意与负载均衡的区别：LoadBalance负载均衡，负责从多个 Invokers中选出具体的一个Invoker用于本次调用，调用过程中包含
      * 了负载均衡的算法，调用失败后需要重新选择
      *
-     * @param invokers
-     * @param url        refer url
-     * @param invocation
-     * @return routed invokers
+     * @param invokers          表示所有的服务提供者的Invoker对象
+     * @param url               消费者调用的URL信息，例如：consumer://192.168.85.1/com.foo.BarService
+     * @param invocation        表示本次调用的方法入参信息
+     * @return routed invokers  根据路由规则，返回该消费者所有可以调用的Invoker
      * @throws RpcException
      */
     <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException;

@@ -56,12 +56,12 @@ ConsistentHash LoadBalance：
 public interface LoadBalance {
 
     /**
-     * select one invoker in list.
+     * 负载均衡前会先进行一次路由，路由完后会返回多个可以调用的Invoker，而负载均衡的作用就是从这些Invoker中选择一个进行本次的RPC调用
      *
-     * @param invokers   invokers.
-     * @param url        refer url
-     * @param invocation invocation.
-     * @return selected invoker.
+     * @param invokers   经过路由过滤后的Invoker集合
+     * @param url        消费者调用的URL信息，例如：consumer://192.168.85.1/com.foo.BarService
+     * @param invocation 表示本次调用的方法入参信息
+     * @return           返回一个用于本次调用的目标服务
      */
     @Adaptive("loadbalance")
     <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException;

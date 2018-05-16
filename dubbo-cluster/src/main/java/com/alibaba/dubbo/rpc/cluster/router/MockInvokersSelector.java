@@ -33,34 +33,29 @@ import java.util.List;
  */
 public class MockInvokersSelector implements Router {
 
-    public <T> List<Invoker<T>> route(final List<Invoker<T>> invokers,
-                                      URL url, final Invocation invocation) throws RpcException {
+    /**
+     * mock方式的路由，是没有路由规则的
+     * @return
+     */
+    public URL getUrl() {
+        return null;
+    }
+
+    public <T> List<Invoker<T>> route(final List<Invoker<T>> invokers, URL url, final Invocation invocation) throws RpcException {
         if (invocation.getAttachments() == null) {
+            // 没有参数的时候就正常调用
             return getNormalInvokers(invokers);
         } else {
             String value = invocation.getAttachments().get(Constants.INVOCATION_NEED_MOCK);
             if (value == null)
                 return getNormalInvokers(invokers);
             else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                // 需要mock方法入参
                 return getMockedInvokers(invokers);
             }
         }
         return invokers;
     }
-
-    private <T> List<Invoker<T>> getMockedInvokers(final List<Invoker<T>> invokers) {
-        if (!hasMockProviders(invokers)) {
-            return null;
-        }
-        List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(1);
-        for (Invoker<T> invoker : invokers) {
-            if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
-                sInvokers.add(invoker);
-            }
-        }
-        return sInvokers;
-    }
-
     private <T> List<Invoker<T>> getNormalInvokers(final List<Invoker<T>> invokers) {
         if (!hasMockProviders(invokers)) {
             return invokers;
@@ -74,7 +69,18 @@ public class MockInvokersSelector implements Router {
             return sInvokers;
         }
     }
-
+    private <T> List<Invoker<T>> getMockedInvokers(final List<Invoker<T>> invokers) {
+        if (!hasMockProviders(invokers)) {
+            return null;
+        }
+        List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(1);
+        for (Invoker<T> invoker : invokers) {
+            if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
+                sInvokers.add(invoker);
+            }
+        }
+        return sInvokers;
+    }
     private <T> boolean hasMockProviders(final List<Invoker<T>> invokers) {
         boolean hasMockProvider = false;
         for (Invoker<T> invoker : invokers) {
@@ -84,10 +90,6 @@ public class MockInvokersSelector implements Router {
             }
         }
         return hasMockProvider;
-    }
-
-    public URL getUrl() {
-        return null;
     }
 
     public int compareTo(Router o) {

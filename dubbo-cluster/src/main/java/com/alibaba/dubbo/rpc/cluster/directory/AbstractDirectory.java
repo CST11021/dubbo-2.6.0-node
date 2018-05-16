@@ -42,9 +42,13 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDirectory.class);
 
+    /** 用来表示提供服务目标机器，可是多个 */
     private final URL url;
+    /** Directory是用来封装同一服务接口的多个服务提供者，该字段用来标识该服务接口是否已被注销 */
     private volatile boolean destroyed = false;
+    /** 表示本次服务调用的URL信息 */
     private volatile URL consumerUrl;
+    /** 获取所有的服务提供后，会通过Router进行过滤后，再使用Directory封装多个服务提供者，最后通过负载均衡确定一个要用于本次调用的目标服务*/
     private volatile List<Router> routers;
 
     public AbstractDirectory(URL url) {
@@ -65,6 +69,8 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
      * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。
      * {@link Cluster}会将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
      *
+     * 通过Router进行过滤后，会使用Directory封装多个服务提供者，最后通过负载均衡确定一个要用于本次调用的目标服务
+     *
      * @return invokers
      */
     public List<Invoker<T>> list(Invocation invocation) throws RpcException {
@@ -72,8 +78,10 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
             throw new RpcException("Directory already destroyed .url: " + getUrl());
         }
 
+        // 先获取所有的服务提供者
         List<Invoker<T>> invokers = doList(invocation);
-        // local reference
+
+        // 遍历所有的路由规则，对Invoker进行过滤
         List<Router> localRouters = this.routers;
         if (localRouters != null && localRouters.size() > 0) {
             for (Router router : localRouters) {
@@ -124,8 +132,5 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
     public void setConsumerUrl(URL consumerUrl) {
         this.consumerUrl = consumerUrl;
     }
-
-
-
 
 }

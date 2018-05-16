@@ -58,7 +58,6 @@ import com.alibaba.dubbo.rpc.cluster.support.FailoverCluster;
 public interface Cluster {
 
     /**
-     * Merge the directory invokers to a virtual invoker.
      * 将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
      *
      * @param <T>
