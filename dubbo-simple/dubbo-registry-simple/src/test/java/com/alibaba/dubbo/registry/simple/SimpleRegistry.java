@@ -19,6 +19,8 @@ package com.alibaba.dubbo.registry.simple;
 public class SimpleRegistry {
 
     public static void main(String[] args) {
+        // 直接在Main类中启动会报错，在该类启动会去读取dubbo.properties文件，然后使用spring的方式启动容器，
+        // SpringContains回去加载META-INF/spring/dubbo-registry-simple.xml文件，然后启动SimpleRegistry
         com.alibaba.dubbo.container.Main.main(args);
     }
 

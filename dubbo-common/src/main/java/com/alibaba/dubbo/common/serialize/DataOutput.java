@@ -106,7 +106,7 @@ public interface DataOutput {
     void writeBytes(byte[] v, int off, int len) throws IOException;
 
     /**
-     * Flush buffer.
+     * 清除缓存区
      *
      * @throws IOException
      */

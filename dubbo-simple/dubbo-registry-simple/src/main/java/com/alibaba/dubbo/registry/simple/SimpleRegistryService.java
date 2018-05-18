@@ -36,13 +36,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * SimpleRegistryService
+/** 此SimpleRegistryService只是简单实现，不支持集群，可作为自定义注册中心的参考，但不适合直接用于生产环境
+ *
+ *  如果要使用此类型的注册中心，需要先执行测试代码中的 SimpleRegistry ，然后再启动服务
  */
 public class SimpleRegistryService extends AbstractRegistry {
 
     private final static Logger logger = LoggerFactory.getLogger(SimpleRegistryService.class);
+    /** 用于保存暴露的服务信息Map<服务地址：端口，暴露的服务信息> */
     private final ConcurrentMap<String, Set<URL>> remoteRegistered = new ConcurrentHashMap<String, Set<URL>>();
+    /** 用于保存服务对应的监听 */
     private final ConcurrentMap<String, ConcurrentMap<URL, Set<NotifyListener>>> remoteSubscribed = new ConcurrentHashMap<String, ConcurrentMap<URL, Set<NotifyListener>>>();
 
     public SimpleRegistryService() {
@@ -74,6 +77,18 @@ public class SimpleRegistryService extends AbstractRegistry {
         super.register(url);
         registered(url);
     }
+    protected void registered(URL url) {
+        // 遍历当前订阅的URL，判断注册的这个服务是否为订阅的服务，如果是的话获取这个服务对应的所有暴露信息，并调用NotifyListener#notify()方法
+        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
+            URL key = entry.getKey();
+            if (UrlUtils.isMatch(key, url)) {
+                List<URL> list = lookup(key);
+                for (NotifyListener listener : entry.getValue()) {
+                    listener.notify(list);
+                }
+            }
+        }
+    }
 
     public void unregister(URL url) {
         String client = RpcContext.getContext().getRemoteAddressString();
@@ -83,6 +98,17 @@ public class SimpleRegistryService extends AbstractRegistry {
         }
         super.unregister(url);
         unregistered(url);
+    }
+    protected void unregistered(URL url) {
+        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
+            URL key = entry.getKey();
+            if (UrlUtils.isMatch(key, url)) {
+                List<URL> list = lookup(key);
+                for (NotifyListener listener : entry.getValue()) {
+                    listener.notify(list);
+                }
+            }
+        }
     }
 
     public void subscribe(URL url, NotifyListener listener) {
@@ -109,46 +135,6 @@ public class SimpleRegistryService extends AbstractRegistry {
         super.subscribe(url, listener);
         subscribed(url, listener);
     }
-
-    public void unsubscribe(URL url, NotifyListener listener) {
-        if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
-                && url.getParameter(Constants.REGISTER_KEY, true)) {
-            unregister(url);
-        }
-        String client = RpcContext.getContext().getRemoteAddressString();
-        Map<URL, Set<NotifyListener>> clientListeners = remoteSubscribed.get(client);
-        if (clientListeners != null && clientListeners.size() > 0) {
-            Set<NotifyListener> listeners = clientListeners.get(url);
-            if (listeners != null && listeners.size() > 0) {
-                listeners.remove(listener);
-            }
-        }
-    }
-
-    protected void registered(URL url) {
-        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
-            URL key = entry.getKey();
-            if (UrlUtils.isMatch(key, url)) {
-                List<URL> list = lookup(key);
-                for (NotifyListener listener : entry.getValue()) {
-                    listener.notify(list);
-                }
-            }
-        }
-    }
-
-    protected void unregistered(URL url) {
-        for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
-            URL key = entry.getKey();
-            if (UrlUtils.isMatch(key, url)) {
-                List<URL> list = lookup(key);
-                for (NotifyListener listener : entry.getValue()) {
-                    listener.notify(list);
-                }
-            }
-        }
-    }
-
     protected void subscribed(final URL url, final NotifyListener listener) {
         if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
             new Thread(new Runnable() {
@@ -183,6 +169,23 @@ public class SimpleRegistryService extends AbstractRegistry {
             }
         }
     }
+
+    public void unsubscribe(URL url, NotifyListener listener) {
+        if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
+                && url.getParameter(Constants.REGISTER_KEY, true)) {
+            unregister(url);
+        }
+        String client = RpcContext.getContext().getRemoteAddressString();
+        Map<URL, Set<NotifyListener>> clientListeners = remoteSubscribed.get(client);
+        if (clientListeners != null && clientListeners.size() > 0) {
+            Set<NotifyListener> listeners = clientListeners.get(url);
+            if (listeners != null && listeners.size() > 0) {
+                listeners.remove(listener);
+            }
+        }
+    }
+
+
 
     public void disconnect() {
         String client = RpcContext.getContext().getRemoteAddressString();

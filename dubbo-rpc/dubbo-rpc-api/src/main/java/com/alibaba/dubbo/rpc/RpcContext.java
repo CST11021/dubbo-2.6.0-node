@@ -54,19 +54,12 @@ public class RpcContext {
     private final Map<String, String> attachments = new HashMap<String, String>();
     private final Map<String, Object> values = new HashMap<String, Object>();
     private Future<?> future;
-
     private List<URL> urls;
-
     private URL url;
-
     private String methodName;
-
     private Class<?>[] parameterTypes;
-
     private Object[] arguments;
-
     private InetSocketAddress localAddress;
-
     private InetSocketAddress remoteAddress;
     @Deprecated
     private List<Invoker<?>> invokers;
@@ -74,9 +67,6 @@ public class RpcContext {
     private Invoker<?> invoker;
     @Deprecated
     private Invocation invocation;
-
-    // now we don't use the 'values' map to hold these objects
-    // we want these objects to be as generic as possible
     private Object request;
     private Object response;
 

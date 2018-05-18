@@ -353,6 +353,12 @@ public class UrlUtils {
         }
     }
 
+    /**
+     * 判断客户端的请求和服务端暴露的服务是为同一个服务
+     * @param consumerUrl   客户端请求的URL
+     * @param providerUrl   服务提供者暴露的服务
+     * @return              是否为同一个服务
+     */
     public static boolean isMatch(URL consumerUrl, URL providerUrl) {
         String consumerInterface = consumerUrl.getServiceInterface();
         String providerInterface = providerUrl.getServiceInterface();

@@ -31,17 +31,17 @@ public class RegistryConfig extends AbstractConfig {
 
     public static final String NO_AVAILABLE = "N/A";
     private static final long serialVersionUID = 5508512956753757169L;
-    // 注册中心的地址
+    /** 注册中心的地址：比如multicast://224.5.6.7:1234 或 zookeeper://127.0.0.1:2181 */
     private String address;
-    // 登录注册中心的用户名
+    /** 登录注册中心的用户名 */
     private String username;
-    // 登录注册中心的密码
+    /** 登录注册中心的密码 */
     private String password;
-    // 注册中心的端口号
+    /** 注册中心的端口号 */
     private Integer port;
-    // 注册中心使用的协议
+    /** 注册中心使用的协议 */
     private String protocol;
-    // client impl
+    /** 网络传输方式，可选mina,netty */
     private String transporter;
     private String server;
     private String client;
@@ -49,25 +49,25 @@ public class RegistryConfig extends AbstractConfig {
     private String group;
     private String version;
 
-    // 访问注册中心的请求超时时间（单位：毫秒）
+    /** 访问注册中心的请求超时时间（单位：毫秒） */
     private Integer timeout;
-    // 注册中心session超时时间（单位：毫秒）
+    /** 注册中心session超时时间（单位：毫秒） */
     private Integer session;
-    // file for saving register center dynamic list
+    /** 使用文件缓存注册中心地址列表及服务提供者列表，应用重启时将基于此文件恢复，注意：两个注册中心不能使用同一文件存储 */
     private String file;
-    // wait time before stop
+    /** 停止时等待通知，完成时间(毫秒) */
     private Integer wait;
-    // whether to check if register center is available when boot up
+    /** 注册中心不存在时，是否报错 */
     private Boolean check;
-    // whether to allow dynamic service to register on the register center
+    /** 服务是否动态注册，如果设为false，注册后将显示后disable状态，需人工启用，并且服务提供者停止时，也不会自动取消册，需人工禁用。 */
     private Boolean dynamic;
-    // whether to export service on the register center
+    /** 是否向此注册中心注册服务，如果设为false，将只订阅，不注册 */
     private Boolean register;
-    // whether allow to subscribe service on the register center
+    /** 是否向此注册中心订阅服务，如果设为false，将只注册，不订阅 */
     private Boolean subscribe;
-    // customized parameters
+    /** 表示自定义参数 */
     private Map<String, String> parameters;
-    // if it's default
+    /** if it's default */
     private Boolean isDefault;
 
     public RegistryConfig() {
@@ -80,7 +80,6 @@ public class RegistryConfig extends AbstractConfig {
     public static void destroyAll() {
         AbstractRegistryFactory.destroyAll();
     }
-
     @Deprecated
     public static void closeAll() {
         destroyAll();
@@ -89,7 +88,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getProtocol() {
         return protocol;
     }
-
     public void setProtocol(String protocol) {
         checkName("protocol", protocol);
         this.protocol = protocol;
@@ -99,7 +97,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getAddress() {
         return address;
     }
-
     public void setAddress(String address) {
         this.address = address;
     }
@@ -107,7 +104,6 @@ public class RegistryConfig extends AbstractConfig {
     public Integer getPort() {
         return port;
     }
-
     public void setPort(Integer port) {
         this.port = port;
     }
@@ -115,7 +111,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getUsername() {
         return username;
     }
-
     public void setUsername(String username) {
         checkName("username", username);
         this.username = username;
@@ -124,7 +119,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getPassword() {
         return password;
     }
-
     public void setPassword(String password) {
         checkLength("password", password);
         this.password = password;
@@ -139,7 +133,6 @@ public class RegistryConfig extends AbstractConfig {
     public Integer getWait() {
         return wait;
     }
-
     /**
      * @param wait
      * @see com.alibaba.dubbo.config.ProviderConfig#setWait(Integer)
@@ -155,7 +148,6 @@ public class RegistryConfig extends AbstractConfig {
     public Boolean isCheck() {
         return check;
     }
-
     public void setCheck(Boolean check) {
         this.check = check;
     }
@@ -163,7 +155,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getFile() {
         return file;
     }
-
     public void setFile(String file) {
         checkPathLength("file", file);
         this.file = file;
@@ -179,7 +170,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getTransport() {
         return getTransporter();
     }
-
     /**
      * @param transport
      * @see #setTransporter(String)
@@ -193,7 +183,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getTransporter() {
         return transporter;
     }
-
     public void setTransporter(String transporter) {
         checkName("transporter", transporter);
         /*if(transporter != null && transporter.length() > 0 && ! ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(transporter)){
@@ -205,7 +194,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getServer() {
         return server;
     }
-
     public void setServer(String server) {
         checkName("server", server);
         /*if(server != null && server.length() > 0 && ! ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(server)){
@@ -217,7 +205,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getClient() {
         return client;
     }
-
     public void setClient(String client) {
         checkName("client", client);
         /*if(client != null && client.length() > 0 && ! ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(client)){
@@ -229,7 +216,6 @@ public class RegistryConfig extends AbstractConfig {
     public Integer getTimeout() {
         return timeout;
     }
-
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
     }
@@ -237,7 +223,6 @@ public class RegistryConfig extends AbstractConfig {
     public Integer getSession() {
         return session;
     }
-
     public void setSession(Integer session) {
         this.session = session;
     }
@@ -245,7 +230,6 @@ public class RegistryConfig extends AbstractConfig {
     public Boolean isDynamic() {
         return dynamic;
     }
-
     public void setDynamic(Boolean dynamic) {
         this.dynamic = dynamic;
     }
@@ -253,7 +237,6 @@ public class RegistryConfig extends AbstractConfig {
     public Boolean isRegister() {
         return register;
     }
-
     public void setRegister(Boolean register) {
         this.register = register;
     }
@@ -261,7 +244,6 @@ public class RegistryConfig extends AbstractConfig {
     public Boolean isSubscribe() {
         return subscribe;
     }
-
     public void setSubscribe(Boolean subscribe) {
         this.subscribe = subscribe;
     }
@@ -269,7 +251,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getCluster() {
         return cluster;
     }
-
     public void setCluster(String cluster) {
         this.cluster = cluster;
     }
@@ -277,7 +258,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getGroup() {
         return group;
     }
-
     public void setGroup(String group) {
         this.group = group;
     }
@@ -285,7 +265,6 @@ public class RegistryConfig extends AbstractConfig {
     public String getVersion() {
         return version;
     }
-
     public void setVersion(String version) {
         this.version = version;
     }
@@ -293,7 +272,6 @@ public class RegistryConfig extends AbstractConfig {
     public Map<String, String> getParameters() {
         return parameters;
     }
-
     public void setParameters(Map<String, String> parameters) {
         checkParameterName(parameters);
         this.parameters = parameters;
@@ -302,7 +280,6 @@ public class RegistryConfig extends AbstractConfig {
     public Boolean isDefault() {
         return isDefault;
     }
-
     public void setDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
