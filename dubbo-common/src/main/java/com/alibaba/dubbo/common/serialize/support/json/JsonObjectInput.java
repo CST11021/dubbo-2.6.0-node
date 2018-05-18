@@ -114,6 +114,13 @@ public class JsonObjectInput implements ObjectInput {
         return readLine().getBytes();
     }
 
+    /**
+     * 该方法返回的都是Map类型的
+     *
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public Object readObject() throws IOException, ClassNotFoundException {
         try {
             String json = readLine();

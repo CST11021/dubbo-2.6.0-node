@@ -25,27 +25,63 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * Dubbo序列化的顶级接口，实现类如下：
+ * NativeJavaSerialization :  Java自带的序列化实现
+ * CompactedJavaSerialization : 压缩java序列化，主要是在原生java序列化基础上，实现了自己定义的类描写叙述符写入和读取
+ *                              写Object类型的类描写叙述符仅仅写入类名称，而不是类的完整信息。这样有非常多Object类型的情况下能够降低序列化后的size
+ * JavaSerialization : 仅仅是对原生java序列化和压缩java序列化的封装
+ * JsonSerialization : 自己实现的JSON序列化实现
+ * FastJsonSerialization : 使用阿里的FastJson实现的序列化
+ * Hessian2Serialization：使用Hessian2的IO机制实现的序列化(默认实现)
+ * DubboSerialization：Dubbo自己定义的序列化实现
+ *
+ *
+ * 使用示例：
+Serialization serialization = new Hessian2Serialization();
+URL url = new URL("protocl", "1.1.1.1", 1234);
+ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+ObjectOutput objectOutput = serialization.serialize(url, byteArrayOutputStream);
+objectOutput.writeObject(data);
+objectOutput.flushBuffer();
+
+ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
+byteArrayOutputStream.toByteArray());
+ObjectInput deserialize = serialization.deserialize(url, byteArrayInputStream);
+
+T data = (T) deserialize.readObject();
+ *
+ *
+ *
  * Serialization. (SPI, Singleton, ThreadSafe)
  */
 @SPI("hessian2")
 public interface Serialization {
 
     /**
-     * get content type id
+     * 表示序列化类型的ID，例如：
+     * DubboSerialization：          id=1，type="x-application/dubbo"
+     * Hessian2Serialization：       id=2，type=""x-application/hessian2"
+     * JavaSerialization：           id=3，type=""x-application/java"
+     * CompactedJavaSerialization：  id=4，type=""x-application/compactedjava"
+     * JsonSerialization：           id=5，type=""text/json"
+     * FastJsonSerialization：       id=6，type=""text/json"
+     * NativeJavaSerialization：     id=7，type=""x-application/nativejava"
+     * KryoSerialization：           id=8，type=""x-application/kryo"
+     * FstSerialization：            id=9，type=""x-application/fst"
      *
      * @return content type id
      */
     byte getContentTypeId();
 
     /**
-     * get content type
+     * 表示序列化的类型
      *
      * @return content type
      */
     String getContentType();
 
     /**
-     * create serializer
+     * 创建一个ObjectOutput对象用于，序列化对象
      *
      * @param url
      * @param output
@@ -56,7 +92,7 @@ public interface Serialization {
     ObjectOutput serialize(URL url, OutputStream output) throws IOException;
 
     /**
-     * create deserializer
+     * 创建一个ObjectInput对象，用于反序列化
      *
      * @param url
      * @param input

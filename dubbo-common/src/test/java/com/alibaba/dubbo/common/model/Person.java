@@ -16,9 +16,10 @@
  */
 package com.alibaba.dubbo.common.model;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Person {
+public class Person implements Serializable {
     byte oneByte = 123;
     private String name = "name1";
     private int age = 11;
