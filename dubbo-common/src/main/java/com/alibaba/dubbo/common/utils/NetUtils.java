@@ -56,6 +56,7 @@ public class NetUtils {
         return RND_PORT_START + RANDOM.nextInt(RND_PORT_RANGE);
     }
 
+    /** 获取一个可用端口号 */
     public static int getAvailablePort() {
         ServerSocket ss = null;
         try {

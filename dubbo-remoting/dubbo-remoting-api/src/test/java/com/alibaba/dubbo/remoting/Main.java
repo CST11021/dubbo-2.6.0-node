@@ -44,12 +44,14 @@ public class Main {
         dispatcher.addReplier(RpcMessage.class, new RpcMessageHandler());
         dispatcher.addReplier(Object.class, new Replier<Object>() {
             public Object reply(ExchangeChannel channel, Object msg) {
+                // 用for循环模拟处理需要花费的时间
                 for (int i = 0; i < 10000; i++)
                     System.currentTimeMillis();
                 System.out.println("handle:" + msg + ";thread:" + Thread.currentThread().getName());
-                return new StringMessage("hello world");
+                return new MockResult("hello world");
             }
         });
+        // 这里默认开启一个NettyServer服务
         Exchangers.bind(URL.valueOf("dubbo://localhost:" + port), dispatcher);
     }
 
@@ -82,10 +84,14 @@ public class Main {
     }
 
     private static void test(int port) throws Exception {
+        // 测试远程调用DemoService#plus()方法
         ExchangeChannel client = Exchangers.connect(URL.valueOf("dubbo://localhost:" + port));
-        MockResult result = (MockResult) client.request(new RpcMessage(DemoService.class.getName(), "plus", new Class<?>[]{int.class, int.class}, new Object[]{55, 25})).get();
+        MockResult result = (MockResult) client.request(
+                new RpcMessage(DemoService.class.getName(), "plus", new Class<?>[]{int.class, int.class}, new Object[]{55, 25})
+        ).get();
         System.out.println("55+25=" + result.getResult());
 
+        // 测试远程调用DemoService#sayHello()方法
         for (int i = 0; i < 100; i++)
             client.request(new RpcMessage(DemoService.class.getName(), "sayHello", new Class<?>[]{String.class}, new Object[]{"qianlei" + i}));
 

@@ -19,10 +19,11 @@ package com.alibaba.dubbo.remoting;
 import java.io.Serializable;
 
 /**
- * RpcMessage.
+ * 封装RPC调用的方法信息
  */
 
 public class RpcMessage implements Serializable {
+
     private static final long serialVersionUID = -5148079121106659095L;
 
     private String mClassName;

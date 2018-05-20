@@ -20,9 +20,7 @@ import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.exchange.ExchangeChannel;
 import com.alibaba.dubbo.remoting.exchange.support.Replier;
 
-/**
- * DataHandler
- */
+/** {@link ClientToServerTest}中，测试用的请求处理器 */
 public class WorldHandler implements Replier<World> {
 
     public Class<World> interest() {

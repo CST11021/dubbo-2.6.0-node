@@ -34,13 +34,11 @@ public abstract class ClientToServerTest extends TestCase {
     protected static final String LOCALHOST = "127.0.0.1";
 
     protected ExchangeServer server;
-
     protected ExchangeChannel client;
-
+    /** 服务端处理请求的处理器 */
     protected WorldHandler handler = new WorldHandler();
 
     protected abstract ExchangeServer newServer(int port, Replier<?> receiver) throws RemotingException;
-
     protected abstract ExchangeChannel newClient(int port) throws RemotingException;
 
     @Override

@@ -41,7 +41,7 @@ import javax.sound.midi.Receiver;
 public interface Transporter {
 
     /**
-     * 服务端通过该方法监听通道消息，ChannelHandler本质上也是一个监听器，用于监听通道消息
+     * 服务端通过该方法监听端口消息，通过{@link ChannelHandler}接口处理不同的请求，
      *
      * @param url     server url
      * @param handler

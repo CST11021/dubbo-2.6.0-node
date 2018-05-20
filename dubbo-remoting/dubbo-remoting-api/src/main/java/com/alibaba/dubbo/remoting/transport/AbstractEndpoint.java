@@ -35,9 +35,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
     private static final Logger logger = LoggerFactory.getLogger(AbstractEndpoint.class);
 
     private Codec2 codec;
-
     private int timeout;
-
     private int connectTimeout;
 
     public AbstractEndpoint(URL url, ChannelHandler handler) {

@@ -32,6 +32,7 @@ import java.net.InetSocketAddress;
  */
 public interface Endpoint {
 
+    /** 用于描述目标机器 */
     URL getUrl();
 
     ChannelHandler getChannelHandler();
@@ -40,7 +41,7 @@ public interface Endpoint {
     InetSocketAddress getLocalAddress();
 
     /**
-     * send message.
+     * 发送消息
      *
      * @param message
      * @throws RemotingException

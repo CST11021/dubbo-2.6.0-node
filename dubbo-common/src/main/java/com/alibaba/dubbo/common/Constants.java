@@ -236,6 +236,7 @@ public class Constants {
 
     public static final String IDLE_TIMEOUT_KEY = "idle.timeout";
 
+    /** 心跳检测时间 */
     public static final String HEARTBEAT_KEY = "heartbeat";
 
     public static final String HEARTBEAT_TIMEOUT_KEY = "heartbeat.timeout";
@@ -282,6 +283,8 @@ public class Constants {
 
     public static final String CHARSET_KEY = "charset";
 
+    /** 表示客户端重置连接的时间间隔（客户端与服务端每次建立连接需要花费的时间可能都不相同，该值用来表示两次建立连接的时间间隔，
+     * 默认为{@link #DEFAULT_RECONNECT_PERIOD}，2秒） */
     public static final String RECONNECT_KEY = "reconnect";
 
     public static final String SEND_RECONNECT_KEY = "send.reconnect";

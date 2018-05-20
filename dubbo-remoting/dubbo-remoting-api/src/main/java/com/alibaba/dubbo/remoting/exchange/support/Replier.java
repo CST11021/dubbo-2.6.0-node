@@ -25,7 +25,7 @@ import com.alibaba.dubbo.remoting.exchange.ExchangeChannel;
 public interface Replier<T> {
 
     /**
-     * reply.
+     * 用于处理请求
      *
      * @param channel
      * @param request

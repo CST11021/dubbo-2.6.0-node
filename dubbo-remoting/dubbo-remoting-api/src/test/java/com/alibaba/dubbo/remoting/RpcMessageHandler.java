@@ -26,7 +26,6 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * RpcMessageHandler.
  */
-
 public class RpcMessageHandler implements Replier<RpcMessage> {
     private final static ServiceProvider DEFAULT_PROVIDER = new ServiceProvider() {
         public Object getImplementation(String service) {
@@ -45,7 +44,6 @@ public class RpcMessageHandler implements Replier<RpcMessage> {
     public RpcMessageHandler() {
         this(DEFAULT_PROVIDER);
     }
-
     public RpcMessageHandler(ServiceProvider prov) {
         mProvider = prov;
     }
@@ -54,11 +52,22 @@ public class RpcMessageHandler implements Replier<RpcMessage> {
         return RpcMessage.class;
     }
 
+    /**
+     * 处理客户端发过来的请求，并返回一个响应值
+     * @param channel
+     * @param msg       客户端请求的信息
+     * @return          响应客户端的信息
+     * @throws RemotingException
+     */
     public Object reply(ExchangeChannel channel, RpcMessage msg) throws RemotingException {
+        // 获取要调用的方法
         String desc = msg.getMethodDesc();
+        // 获取方法入参
         Object[] args = msg.getArguments();
+        // 获取要调用那个服务接口
         Object impl = mProvider.getImplementation(msg.getClassName());
         Wrapper wrap = Wrapper.getWrapper(impl.getClass());
+
         try {
             return new MockResult(wrap.invokeMethod(impl, desc, msg.getParameterTypes(), args));
         } catch (NoSuchMethodException e) {

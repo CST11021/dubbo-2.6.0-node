@@ -29,13 +29,13 @@ import com.alibaba.dubbo.common.extension.SPI;
 public interface ChannelHandler {
 
     /**
-     * on channel connected.
+     * 当客户端请求连接服务端时的处理方法
      *
      * @param channel channel.
      */
     void connected(Channel channel) throws RemotingException;
     /**
-     * on channel disconnected.
+     * 客户端断开与服务端连接请求的处理方法
      *
      * @param channel channel.
      */

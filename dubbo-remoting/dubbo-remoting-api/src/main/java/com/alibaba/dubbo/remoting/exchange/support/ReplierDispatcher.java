@@ -27,18 +27,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ReplierDispatcher implements Replier<Object> {
 
+    /** 默认的处理策略 */
     private final Replier<?> defaultReplier;
-
+    /** 保存不同请求消息类型对应的处理方式，Map<请求消息类型，处理策略/> */
     private final Map<Class<?>, Replier<?>> repliers = new ConcurrentHashMap<Class<?>, Replier<?>>();
+
 
     public ReplierDispatcher() {
         this(null, null);
     }
-
     public ReplierDispatcher(Replier<?> defaultReplier) {
         this(defaultReplier, null);
     }
-
     public ReplierDispatcher(Replier<?> defaultReplier, Map<Class<?>, Replier<?>> repliers) {
         this.defaultReplier = defaultReplier;
         if (repliers != null && repliers.size() > 0) {
@@ -46,16 +46,15 @@ public class ReplierDispatcher implements Replier<Object> {
         }
     }
 
+
     public <T> ReplierDispatcher addReplier(Class<T> type, Replier<T> replier) {
         repliers.put(type, replier);
         return this;
     }
-
     public <T> ReplierDispatcher removeReplier(Class<T> type) {
         repliers.remove(type);
         return this;
     }
-
     private Replier<?> getReplier(Class<?> type) {
         for (Map.Entry<Class<?>, Replier<?>> entry : repliers.entrySet()) {
             if (entry.getKey().isAssignableFrom(type)) {
@@ -67,6 +66,7 @@ public class ReplierDispatcher implements Replier<Object> {
         }
         throw new IllegalStateException("Replier not found, Unsupported message object: " + type);
     }
+
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Object reply(ExchangeChannel channel, Object request) throws RemotingException {

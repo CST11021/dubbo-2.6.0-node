@@ -18,9 +18,7 @@ package com.alibaba.dubbo.remoting.transport.netty;
 
 import java.io.Serializable;
 
-/**
- * Data
- */
+/** 测试中客户端向服务端发送一个World对象，然后服务端返回一个{@link Hello}对象 */
 public class World implements Serializable {
 
     private static final long serialVersionUID = 8563900571013747774L;

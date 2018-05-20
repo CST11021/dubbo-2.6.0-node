@@ -26,7 +26,7 @@ import com.alibaba.dubbo.remoting.telnet.TelnetHandler;
 public interface ExchangeHandler extends ChannelHandler, TelnetHandler {
 
     /**
-     * reply.
+     * 当服务端接收到请求，通过该方法对请求作出响应
      *
      * @param channel
      * @param request

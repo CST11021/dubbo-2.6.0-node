@@ -65,6 +65,7 @@ public class HeartbeatHandlerTest {
         FakeChannelHandlers.setTestingChannelHandlers();
         serverURL = serverURL.removeParameter(Constants.HEARTBEAT_KEY);
         client = Exchangers.connect(serverURL);
+
         Thread.sleep(10000);
         Assert.assertTrue(handler.disconnectCount > 0);
         System.out.println("disconnect count " + handler.disconnectCount);
@@ -110,27 +111,21 @@ public class HeartbeatHandlerTest {
         public Object reply(ExchangeChannel channel, Object request) throws RemotingException {
             return request;
         }
-
         public void connected(Channel channel) throws RemotingException {
             ++connectCount;
         }
-
         public void disconnected(Channel channel) throws RemotingException {
             ++disconnectCount;
         }
-
         public void sent(Channel channel, Object message) throws RemotingException {
 
         }
-
         public void received(Channel channel, Object message) throws RemotingException {
             logger.error(this.getClass().getSimpleName() + message.toString());
         }
-
         public void caught(Channel channel, Throwable exception) throws RemotingException {
             exception.printStackTrace();
         }
-
         public String telnet(Channel channel, String message) throws RemotingException {
             return message;
         }

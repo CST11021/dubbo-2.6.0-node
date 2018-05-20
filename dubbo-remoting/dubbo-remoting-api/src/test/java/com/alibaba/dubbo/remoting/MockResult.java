@@ -21,10 +21,10 @@ import java.io.Serializable;
 /**
  * RpcResult.
  */
-
 public class MockResult implements Serializable {
-    private static final long serialVersionUID = -3630485157441794463L;
 
+    private static final long serialVersionUID = -3630485157441794463L;
+    /** 表示RPC调用的结果 */
     private final Object mResult;
 
     public MockResult(Object result) {
