@@ -69,9 +69,12 @@ public class DubboProtocol extends AbstractProtocol {
     //consumer side export a stub service for dispatching event
     //servicekey-stubmethods
     private final ConcurrentMap<String, String> stubServiceMethodsMap = new ConcurrentHashMap<String, String>();
+    /** Dubbo通过该处理器处理消费者发起的服务调用 */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
+        /** message提供了目标方法的调用信息，然后返回调用结果 */
         public Object reply(ExchangeChannel channel, Object message) throws RemotingException {
+            // message必须是一个Invocation的对象，它包含远程方法的调用信息
             if (message instanceof Invocation) {
                 Invocation inv = (Invocation) message;
                 Invoker<?> invoker = getInvoker(channel, inv);
@@ -90,6 +93,8 @@ public class DubboProtocol extends AbstractProtocol {
                             }
                         }
                     }
+
+                    // 找不到对应目标方法
                     if (!hasMethod) {
                         logger.warn(new IllegalStateException("The methodName " + inv.getMethodName() + " not found in callback service interface ,invoke will be ignored. please update the api interface. url is:" + invoker.getUrl()) + " ,invocation is :" + inv);
                         return null;

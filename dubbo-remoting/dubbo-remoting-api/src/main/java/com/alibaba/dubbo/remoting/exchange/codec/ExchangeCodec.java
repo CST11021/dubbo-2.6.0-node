@@ -42,7 +42,7 @@ import java.io.InputStream;
 
 /**
  * ExchangeCodec.
- *
+ * 交换层是基于请求响应request/response的，在传输层之上封装了Request, Response, ExchangeCodecde层的编码解码就是正对Request, Response的编码解码
  *
  *
  */

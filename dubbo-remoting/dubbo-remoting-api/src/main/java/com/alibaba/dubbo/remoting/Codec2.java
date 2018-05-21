@@ -23,6 +23,10 @@ import com.alibaba.dubbo.remoting.buffer.ChannelBuffer;
 
 import java.io.IOException;
 
+/**
+ * Dubbo的远程调用需要对传输的数据进行编码解码，dubbo的Codec2接口定义了编码解码规范，与废弃的接口Codec相比，Codec2没有依赖jdk
+ * 的输入输出流， 以dubbo的ChannelBuffer为核心便于更好的整合
+ */
 @SPI
 public interface Codec2 {
 

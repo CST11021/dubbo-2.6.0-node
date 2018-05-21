@@ -45,6 +45,7 @@ import static com.alibaba.dubbo.rpc.protocol.dubbo.CallbackServiceCodec.encodeIn
 
 /**
  * Dubbo codec.
+ * 主要是对于dubbo的远程调用请求对象DecodeableRpcInvocation以及请求返回结果DecodeableRpcResult的编码解码。
  */
 public class DubboCodec extends ExchangeCodec implements Codec2 {
 

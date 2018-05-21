@@ -284,11 +284,13 @@ public class Constants {
     public static final String CHARSET_KEY = "charset";
 
     /** 表示客户端重置连接的时间间隔（客户端与服务端每次建立连接需要花费的时间可能都不相同，该值用来表示两次建立连接的时间间隔，
-     * 默认为{@link #DEFAULT_RECONNECT_PERIOD}，2秒） */
+     * 如果为“true”，表示使用默认值，默认为{@link #DEFAULT_RECONNECT_PERIOD}，2秒）*/
     public static final String RECONNECT_KEY = "reconnect";
 
+    /** 表示客户端向服务端发起请求时，是否要重新建立连接 */
     public static final String SEND_RECONNECT_KEY = "send.reconnect";
 
+    /** 客户端重置连接的时间间隔 */
     public static final int DEFAULT_RECONNECT_PERIOD = 2000;
 
     public static final String SHUTDOWN_TIMEOUT_KEY = "shutdown.timeout";

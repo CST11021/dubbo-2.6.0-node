@@ -44,25 +44,37 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * AbstractClient
+ * AbstractPeer：用于描述通道对应的ChannelHandler和通道连接状态
+ * AbstractEndpoint 扩展自AbstractPeer，添加了编解码功能和超时信息
+ *
+ * AbstractClient：用于子类扩展，不同的通讯框架有不同的实现，实现类如下：GrizzlyClient、MinaClient、NettyClient、NettyClient（4）
+ *
  */
 public abstract class AbstractClient extends AbstractEndpoint implements Client {
 
-    protected static final String CLIENT_THREAD_POOL_NAME = "DubboClientHandler";
     private static final Logger logger = LoggerFactory.getLogger(AbstractClient.class);
+
+    protected static final String CLIENT_THREAD_POOL_NAME = "DubboClientHandler";
     private static final AtomicInteger CLIENT_THREAD_POOL_ID = new AtomicInteger();
+
+    /** 重试连接时用的线程池，总不能每次重试连接再去创建一个新的线程吧 */
     private static final ScheduledThreadPoolExecutor reconnectExecutorService = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("DubboClientReconnectTimer", true));
+    /** 表示在ScheduledExecutorService中提交了任务的返回结果，我们通过Delayed的接口getDelay()方法知道该任务还有多久才被执行 */
+    private volatile ScheduledFuture<?> reconnectExecutorFuture = null;
+
+    /** 客户端与服务端建立连接时用的锁 */
     private final Lock connectLock = new ReentrantLock();
+    /** 表示客户端向服务端发起请求时，是否要重新建立连接 */
     private final boolean send_reconnect;
+    /** 表示重置连接的次数 */
     private final AtomicInteger reconnect_count = new AtomicInteger(0);
-    // Reconnection error log has been called before?
+    /** 表示连接使出现异常的日志信息是否已经打印了，如果没有该标记则每次重置连接失败后都会打印日志 */
     private final AtomicBoolean reconnect_error_log_flag = new AtomicBoolean(false);
-    // reconnect warning period. Reconnect warning interval (log warning after how many times) //for test
+    /** 每n次重置与服务端建立连接都会打印日志，比如该值为2，则表示没两次连接失败打印一次日志 */
     private final int reconnect_warning_period;
     private final long shutdown_timeout;
     protected volatile ExecutorService executor;
-    private volatile ScheduledFuture<?> reconnectExecutorFuture = null;
-    // the last successed connected time
+    /** 表示最后一次成功连接的时间 */
     private long lastConnectedTime = System.currentTimeMillis();
 
 
@@ -70,12 +82,11 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         super(url, handler);
 
         send_reconnect = url.getParameter(Constants.SEND_RECONNECT_KEY, false);
-
         shutdown_timeout = url.getParameter(Constants.SHUTDOWN_TIMEOUT_KEY, Constants.DEFAULT_SHUTDOWN_TIMEOUT);
-
         // The default reconnection interval is 2s, 1800 means warning interval is 1 hour.
         reconnect_warning_period = url.getParameter("reconnect.waring.period", 1800);
 
+        // 打开（创建）一个客户端
         try {
             doOpen();
         } catch (Throwable t) {
@@ -84,8 +95,9 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                     "Failed to start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress()
                             + " connect to the server " + getRemoteAddress() + ", cause: " + t.getMessage(), t);
         }
+
+        // 连接到服务端
         try {
-            // connect.
             connect();
             if (logger.isInfoEnabled()) {
                 logger.info("Start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress() + " connect to the server " + getRemoteAddress());
@@ -117,35 +129,110 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         return ChannelHandlers.wrap(handler, url);
     }
 
-    /**
-     * @param url
-     * @return 0-false
-     */
-    private static int getReconnectParam(URL url) {
-        int reconnect;
-        String param = url.getParameter(Constants.RECONNECT_KEY);
-        if (param == null || param.length() == 0 || "true".equalsIgnoreCase(param)) {
-            reconnect = Constants.DEFAULT_RECONNECT_PERIOD;
-        } else if ("false".equalsIgnoreCase(param)) {
-            reconnect = 0;
-        } else {
-            try {
-                reconnect = Integer.parseInt(param);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("reconnect param must be nonnegative integer or false/true. input is:" + param);
-            }
-            if (reconnect < 0) {
-                throw new IllegalArgumentException("reconnect param must be nonnegative integer or false/true. input is:" + param);
-            }
-        }
-        return reconnect;
+    protected ExecutorService createExecutor() {
+        return Executors.newCachedThreadPool(new NamedThreadFactory(CLIENT_THREAD_POOL_NAME + CLIENT_THREAD_POOL_ID.incrementAndGet() + "-" + getUrl().getAddress(), true));
     }
 
-    /**
-     * init reconnect thread
-     */
+    public InetSocketAddress getConnectAddress() {
+        return new InetSocketAddress(NetUtils.filterLocalHost(getUrl().getHost()), getUrl().getPort());
+    }
+
+    public InetSocketAddress getRemoteAddress() {
+        Channel channel = getChannel();
+        if (channel == null)
+            return getUrl().toInetSocketAddress();
+        return channel.getRemoteAddress();
+    }
+
+    public InetSocketAddress getLocalAddress() {
+        Channel channel = getChannel();
+        if (channel == null)
+            return InetSocketAddress.createUnresolved(NetUtils.getLocalHost(), 0);
+        return channel.getLocalAddress();
+    }
+
+
+
+    public Object getAttribute(String key) {
+        Channel channel = getChannel();
+        if (channel == null)
+            return null;
+        return channel.getAttribute(key);
+    }
+    public void setAttribute(String key, Object value) {
+        Channel channel = getChannel();
+        if (channel == null)
+            return;
+        channel.setAttribute(key, value);
+    }
+    public void removeAttribute(String key) {
+        Channel channel = getChannel();
+        if (channel == null)
+            return;
+        channel.removeAttribute(key);
+    }
+    public boolean hasAttribute(String key) {
+        Channel channel = getChannel();
+        if (channel == null)
+            return false;
+        return channel.hasAttribute(key);
+    }
+
+    public void send(Object message, boolean sent) throws RemotingException {
+        if (send_reconnect && !isConnected()) {
+            connect();
+        }
+        Channel channel = getChannel();
+        //TODO Can the value returned by getChannel() be null? need improvement.
+        if (channel == null || !channel.isConnected()) {
+            throw new RemotingException(this, "message can not send, because channel is closed . url:" + getUrl());
+        }
+        channel.send(message, sent);
+    }
+
+    /** 与服务端建立连接 */
+    protected void connect() throws RemotingException {
+        connectLock.lock();
+        try {
+            if (isConnected()) {
+                return;
+            }
+            // 初始化重置连接的线程
+            initConnectStatusCheckCommand();
+            doConnect();
+            if (!isConnected()) {
+                throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                        + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
+                        + ", cause: Connect wait timeout: " + getTimeout() + "ms.");
+            } else {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Successed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                            + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
+                            + ", channel is " + this.getChannel());
+                }
+            }
+            reconnect_count.set(0);
+            reconnect_error_log_flag.set(false);
+        } catch (RemotingException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                    + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
+                    + ", cause: " + e.getMessage(), e);
+        } finally {
+            connectLock.unlock();
+        }
+    }
+    /** 判断是否已经与服务端建立连接 */
+    public boolean isConnected() {
+        Channel channel = getChannel();
+        if (channel == null)
+            return false;
+        return channel.isConnected();
+    }
+    /** 初始化重置连接的线程 */
     private synchronized void initConnectStatusCheckCommand() {
-        //reconnect=false to close reconnect
+        // 获取重置连接的时间间隔
         int reconnect = getReconnectParam(getUrl());
         if (reconnect > 0 && (reconnectExecutorFuture == null || reconnectExecutorFuture.isCancelled())) {
             Runnable connectStatusCheckCommand = new Runnable() {
@@ -175,117 +262,29 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
             reconnectExecutorFuture = reconnectExecutorService.scheduleWithFixedDelay(connectStatusCheckCommand, reconnect, reconnect, TimeUnit.MILLISECONDS);
         }
     }
-
-    private synchronized void destroyConnectStatusCheckCommand() {
-        try {
-            if (reconnectExecutorFuture != null && !reconnectExecutorFuture.isDone()) {
-                reconnectExecutorFuture.cancel(true);
-                reconnectExecutorService.purge();
+    /**
+     * 获取本次连接请求的重置连接时间间隔
+     * @param url
+     * @return 0-false
+     */
+    private static int getReconnectParam(URL url) {
+        int reconnect;
+        String param = url.getParameter(Constants.RECONNECT_KEY);
+        if (param == null || param.length() == 0 || "true".equalsIgnoreCase(param)) {
+            reconnect = Constants.DEFAULT_RECONNECT_PERIOD;
+        } else if ("false".equalsIgnoreCase(param)) {
+            reconnect = 0;
+        } else {
+            try {
+                reconnect = Integer.parseInt(param);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("reconnect param must be nonnegative integer or false/true. input is:" + param);
             }
-        } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
-        }
-    }
-
-    protected ExecutorService createExecutor() {
-        return Executors.newCachedThreadPool(new NamedThreadFactory(CLIENT_THREAD_POOL_NAME + CLIENT_THREAD_POOL_ID.incrementAndGet() + "-" + getUrl().getAddress(), true));
-    }
-
-    public InetSocketAddress getConnectAddress() {
-        return new InetSocketAddress(NetUtils.filterLocalHost(getUrl().getHost()), getUrl().getPort());
-    }
-
-    public InetSocketAddress getRemoteAddress() {
-        Channel channel = getChannel();
-        if (channel == null)
-            return getUrl().toInetSocketAddress();
-        return channel.getRemoteAddress();
-    }
-
-    public InetSocketAddress getLocalAddress() {
-        Channel channel = getChannel();
-        if (channel == null)
-            return InetSocketAddress.createUnresolved(NetUtils.getLocalHost(), 0);
-        return channel.getLocalAddress();
-    }
-
-    public boolean isConnected() {
-        Channel channel = getChannel();
-        if (channel == null)
-            return false;
-        return channel.isConnected();
-    }
-
-    public Object getAttribute(String key) {
-        Channel channel = getChannel();
-        if (channel == null)
-            return null;
-        return channel.getAttribute(key);
-    }
-
-    public void setAttribute(String key, Object value) {
-        Channel channel = getChannel();
-        if (channel == null)
-            return;
-        channel.setAttribute(key, value);
-    }
-
-    public void removeAttribute(String key) {
-        Channel channel = getChannel();
-        if (channel == null)
-            return;
-        channel.removeAttribute(key);
-    }
-
-    public boolean hasAttribute(String key) {
-        Channel channel = getChannel();
-        if (channel == null)
-            return false;
-        return channel.hasAttribute(key);
-    }
-
-    public void send(Object message, boolean sent) throws RemotingException {
-        if (send_reconnect && !isConnected()) {
-            connect();
-        }
-        Channel channel = getChannel();
-        //TODO Can the value returned by getChannel() be null? need improvement.
-        if (channel == null || !channel.isConnected()) {
-            throw new RemotingException(this, "message can not send, because channel is closed . url:" + getUrl());
-        }
-        channel.send(message, sent);
-    }
-
-    protected void connect() throws RemotingException {
-        connectLock.lock();
-        try {
-            if (isConnected()) {
-                return;
+            if (reconnect < 0) {
+                throw new IllegalArgumentException("reconnect param must be nonnegative integer or false/true. input is:" + param);
             }
-            initConnectStatusCheckCommand();
-            doConnect();
-            if (!isConnected()) {
-                throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
-                        + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
-                        + ", cause: Connect wait timeout: " + getTimeout() + "ms.");
-            } else {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Successed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
-                            + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
-                            + ", channel is " + this.getChannel());
-                }
-            }
-            reconnect_count.set(0);
-            reconnect_error_log_flag.set(false);
-        } catch (RemotingException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
-                    + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
-                    + ", cause: " + e.getMessage(), e);
-        } finally {
-            connectLock.unlock();
         }
+        return reconnect;
     }
 
     public void disconnect() {
@@ -309,12 +308,27 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
             connectLock.unlock();
         }
     }
+    private synchronized void destroyConnectStatusCheckCommand() {
+        try {
+            if (reconnectExecutorFuture != null && !reconnectExecutorFuture.isDone()) {
+                reconnectExecutorFuture.cancel(true);
+                reconnectExecutorService.purge();
+            }
+        } catch (Throwable e) {
+            logger.warn(e.getMessage(), e);
+        }
+    }
 
+    /** 重置连接：先断开连接，在尝试连接 */
     public void reconnect() throws RemotingException {
         disconnect();
         connect();
     }
 
+    public void close(int timeout) {
+        ExecutorUtil.gracefulShutdown(executor, timeout);
+        close();
+    }
     public void close() {
         try {
             if (executor != null) {
@@ -340,49 +354,32 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         }
     }
 
-    public void close(int timeout) {
-        ExecutorUtil.gracefulShutdown(executor, timeout);
-        close();
-    }
+
+
+
+
+
+    // ============================
+    // ===== 模板方法，子类扩展 ====
+    // ============================
+
+    /** 打开（创建）客户端 */
+    protected abstract void doOpen() throws Throwable;
+    /** 关闭客户端 */
+    protected abstract void doClose() throws Throwable;
+
+    /** 连接到服务端 */
+    protected abstract void doConnect() throws Throwable;
+    /** 与服务端断开连接 */
+    protected abstract void doDisConnect() throws Throwable;
+
+    /** 获取用于数据传输的连接通道 */
+    protected abstract Channel getChannel();
+
 
     @Override
     public String toString() {
         return getClass().getName() + " [" + getLocalAddress() + " -> " + getRemoteAddress() + "]";
     }
-
-    /**
-     * Open client.
-     *
-     * @throws Throwable
-     */
-    protected abstract void doOpen() throws Throwable;
-
-    /**
-     * Close client.
-     *
-     * @throws Throwable
-     */
-    protected abstract void doClose() throws Throwable;
-
-    /**
-     * Connect to server.
-     *
-     * @throws Throwable
-     */
-    protected abstract void doConnect() throws Throwable;
-
-    /**
-     * disConnect to server.
-     *
-     * @throws Throwable
-     */
-    protected abstract void doDisConnect() throws Throwable;
-
-    /**
-     * Get the connected channel.
-     *
-     * @return channel
-     */
-    protected abstract Channel getChannel();
 
 }

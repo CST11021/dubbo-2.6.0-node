@@ -27,15 +27,16 @@ import com.alibaba.dubbo.remoting.Codec;
 import com.alibaba.dubbo.remoting.Codec2;
 import com.alibaba.dubbo.remoting.transport.codec.CodecAdapter;
 
-/**
- * AbstractEndpoint
- */
+/** AbstractEndpoint 扩展自AbstractPeer，添加了编解码功能和超时信息，该类有两个抽象子类，用于扩展：
+ * {@link AbstractClient} 和 {@link AbstractServer}*/
 public abstract class AbstractEndpoint extends AbstractPeer implements Resetable {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEndpoint.class);
-
+    /** 对通道数据进行编解码 */
     private Codec2 codec;
+    /** 表示连接通道的默认超时时间 */
     private int timeout;
+    /** 表示连接通道的超时时间 */
     private int connectTimeout;
 
     public AbstractEndpoint(URL url, ChannelHandler handler) {
@@ -45,16 +46,8 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         this.connectTimeout = url.getPositiveParameter(Constants.CONNECT_TIMEOUT_KEY, Constants.DEFAULT_CONNECT_TIMEOUT);
     }
 
-    protected static Codec2 getChannelCodec(URL url) {
-        String codecName = url.getParameter(Constants.CODEC_KEY, "telnet");
-        if (ExtensionLoader.getExtensionLoader(Codec2.class).hasExtension(codecName)) {
-            return ExtensionLoader.getExtensionLoader(Codec2.class).getExtension(codecName);
-        } else {
-            return new CodecAdapter(ExtensionLoader.getExtensionLoader(Codec.class)
-                    .getExtension(codecName));
-        }
-    }
 
+    /** 从url中提取timeout、connectTimeout和codec信息 */
     public void reset(URL url) {
         if (isClosed()) {
             throw new IllegalStateException("Failed to reset parameters "
@@ -70,6 +63,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
+
         try {
             if (url.hasParameter(Constants.CONNECT_TIMEOUT_KEY)) {
                 int t = url.getParameter(Constants.CONNECT_TIMEOUT_KEY, 0);
@@ -80,6 +74,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
+
         try {
             if (url.hasParameter(Constants.CODEC_KEY)) {
                 this.codec = getChannelCodec(url);
@@ -106,4 +101,13 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         return connectTimeout;
     }
 
+    protected static Codec2 getChannelCodec(URL url) {
+        String codecName = url.getParameter(Constants.CODEC_KEY, "telnet");
+        if (ExtensionLoader.getExtensionLoader(Codec2.class).hasExtension(codecName)) {
+            return ExtensionLoader.getExtensionLoader(Codec2.class).getExtension(codecName);
+        } else {
+            return new CodecAdapter(ExtensionLoader.getExtensionLoader(Codec.class)
+                    .getExtension(codecName));
+        }
+    }
 }

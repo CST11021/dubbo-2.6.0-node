@@ -25,7 +25,7 @@ import com.alibaba.dubbo.remoting.RemotingException;
 public interface ExchangeChannel extends Channel {
 
     /**
-     * send request.
+     * 发送请求，并返回一个响应信息
      *
      * @param request
      * @return response future
@@ -44,14 +44,14 @@ public interface ExchangeChannel extends Channel {
     ResponseFuture request(Object request, int timeout) throws RemotingException;
 
     /**
-     * get message handler.
+     * 获取消息处理器
      *
      * @return message handler
      */
     ExchangeHandler getExchangeHandler();
 
     /**
-     * graceful close.
+     * 优雅的关闭
      *
      * @param timeout
      */

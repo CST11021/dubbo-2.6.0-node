@@ -34,6 +34,13 @@ public class ExecutorUtil {
             new LinkedBlockingQueue<Runnable>(100),
             new NamedThreadFactory("Close-ExecutorService-Timer", true));
 
+    /**
+     * 判断线程池是否置为关闭状态
+     * 基础知识：isShutdown和isTerminaed方法：只要调用了shutdown()和shutdownNow()这两个关闭方法的其中一个，isShutdown方法就
+     * 会返回true。当所有的任务都已关闭后,才表示线程池关闭成功，这时调用isTerminaed方法会返回true。
+     * @param executor
+     * @return
+     */
     public static boolean isShutdown(Executor executor) {
         if (executor instanceof ExecutorService) {
             if (((ExecutorService) executor).isShutdown()) {
@@ -43,10 +50,16 @@ public class ExecutorUtil {
         return false;
     }
 
+    /**
+     * 优雅的关闭线程池
+     * @param executor
+     * @param timeout
+     */
     public static void gracefulShutdown(Executor executor, int timeout) {
         if (!(executor instanceof ExecutorService) || isShutdown(executor)) {
             return;
         }
+
         final ExecutorService es = (ExecutorService) executor;
         try {
             es.shutdown(); // Disable new tasks from being submitted
@@ -55,6 +68,7 @@ public class ExecutorUtil {
         } catch (NullPointerException ex2) {
             return;
         }
+
         try {
             if (!es.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
                 es.shutdownNow();
@@ -68,10 +82,16 @@ public class ExecutorUtil {
         }
     }
 
+    /**
+     * 立即关闭线程池
+     * @param executor  表示线程池
+     * @param timeout   超过该时间，线程池会被关闭
+     */
     public static void shutdownNow(Executor executor, final int timeout) {
         if (!(executor instanceof ExecutorService) || isShutdown(executor)) {
             return;
         }
+
         final ExecutorService es = (ExecutorService) executor;
         try {
             es.shutdownNow();
@@ -80,16 +100,27 @@ public class ExecutorUtil {
         } catch (NullPointerException ex2) {
             return;
         }
+
         try {
             es.awaitTermination(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
+
+        // 立马关闭，并得到未执行任务列表，用shutdownNow()
+        // 优雅的关闭，用shutdown()
+        // 优雅的关闭，并允许关闭声明后新任务能提交，用awaitTermination()
+        // 关闭功能 【从强到弱】 依次是：shuntdownNow() > shutdown() > awaitTermination()
         if (!isShutdown(es)) {
+            // 开启一个线程来关闭线程池
             newThreadToCloseExecutor(es);
         }
     }
 
+    /**
+     * 创建一个新的线程来关闭线程池服务（强制关闭）
+     * @param es
+     */
     private static void newThreadToCloseExecutor(final ExecutorService es) {
         if (!isShutdown(es)) {
             shutdownExecutor.execute(new Runnable() {

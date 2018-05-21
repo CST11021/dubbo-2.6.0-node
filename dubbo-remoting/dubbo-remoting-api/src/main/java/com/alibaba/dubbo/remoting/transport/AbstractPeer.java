@@ -23,9 +23,7 @@ import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.Endpoint;
 import com.alibaba.dubbo.remoting.RemotingException;
 
-/**
- * AbstractPeer
- */
+/** AbstractPeer：用于描述通道对应的ChannelHandler和通道连接状态 */
 public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
     /** 收发消息都是基于通道，表示通道消息处理 */

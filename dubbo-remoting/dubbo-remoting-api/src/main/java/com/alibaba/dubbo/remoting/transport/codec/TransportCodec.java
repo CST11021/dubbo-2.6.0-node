@@ -36,8 +36,11 @@ import java.io.OutputStream;
 public class TransportCodec extends AbstractCodec {
 
     public void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException {
+        // 1、构建ChannelBufferOutputStream，是的buffer具有jdk OutputStream的api操作功能，因为序列化工具都是基于jdkAPI的
         OutputStream output = new ChannelBufferOutputStream(buffer);
+        // 2、getSerialization(channel) 通过Dubbo的SPI扩展机制得到具体的序列化工具
         ObjectOutput objectOutput = getSerialization(channel).serialize(channel.getUrl(), output);
+        // 3、将数据序列化后写入传输通道
         encodeData(channel, objectOutput, message);
         objectOutput.flushBuffer();
         if (objectOutput instanceof Cleanable) {
@@ -46,8 +49,11 @@ public class TransportCodec extends AbstractCodec {
     }
 
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
+        // 1、构建ChannelBufferInputStream是的序列化工具能够通过jdk的api读取channelBuffer数据的功能
         InputStream input = new ChannelBufferInputStream(buffer);
+        // 2. 通过Dubbo的SPI扩展机制得到具体的序列化实现进行反序列实现
         ObjectInput objectInput = getSerialization(channel).deserialize(channel.getUrl(), input);
+        // 3. decodeData这里只是获取反序列化对象
         Object object = decodeData(channel, objectInput);
         if (objectInput instanceof Cleanable) {
             ((Cleanable) objectInput).cleanup();
