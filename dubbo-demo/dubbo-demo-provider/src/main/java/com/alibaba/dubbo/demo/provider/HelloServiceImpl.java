@@ -14,12 +14,6 @@ public class HelloServiceImpl implements com.alibaba.dubbo.demo.HelloService {
     }
 
     @Override
-    public String sayHi(String name) {
-        System.out.println("HelloService#sayHi 服务被调用");
-        return "Hi " + name;
-    }
-
-    @Override
     public UserInfo sayHello(UserInfo userInfo) {
         System.out.println("HelloService#sayHello 服务被调用");
         userInfo.setUsername("Hello " + userInfo.getUsername());
