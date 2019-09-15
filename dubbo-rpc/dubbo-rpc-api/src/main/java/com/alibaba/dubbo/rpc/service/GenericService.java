@@ -18,6 +18,7 @@ package com.alibaba.dubbo.rpc.service;
 
 /**
  * Generic service interface
+ * 表示一个泛化服务类型
  *
  * @export
  */

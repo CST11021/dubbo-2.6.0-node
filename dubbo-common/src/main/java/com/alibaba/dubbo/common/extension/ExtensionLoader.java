@@ -220,11 +220,13 @@ public class ExtensionLoader<T> {
         if (!type.isInterface()) {
             throw new IllegalArgumentException("Extension type(" + type + ") is not interface!");
         }
+        // 扩展点接口必须有@SPI注解
         if (!withExtensionAnnotation(type)) {
             throw new IllegalArgumentException("Extension type(" + type +
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
 
+        // 从缓存获取扩展点对应的 ExtensionLoader，如果没有获取到加载一个扩展点的ExtensionLoader实例
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
@@ -891,7 +893,7 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
                 break;
             }
         }
-        // no need to generate adaptive class since there's no adaptive method found.
+        // no need to generate adaptive class since there's no adaptive method found.如果接口一个@Adaptive修饰的方法都没有就报错
         if (!hasAdaptiveAnnotation)
             throw new IllegalStateException("No adaptive method on extension " + type.getName() + ", refuse to create the adaptive class!");
 
@@ -906,11 +908,13 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
 
             Adaptive adaptiveAnnotation = method.getAnnotation(Adaptive.class);
             StringBuilder code = new StringBuilder(512);
+            // 没有@Adaptive修饰的方法都将方法实现设置为：throw new UnsupportedOperationException("method of interface is not adaptive method!);
             if (adaptiveAnnotation == null) {
                 code.append("throw new UnsupportedOperationException(\"method ")
                         .append(method.toString()).append(" of interface ")
                         .append(type.getName()).append(" is not adaptive method!\");");
             } else {
+                // 遍历查找URL.class类型的入参
                 int urlTypeIndex = -1;
                 for (int i = 0; i < pts.length; ++i) {
                     if (pts[i].equals(URL.class)) {
@@ -918,13 +922,16 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
                         break;
                     }
                 }
+
                 // found parameter in URL type
                 if (urlTypeIndex != -1) {
                     // Null Point check
+                    // 存在URL.class类型的入参时，如果入参是null则抛IllegalArgumentException异常
                     String s = String.format("\nif (arg%d == null) throw new IllegalArgumentException(\"url == null\");",
                             urlTypeIndex);
                     code.append(s);
 
+                    // 存在URL.class类型的入参时，如果入参不是null，则设置一个url的局部变量并将入参赋值给它
                     s = String.format("\n%s url = arg%d;", URL.class.getName(), urlTypeIndex);
                     code.append(s);
                 }
@@ -933,6 +940,7 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
                     String attribMethod = null;
 
                     // find URL getter method
+                    // 查找获取URL的getter方法
                     LBL_PTS:
                     for (int i = 0; i < pts.length; ++i) {
                         Method[] ms = pts[i].getMethods();
