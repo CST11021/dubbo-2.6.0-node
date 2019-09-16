@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * AbstractProxyProtocol
+ *
+ * AbstractProxyProtocol实现有：HessianProtocol、HttpProtocol、RestProtocol、RmiProtocol和WebServiceProtocol
  */
 public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
@@ -61,6 +62,7 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
     @SuppressWarnings("unchecked")
     public <T> Exporter<T> export(final Invoker<T> invoker) throws RpcException {
+        // 从缓存获取导出的服务
         final String uri = serviceKey(invoker.getUrl());
         Exporter<T> exporter = (Exporter<T>) exporterMap.get(uri);
         if (exporter != null) {
@@ -115,6 +117,15 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         return invoker;
     }
 
+    /**
+     * 将远程调用的异常信息封装为RpcException返回
+     *
+     * @param type          调用的远程服务
+     * @param url           url
+     * @param invocation    调用的参数信息
+     * @param e             服务调用异常的原始信息
+     * @return
+     */
     protected RpcException getRpcException(Class<?> type, URL url, Invocation invocation, Throwable e) {
         RpcException re = new RpcException("Failed to invoke remote service: " + type + ", method: "
                 + invocation.getMethodName() + ", cause: " + e.getMessage(), e);

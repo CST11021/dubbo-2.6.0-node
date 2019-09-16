@@ -56,18 +56,35 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class DubboProtocol extends AbstractProtocol {
 
+    /**
+     * 表示协议名
+     */
     public static final String NAME = "dubbo";
 
+    /**
+     * 服务暴露的默认端口
+     */
     public static final int DEFAULT_PORT = 20880;
     private static final String IS_CALLBACK_SERVICE_INVOKE = "_isCallBackServiceInvoke";
     private static DubboProtocol INSTANCE;
-    /** 保存所有暴露的服务，key：“ip:port” value：{@link ExchangeServer} <host:port,Exchanger> */
+    /**
+     * 保存所有暴露的服务，每个服务都有对应的服务来监听来自客户端的调用请求
+     *
+     * key：“ip:port”
+     * value：{@link ExchangeServer}
+     * <host:port,Exchanger>
+     *
+     */
     private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>();
-    private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>(); // <host:port,Exchanger>
+    /** <host:port,Exchanger> */
+    private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>();
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap = new ConcurrentHashMap<String, LazyConnectExchangeClient>();
     private final Set<String> optimizers = new ConcurrentHashSet<String>();
-    //consumer side export a stub service for dispatching event
-    //servicekey-stubmethods
+    /**
+     * consumer side export a stub service for dispatching event
+     * 缓存消费者用于分派事件的本地存根服务，关于存根服务的概念这里不做阐述
+     * Map<servicekey, stubmethods>
+     */
     private final ConcurrentMap<String, String> stubServiceMethodsMap = new ConcurrentHashMap<String, String>();
     /** Dubbo通过该处理器处理消费者发起的服务调用 */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
@@ -236,12 +253,15 @@ public class DubboProtocol extends AbstractProtocol {
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         URL url = invoker.getUrl();
 
-        // export service. 获取要暴露的服务接口，例如：com.alibaba.dubbo.demo.DemoService:20880
+        // 创建一个要暴露的服务，并放到缓存里
+
+        // key例如：com.alibaba.dubbo.demo.DemoService:20880
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
         exporterMap.put(key, exporter);
 
-        //export an stub service for dispatching event
+        // 本地存根相关代码
+        // export an stub service for dispatching event
         Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY, Constants.DEFAULT_STUB_EVENT);
         Boolean isCallbackservice = url.getParameter(Constants.IS_CALLBACK_SERVICE, false);
         if (isStubSupportEvent && !isCallbackservice) {
@@ -256,10 +276,13 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+        // 启动服务，这样就可以监听来自客户端的调用请求了
         openServer(url);
+        // 优化序列化
         optimizeSerialization(url);
         return exporter;
     }
+
     /** 开启服务，等待客户端连接 */
     private void openServer(URL url) {
         // 获取服务提供者的地址：ip:port
@@ -277,6 +300,12 @@ public class DubboProtocol extends AbstractProtocol {
         }
     }
 
+    /**
+     * 创建一个服务对应的server，每个服务都有对应的服务来监听来自客户端的调用请求
+     *
+     * @param url
+     * @return
+     */
     private ExchangeServer createServer(URL url) {
         // 默认开启server关闭时发送readonly事件
         url = url.addParameterIfAbsent(Constants.CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString());

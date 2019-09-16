@@ -24,11 +24,27 @@ public class ProtocolUtils {
     private ProtocolUtils() {
     }
 
+    /**
+     * 根据url里参数信息，返回一个服务的key，每个key对应一个{@link com.alibaba.dubbo.rpc.Exporter}
+     *
+     * @param url
+     * @return
+     */
     public static String serviceKey(URL url) {
         return serviceKey(url.getPort(), url.getPath(), url.getParameter(Constants.VERSION_KEY),
                 url.getParameter(Constants.GROUP_KEY));
     }
 
+    /**
+     * {serviceGroup}/{serviceName}:{serviceVersion}:{port}
+     * 例如：com.alibaba.dubbo.demo.DemoService:20880，serviceGroup和serviceVersion可选
+     *
+     * @param port
+     * @param serviceName
+     * @param serviceVersion
+     * @param serviceGroup
+     * @return
+     */
     public static String serviceKey(int port, String serviceName, String serviceVersion, String serviceGroup) {
         StringBuilder buf = new StringBuilder();
         if (serviceGroup != null && serviceGroup.length() > 0) {
@@ -45,6 +61,12 @@ public class ProtocolUtils {
         return buf.toString();
     }
 
+    /**
+     * 传入的值为"true"、"nativejava"或"bean"时，返回true
+     *
+     * @param generic
+     * @return
+     */
     public static boolean isGeneric(String generic) {
         return generic != null
                 && !"".equals(generic)
@@ -53,16 +75,34 @@ public class ProtocolUtils {
                 || Constants.GENERIC_SERIALIZATION_BEAN.equalsIgnoreCase(generic));
     }
 
+    /**
+     * 是否为默认的泛化调用
+     *
+     * @param generic
+     * @return
+     */
     public static boolean isDefaultGenericSerialization(String generic) {
         return isGeneric(generic)
                 && Constants.GENERIC_SERIALIZATION_DEFAULT.equalsIgnoreCase(generic);
     }
 
+    /**
+     * 是否为支持jdk序列化的流泛化调用
+     *
+     * @param generic
+     * @return
+     */
     public static boolean isJavaGenericSerialization(String generic) {
         return isGeneric(generic)
                 && Constants.GENERIC_SERIALIZATION_NATIVE_JAVA.equalsIgnoreCase(generic);
     }
 
+    /**
+     * 是否为bean方式的泛化调用
+     *
+     * @param generic
+     * @return
+     */
     public static boolean isBeanGenericSerialization(String generic) {
         return isGeneric(generic) && Constants.GENERIC_SERIALIZATION_BEAN.equals(generic);
     }

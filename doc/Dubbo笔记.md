@@ -296,7 +296,7 @@ public class <扩展点接口名>$Adpative implements <扩展点接口> {
 
 
 
-
+##服务提供者配置
 
 服务提供者暴露服务配置。对应的配置类：`org.apache.dubbo.config.ServiceConfig`
 
