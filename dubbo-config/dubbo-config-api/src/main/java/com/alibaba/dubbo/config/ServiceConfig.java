@@ -585,7 +585,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
 
         String scope = url.getParameter(Constants.SCOPE_KEY);
-        // don't export when none is configured
+
+        // 根据 url 中的 scope 参数决定服务导出方式，分别如下：
+        // scope = none，不导出服务
+        // scope != remote，导出到本地
+        // scope != local，导出到远程
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // 如果这个服务的作用域不是remote的话，就将服务暴露到本地：调用一次ProtocolFilterWrapper -> ProtocolListener -> InjvmProtocol

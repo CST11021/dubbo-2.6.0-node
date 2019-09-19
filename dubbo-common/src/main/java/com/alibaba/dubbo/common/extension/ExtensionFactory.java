@@ -23,7 +23,7 @@ package com.alibaba.dubbo.common.extension;
 public interface ExtensionFactory {
 
     /**
-     * Get extension.
+     * 根据接口类型和扩展名称获取扩展实例
      *
      * @param type object type.
      * @param name object name.

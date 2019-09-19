@@ -19,8 +19,14 @@ package com.alibaba.dubbo.common.serialize.support;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * 序列化方式注册表
+ */
 public abstract class SerializableClassRegistry {
 
+    /**
+     * 用于保存多个不同序列化方式的类
+     */
     private static final Set<Class> registrations = new LinkedHashSet<Class>();
 
     /**

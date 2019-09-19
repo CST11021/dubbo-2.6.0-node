@@ -79,6 +79,8 @@ public class DubboProtocol extends AbstractProtocol {
     /** <host:port,Exchanger> */
     private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>();
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap = new ConcurrentHashMap<String, LazyConnectExchangeClient>();
+
+    /** 通信层用于优化序列化的类 */
     private final Set<String> optimizers = new ConcurrentHashSet<String>();
     /**
      * consumer side export a stub service for dispatching event
@@ -333,6 +335,12 @@ public class DubboProtocol extends AbstractProtocol {
         return server;
     }
 
+    /**
+     * 从url中解析优化序列化的类，并保存到{@link #optimizers}
+     *
+     * @param url
+     * @throws RpcException
+     */
     private void optimizeSerialization(URL url) throws RpcException {
         String className = url.getParameter(Constants.OPTIMIZER_KEY, "");
         if (StringUtils.isEmpty(className) || optimizers.contains(className)) {
@@ -343,6 +351,7 @@ public class DubboProtocol extends AbstractProtocol {
         
         try {
             Class clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
+            // clazz必须为SerializationOptimizer的子类
             if (!SerializationOptimizer.class.isAssignableFrom(clazz)) {
                 throw new RpcException("The serialization optimizer " + className + " isn't an instance of " + SerializationOptimizer.class.getName());
             }

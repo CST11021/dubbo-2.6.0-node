@@ -25,6 +25,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+
+ @Activate可以修饰类和方法：
+
+    修饰类：目前修饰类的方式在整个系统只有2个类被使用，它们分别是 AdaptiveCompiler 和 AdaptiveExtensionFactory
+
+
     Activate：可以被框架中自动激活加载扩展，此注解用于配置扩展被自动激活加载条件。
     Activate，看起来有点不好理解，它的意思是条件激活，用户通过group和value配置激活条件。被该注解修饰的扩展点在满足某种条件时会被激活，它一般用来配合filter和Invokelistener
 

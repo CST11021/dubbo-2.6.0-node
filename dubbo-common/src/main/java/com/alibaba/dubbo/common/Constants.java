@@ -259,6 +259,7 @@ public class Constants {
 
     public static final String KEEP_ALIVE_KEY = "keepalive";
 
+    /** 表示url中用于声明优化序列化类的key，序列化类必须继承 {@link com.alibaba.dubbo.common.serialize.support.SerializationOptimizer} */
     public static final String OPTIMIZER_KEY = "optimizer";
 
     public static final String EXCHANGER_KEY = "exchanger";
@@ -567,6 +568,12 @@ public class Constants {
 
     public static final String AUTO_ATTACH_INVOCATIONID_KEY = "invocationid.autoattach";
 
+    /**
+     * 表示服务导出的范围，对应的配置如下：
+     * scope = none，不导出服务
+     * scope != remote，导出到本地
+     * scope != local，导出到远程
+     */
     public static final String SCOPE_KEY = "scope";
 
     public static final String SCOPE_LOCAL = "local";

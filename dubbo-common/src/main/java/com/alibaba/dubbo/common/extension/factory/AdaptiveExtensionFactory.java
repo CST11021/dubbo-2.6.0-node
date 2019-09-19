@@ -30,6 +30,7 @@ import java.util.List;
 @Adaptive
 public class AdaptiveExtensionFactory implements ExtensionFactory {
 
+    /** 实例化的时候会加载所有扩展实例 */
     private final List<ExtensionFactory> factories;
 
     /**
@@ -38,6 +39,7 @@ public class AdaptiveExtensionFactory implements ExtensionFactory {
     public AdaptiveExtensionFactory() {
         ExtensionLoader<ExtensionFactory> loader = ExtensionLoader.getExtensionLoader(ExtensionFactory.class);
         List<ExtensionFactory> list = new ArrayList<ExtensionFactory>();
+        // 获取所有支持的扩展实现名称
         for (String name : loader.getSupportedExtensions()) {
             list.add(loader.getExtension(name));
         }

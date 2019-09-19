@@ -163,7 +163,7 @@ public class ExtensionLoader<T> {
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
     /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型，value：SPI接口对应的ExtensionLoader */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
-    /** 缓存SPI接口类型对应的扩展点实现类 */
+    /** 缓存SPI接口类型对应的扩展点实现类，这里的实现类是原始的实现，比如：DubboProtocol实例，注意该实例是为经过反射注入扩展和包装的实例，与{@link #cachedInstances}有区别 */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
@@ -171,17 +171,17 @@ public class ExtensionLoader<T> {
     private final Class<?> type;
     /** 扩展点工厂，用于创建扩展点的实现类，即SPI接口的实现类(该扩展点工厂本身也是一个SPI接口，) */
     private final ExtensionFactory objectFactory;
-    /** 缓存（key：扩展点实现类型，value：扩展点名称），同{@link #cachedClasses}*/
+    /** 缓存（key：扩展点实现类型，value：扩展点名称），同{@link #cachedClasses}，加载扩展文件的时候会解析并缓存起来 */
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
     /** 保存{@link #type}对应的SPI接口的扩展实现，key:扩展实现名称，value:对应的扩展实现的类型 */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
-    /** 如果扩展点实现有被@Activate修饰，则会被缓存到这里，key：表示扩展点名称，value：修饰的该扩展点的@Activate注解对象 */
+    /** 如果扩展点实现有被@Activate修饰，则会被缓存到这里，key：表示扩展点名称，value：修饰的该扩展点的@Activate注解对象，加载扩展文件的时候会解析并缓存起来 */
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
-    /** 缓存扩展点名称，及对应的扩展点实例*/
+    /** 缓存扩展点名称，及对应的扩展点实例，这里的实例是经过反射注入其他扩展点和包装过后的实例，注意与{@link #EXTENSION_INSTANCES}的区别，外部通过{@link #getExtension}方法返回的实例就从该缓存中获取的实例 */
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     /** 缓存这个{@link #type} 对应的扩展点实例 */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
-    /** 表示有被@Adaptive注解修饰的扩展点，目前整个系统只有2个，AdaptiveCompiler、AdaptiveExtensionFactory */
+    /** 表示有被@Adaptive注解修饰的扩展点，目前整个系统只有2个，AdaptiveCompiler、AdaptiveExtensionFactory，加载扩展文件的时候会解析并缓存起来 */
     private volatile Class<?> cachedAdaptiveClass = null;
     /** 表示这个SPI接口的默认实现，对应@SPI注解的value值，参见{@link ExtensionLoader#loadExtensionClasses()}*/
     private String cachedDefaultName;
@@ -190,6 +190,8 @@ public class ExtensionLoader<T> {
     /**
      * 用于缓存包装器的扩展点，例如：ProtocolListenerWrapper和ProtocolFilterWrapper
      * 判断是否为包装器的依据是，是否带有例如如下的构造器：public ProtocolFilterWrapper(Protocol protocol){};
+     *
+     * 在加载扩展文件的时候会解析每个扩展实现，然后将包装类型的扩展保存到这里
      *
      */
     private Set<Class<?>> cachedWrapperClasses;
@@ -255,6 +257,11 @@ public class ExtensionLoader<T> {
     public Set<String> getLoadedExtensions() {
         return Collections.unmodifiableSet(new TreeSet<String>(cachedInstances.keySet()));
     }
+    /**
+     * 返回{@link #type}的所有扩展名称
+     *
+     * @return
+     */
     public Set<String> getSupportedExtensions() {
         Map<String, Class<?>> clazzes = getExtensionClasses();
         return Collections.unmodifiableSet(new TreeSet<String>(clazzes.keySet()));
@@ -274,7 +281,8 @@ public class ExtensionLoader<T> {
         }
     }
     /**
-     * 获取name对应的扩展点实现
+     * 获取name对应的扩展点实现类
+     *
      * @param name  这里的name使用的是简称，比如：协议扩展dubbo、rmi、http等
      * @return
      */
@@ -329,6 +337,8 @@ public class ExtensionLoader<T> {
     // -------------------------------
 
     /**
+     * 获取扩展实例，如果扩展类没找到或者没有实例化，则返回null，注意，此方法不会触发扩展加载。
+     *
      * Get extension's instance. Return <code>null</code> if extension is not found or is not initialized. Pls. note
      * that this method will not trigger extension load.
      * <p>
@@ -396,6 +406,14 @@ public class ExtensionLoader<T> {
         }
         return getExtension(cachedDefaultName);
     }
+    /**
+     * 根据扩展名创建一个扩展实例
+     *
+     * 注意！！！！！！！！！！：扩展点的装饰器模式就是在这里实现，注入被装饰的扩展点实例
+     *
+     * @param name
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private T createExtension(String name) {
         Class<?> clazz = getExtensionClasses().get(name);
