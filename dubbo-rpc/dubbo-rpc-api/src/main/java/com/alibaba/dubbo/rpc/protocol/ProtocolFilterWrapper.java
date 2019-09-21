@@ -45,6 +45,19 @@ public class ProtocolFilterWrapper implements Protocol {
         this.protocol = protocol;
     }
 
+    public int getDefaultPort() {
+        return protocol.getDefaultPort();
+    }
+
+    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 如果协议是"registry"说明，该请求是要将服务暴露到注册中心的
+        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
+            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务，这里的扩展点是RegistryProtocol
+            return protocol.export(invoker);
+        }
+        // 服务暴露前会调用一系列的过滤器
+        return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
+    }
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
@@ -82,20 +95,6 @@ public class ProtocolFilterWrapper implements Protocol {
             }
         }
         return last;
-    }
-
-    public int getDefaultPort() {
-        return protocol.getDefaultPort();
-    }
-
-    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        // 如果协议是"registry"说明，该请求是要将服务暴露到注册中心的
-        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
-            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务，这里的扩展点是RegistryProtocol
-            return protocol.export(invoker);
-        }
-        // 服务暴露前会调用一系列的过滤器
-        return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {

@@ -179,15 +179,55 @@ public class RegistryProtocol implements Protocol {
      */
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
+        // 这里originInvoker的协议是registry,url例如：
+        // registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
+        // ?application=demo-provider
+        // &dubbo=2.0.0
+        // &export=dubbo://172.16.110.158:20880/com.alibaba.dubbo.demo.DemoService
+        // ?anyhost=true
+        // &application=demo-provider
+        // &bind.ip=172.16.110.158&bind.port=20880
+        // &dubbo=2.0.0
+        // &generic=false
+        // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+        // &pid=33230
+        // &side=provider
+        // &timestamp=1569031709278
+        // &pid=33230
+        // &registry=zookeeper
+        // &timestamp=1569031708581
+
+        // --------------------------------------------------------------------------------
+
         // 这里的缓存key直接使用URL的fullString，例如：dubbo://30.6.28.128:20880/com.alibaba.dubbo.demo.DemoService
-        // ?anyhost=true&application=demo-provider&bind.ip=30.6.28.128&bind.port=20880&dubbo=2.0.0&generic=false
-        // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=1225680&side=provider&timestamp=1522221254113
+        // ?anyhost=true
+        // &application=demo-provider
+        // &bind.ip=30.6.28.128
+        // &bind.port=20880
+        // &dubbo=2.0.0
+        // &generic=false
+        // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+        // &pid=1225680
+        // &side=provider
+        // &timestamp=1522221254113
         String key = getCacheKey(originInvoker);
         ExporterChangeableWrapper<T> exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
         if (exporter == null) {
             synchronized (bounds) {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
+                    // invokerDelegete的url即为getProviderUrl()方法返回的URL，这里是将registry协议转为dubbo协议，url例如：
+                    // dubbo://172.16.110.158:20880/com.alibaba.dubbo.demo.DemoService
+                    // ?anyhost=true
+                    // &application=demo-provider
+                    // &bind.ip=172.16.110.158
+                    // &bind.port=20880
+                    // &dubbo=2.0.0
+                    // &generic=false
+                    // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+                    // &pid=33230
+                    // &side=provider
+                    // &timestamp=1569031709278
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
                     // 使用最终指向的协议暴露服务，比如DubboProtocol
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
@@ -268,7 +308,18 @@ public class RegistryProtocol implements Protocol {
      * 获取服务提供者的配置信息，其配置信息封装为URL对象返回
      *
      * @param origininvoker
-     * @return
+     * @return 例如：dubbo://172.16.110.158:20880/com.alibaba.dubbo.demo.DemoService
+     * ?anyhost=true
+     * &application=demo-provider
+     * &bind.ip=172.16.110.158
+     * &bind.port=20880
+     * &dubbo=2.0.0
+     * &generic=false
+     * &interface=com.alibaba.dubbo.demo.DemoService
+     * &methods=sayHello
+     * &pid=33230
+     * &side=provider
+     * &timestamp=1569031709278
      */
     private URL getProviderUrl(final Invoker<?> origininvoker) {
         String export = origininvoker.getUrl().getParameterAndDecoded(Constants.EXPORT_KEY);

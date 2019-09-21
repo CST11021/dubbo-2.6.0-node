@@ -163,7 +163,7 @@ public class ExtensionLoader<T> {
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
     /** 用于保存不同SPI接口对应的ExtensionLoader，key：对应SPI接口的类型，value：SPI接口对应的ExtensionLoader */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
-    /** 缓存SPI接口类型对应的扩展点实现类，这里的实现类是原始的实现，比如：DubboProtocol实例，注意该实例是为经过反射注入扩展和包装的实例，与{@link #cachedInstances}有区别 */
+    /** 缓存SPI接口类型对应的扩展点实现类，这里的实现类是原始的实现，比如：DubboProtocol实例，注意该实例是调用默认的构造器实例化的，是未经过反射注入扩展和包装的实例，与{@link #cachedInstances}有区别 */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
@@ -1148,37 +1148,12 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
 
 
 
-
     /**
-     * This is equivalent to {@code getActivateExtension(url, key, null)}
-     *
-     * @param url url
-     * @param key url parameter key which used to get extension point names
-     * @return extension list which are activated.
-     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String, String)
-     */
-    public List<T> getActivateExtension(URL url, String key) {
-        return getActivateExtension(url, key, null);
-    }
-    /**
-     * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
-     *
-     * @param url   url
-     * @param key   url parameter key which used to get extension point names
-     * @param group group
-     * @return extension list which are activated.
-     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
-     */
-    public List<T> getActivateExtension(URL url, String key, String group) {
-        String value = url.getParameter(key);
-        return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
-    }
-    /**
-     * Get activate extensions.
+     * 根据扩展点名称和group获取对应的扩展点实现，这里value和group对应{@link Activate}注解
      *
      * @param url    url
-     * @param values extension point names
-     * @param group  group
+     * @param values 扩展点的名称
+     * @param group  所属分组
      * @return extension list which are activated
      * @see com.alibaba.dubbo.common.extension.Activate
      */
@@ -1221,6 +1196,30 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
             exts.addAll(usrs);
         }
         return exts;
+    }
+    /**
+     * This is equivalent to {@code getActivateExtension(url, key, null)}
+     *
+     * @param url url
+     * @param key url parameter key which used to get extension point names
+     * @return extension list which are activated.
+     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String, String)
+     */
+    public List<T> getActivateExtension(URL url, String key) {
+        return getActivateExtension(url, key, null);
+    }
+    /**
+     * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
+     *
+     * @param url   url
+     * @param key   url parameter key which used to get extension point names
+     * @param group group
+     * @return extension list which are activated.
+     * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
+     */
+    public List<T> getActivateExtension(URL url, String key, String group) {
+        String value = url.getParameter(key);
+        return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
     }
     /**
      * This is equivalent to {@code getActivateExtension(url, values, null)}

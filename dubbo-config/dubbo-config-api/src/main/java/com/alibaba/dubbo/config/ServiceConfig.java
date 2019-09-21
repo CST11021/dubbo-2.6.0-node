@@ -83,6 +83,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     /** 表示暴露的服务接口类型，这里使用接口的全限定类名 */
     private String interfaceName;
+    /** 表示暴露的服务接口类型 */
     private Class<?> interfaceClass;
     /** reference to interface impl （表示服务接口的实现类） */
     private T ref;

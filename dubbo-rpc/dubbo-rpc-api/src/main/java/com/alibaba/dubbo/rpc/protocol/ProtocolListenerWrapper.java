@@ -35,6 +35,7 @@ import java.util.Collections;
  * ListenerProtocol
  */
 public class ProtocolListenerWrapper implements Protocol {
+
     static {
         try {
             Class serverClass = Protocol.class.getClassLoader().loadClass("com.alibaba.dubbo.qos.server.Server");
@@ -57,6 +58,11 @@ public class ProtocolListenerWrapper implements Protocol {
         this.protocol = protocol;
     }
 
+    /**
+     * 返回真正协议实现的端口
+     *
+     * @return
+     */
     public int getDefaultPort() {
         return protocol.getDefaultPort();
     }

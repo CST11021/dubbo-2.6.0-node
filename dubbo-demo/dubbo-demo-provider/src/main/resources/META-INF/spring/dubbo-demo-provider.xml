@@ -39,8 +39,8 @@ limitations under the License.
             registry=""/>-->
 
     <!-- use multicast registry center to export service -->
-    <dubbo:registry address="multicast://224.5.6.7:1234"/>
-    <!--<dubbo:registry address="zookeeper://127.0.0.1:2181" />-->
+    <!--<dubbo:registry address="multicast://224.5.6.7:1234"/>-->
+    <dubbo:registry address="zookeeper://127.0.0.1:2181" />
     <!-- 使用SimpleRegistryService需要先将该注册中心暴露为一个远程服务，以供注册，可以调用测试代码中的SimpleRegistry类来启动注册中心服务 -->
     <!--<dubbo:registry address="127.0.0.1:9090" group="simple" version="1.0.0" />-->
 

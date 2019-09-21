@@ -292,6 +292,189 @@ public class <扩展点接口名>$Adpative implements <扩展点接口> {
 
 
 
+###5.@Activate注解
+
+
+
+####一. 使用示例
+
+```xml
+<dependency>
+   <groupId>com.alibaba</groupId>
+   <artifactId>dubbo</artifactId>
+   <version>2.5.3</version>
+</dependency>
+```
+
+1. shuqi.dubbotest.spi.adaptive.AdaptiveExt1 作为需要被扩展的接口，注意要加上@SPI注解
+
+```java
+package shuqi.dubbotest.spi.activate;
+
+import com.alibaba.dubbo.common.extension.SPI;
+
+@SPI
+public interface ActivateExt1 {
+    String echo(String msg);
+}
+```
+
+2. 上面接口的五个实现类
+
+* ActivateExt1Impl1
+
+```java
+@Activate(group = {"default_group"})
+public class ActivateExt1Impl1 implements ActivateExt1 {
+    public String echo(String msg) {
+        return msg;
+    }
+}
+```
+
+* ##### GroupActivateExtImpl
+
+```java
+@Activate(group = {"group1", "group2"})
+public class GroupActivateExtImpl implements ActivateExt1 {
+    public String echo(String msg) {
+        return msg;
+    }
+}
+```
+
+* ##### OrderActivateExtImpl1
+
+```java
+@Activate(order = 2, group = {"order"})
+public class OrderActivateExtImpl1 implements ActivateExt1 {
+    public String echo(String msg) {
+        return msg;
+    }
+}
+```
+
+* ##### OrderActivateExtImpl2
+
+```java
+@Activate(order = 1, group = {"order"})
+public class OrderActivateExtImpl2 implements ActivateExt1 {
+    public String echo(String msg) {
+        return msg;
+    }
+}
+```
+
+* ##### ValueActivateExtImpl
+
+```java
+@Activate(value = {"value1"}, group = {"value"})
+public class ValueActivateExtImpl implements ActivateExt1 {
+    public String echo(String msg) {
+        return msg;
+    }
+}
+```
+
+3. 在Resource目录下，添加/META-INF/dubbo/internal/shuqi.dubbotest.spi.activate.ActivateExt1文件，里面的内容
+
+```csharp
+group=shuqi.dubbotest.spi.activate.GroupActivateExtImpl
+value=shuqi.dubbotest.spi.activate.ValueActivateExtImpl
+order1=shuqi.dubbotest.spi.activate.OrderActivateExtImpl1
+order2=shuqi.dubbotest.spi.activate.OrderActivateExtImpl2
+shuqi.dubbotest.spi.activate.ActivateExt1Impl1
+```
+
+####测试
+
+测试一：@Activate注解中声明group
+
+```java
+@Test
+public void testDefault() {
+  ExtensionLoader<ActivateExt1> loader = ExtensionLoader.getExtensionLoader(ActivateExt1.class);
+  URL url = URL.valueOf("test://localhost/test");
+  //查询组为default_group的ActivateExt1的实现
+  List<ActivateExt1> list = loader.getActivateExtension(url, new String[]{}, "default_group");
+  System.out.println(list.size()); 
+  System.out.println(list.get(0).getClass());
+}
+
+1
+class shuqi.dubbotest.spi.activate.ActivateExt1Impl1
+```
+
+测试二：@Activate注解中声明多个group
+
+```java
+@Test
+public void test2() {
+  URL url = URL.valueOf("test://localhost/test");
+  //查询组为group2的ActivateExt1的实现
+  List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class).getActivateExtension(url, new String[]{}, "group2");
+  System.out.println(list.size());
+  System.out.println(list.get(0).getClass());
+}
+
+测试结果：
+1
+class shuqi.dubbotest.spi.activate.GroupActivateExtImpl
+```
+
+
+
+测试三：@Activate注解中声明了group与value
+
+```java
+@Test
+public void testValue() {
+  URL url = URL.valueOf("test://localhost/test");
+  //根据   key = value1,group =  value
+  //@Activate(value = {"value1"}, group = {"value"})来激活扩展
+  url = url.addParameter("value1", "value");
+  List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class).getActivateExtension(url, new String[]{}, "value");  
+  System.out.println(list.size());
+  System.out.println(list.get(0).getClass());
+}
+
+测试结果：
+1
+class shuqi.dubbotest.spi.activate.ValueActivateExtImpl
+```
+
+
+
+测试四：@Activate注解中声明了order,低的排序优先级搞
+
+```java
+@Test
+public void testOrder() {
+  URL url = URL.valueOf("test://localhost/test");
+  List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class).getActivateExtension(url, new String[]{}, "order");
+  System.out.println(list.size());
+  System.out.println(list.get(0).getClass());
+  System.out.println(list.get(1).getClass());
+}
+
+测试结果：
+2
+class shuqi.dubbotest.spi.activate.OrderActivateExtImpl2
+class shuqi.dubbotest.spi.activate.OrderActivateExtImpl1
+```
+
+
+
+### 结论：
+
+> 从上面的几个测试用例，可以得到下面的结论：
+>
+> 1. 根据loader.getActivateExtension中的group和搜索到此类型的实例进行比较，如果group能匹配到，就是我们选择的，也就是在此条件下需要激活的。
+> 2.  @Activate中的value是参数是第二层过滤参数（第一层是通过group），在group校验通过的前提下，如果URL中的参数（k）与值（v）中的参数名同@Activate中的value值一致或者包含，那么才会被选中。相当于加入了value后，条件更为苛刻点，需要URL中有此参数并且，参数必须有值。
+> 3. @Activate的order参数对于同一个类型的多个扩展来说，order值越小，优先级越高。
+
+
+
 
 
 
