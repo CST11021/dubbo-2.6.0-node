@@ -89,9 +89,17 @@ public class RegistryProtocol implements Protocol {
 
 
     /**
+     * 主要做如下一些操作：
+     *
+     * 调用 doLocalExport 导出服务
+     * 向注册中心注册服务
+     * 向注册中心进行订阅 override 数据
+     * 创建并返回 DestroyableExporter
+     *
      * 注册时应该是将 registedProviderUrl 传递到注册中心，注册中心记录相应信息；这里我们可以理解为，消费者访问注册中心时，
      * 根据消费者需要获得的服务去读取服务提供者（url）；而订阅时，则是根据 overrideSubscribeUrl 地址和 overrideSubscribeListener
      * 监听。overrideSubscribeListener 监听的作用是当提供者的 url 改变时，重新 export；
+     *
      *
      * @param originInvoker
      * @param <T>
@@ -102,24 +110,23 @@ public class RegistryProtocol implements Protocol {
         // export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
-        // 注册中心的相关信息：比如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider
-        // &dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659
-        // &pid=5892&timestamp=1526286422635
+        // 获取注册中心 URL，以 zookeeper 注册中心为例，得到的示例 URL 如下：
+        // zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.2&export=dubbo%3A%2F%2F172.17.48.52%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider
         URL registryUrl = getRegistryUrl(originInvoker);
 
-        // 获取一个注册中心实例
+        // 根据 URL 加载 Registry 实现类，比如 ZookeeperRegistry
         final Registry registry = getRegistry(originInvoker);
 
-        // 要暴露的服务信息，比如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
-        // &dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider
-        // &timestamp=1526286422659
+        // 获取已注册的服务提供者 URL，比如：
+        // dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.2&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
-        // 用于判断是否延迟发布
         boolean register = registedProviderUrl.getParameter("register", true);
 
+        // 向服务提供者与消费者注册表中注册服务提供者
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);
 
+        // 根据 register 的值决定是否注册服务
         if (register) {
             // 使用registryUrl创建一个注册中心，并向注册中心注册服务
             register(registryUrl, registedProviderUrl);
@@ -131,9 +138,8 @@ public class RegistryProtocol implements Protocol {
         // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
         // FIXME：Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
         // FIXME： 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
-        // 例如：provider://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
-        // &category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
-        // &pid=19032&side=provider&timestamp=1526346368440
+        // 获取订阅 URL，比如：
+        // provider://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?category=configurators&check=false&anyhost=true&application=demo-provider&dubbo=2.0.2&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);

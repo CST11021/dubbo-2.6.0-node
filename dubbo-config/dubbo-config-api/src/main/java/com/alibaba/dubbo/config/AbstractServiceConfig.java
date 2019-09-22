@@ -32,9 +32,9 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     private static final long serialVersionUID = 1L;
 
-    // version
+    /** 表示提供服务的version */
     protected String version;
-    // group
+    /** 表示提供服务的group */
     protected String group;
     // whether the service is deprecated
     protected Boolean deprecated;
@@ -54,7 +54,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
      * ② 延迟到 Spring 初始化完成后，再暴露服务：<dubbo:service delay="-1" />
      */
     protected Integer delay;
-    // whether to export the service
+    /** 表示是否已经暴露服务 */
     protected Boolean export;
     // weight
     protected Integer weight;

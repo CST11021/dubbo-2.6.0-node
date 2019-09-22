@@ -31,8 +31,9 @@ public class ProviderModel {
     private final String serviceName;
     /** 表示实现服务接口的实例对象 */
     private final Object serviceInstance;
-     /** 表示配置信息 */
+     /** 表示配置信息，及导出的服务信息 */
     private final ServiceConfig metadata;
+
     /** 表示暴露服务接口的方法集合，key:方法名*/
     private final Map<String, List<ProviderMethodModel>> methods = new HashMap<String, List<ProviderMethodModel>>();
 

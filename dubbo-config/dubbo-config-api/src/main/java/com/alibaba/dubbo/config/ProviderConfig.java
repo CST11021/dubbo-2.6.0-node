@@ -30,7 +30,7 @@ import java.util.Arrays;
 /**
  * ProviderConfig
  *
- * 当 ProtocolConfig 和 ServiceConfig 某属性没有配置时，采用此缺省值，可选
+ * 对应<dubbo:provider/>配置：当<dubbo:service>配置中没有配置某项参数时，会采用此缺省配置，该标签配置可选
  *
  * @export
  * @see com.alibaba.dubbo.config.ProtocolConfig

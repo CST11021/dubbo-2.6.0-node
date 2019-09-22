@@ -64,9 +64,11 @@ public abstract class AbstractConfigurator implements Configurator {
         // 2.If the ip is 0.0.0.0, this override url can be used on consumer, and also can be used on provider
         else {
             if (url.getParameter(Constants.SIDE_KEY, Constants.PROVIDER).equals(Constants.CONSUMER)) {
-                return configureIfMatch(NetUtils.getLocalHost(), url);// NetUtils.getLocalHost is the ip address consumer registered to registry.
+                // NetUtils.getLocalHost is the ip address consumer registered to registry.
+                return configureIfMatch(NetUtils.getLocalHost(), url);
             } else if (url.getParameter(Constants.SIDE_KEY, Constants.CONSUMER).equals(Constants.PROVIDER)) {
-                return configureIfMatch(Constants.ANYHOST_VALUE, url);// take effect on all providers, so address must be 0.0.0.0, otherwise it won't flow to this if branch
+                // take effect on all providers, so address must be 0.0.0.0, otherwise it won't flow to this if branch
+                return configureIfMatch(Constants.ANYHOST_VALUE, url);
             }
         }
         return url;

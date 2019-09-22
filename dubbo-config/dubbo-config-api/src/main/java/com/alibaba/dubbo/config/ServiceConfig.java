@@ -74,6 +74,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
     /** 延迟暴露服务时，会使用该线程池服务进行服务暴露 */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
@@ -85,7 +86,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private String interfaceName;
     /** 表示暴露的服务接口类型 */
     private Class<?> interfaceClass;
-    /** reference to interface impl （表示服务接口的实现类） */
+    /** 表示服务接口的实现类，对应<dubbo:service>中的ref配置 */
     private T ref;
     /** service name, e.g: com.alibaba.dubbo.demo.DemoService */
     private String path;
@@ -100,7 +101,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private ProviderConfig provider;
     /** 用于标识是否已经暴露服务 */
     private transient volatile boolean exported;
-    /** 当ServiceBean被销毁时，会调用{@link ServiceBean#destroy()} 方法，在该方法中会将该字段置为true */
+    /** 当ServiceBean被销毁时，会调用 ServiceBean#destroy() 方法，在该方法中会将该字段置为true */
     private transient volatile boolean unexported;
     /** 用于标记是否为泛化服务类型，"true"表示是，"false"表示否 */
     private volatile String generic;
@@ -111,94 +112,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         appendAnnotation(Service.class, service);
     }
 
-    @Deprecated
-    private static final List<ProtocolConfig> convertProviderToProtocol(List<ProviderConfig> providers) {
-        if (providers == null || providers.size() == 0) {
-            return null;
-        }
-        List<ProtocolConfig> protocols = new ArrayList<ProtocolConfig>(providers.size());
-        for (ProviderConfig provider : providers) {
-            protocols.add(convertProviderToProtocol(provider));
-        }
-        return protocols;
-    }
-
-    @Deprecated
-    private static final List<ProviderConfig> convertProtocolToProvider(List<ProtocolConfig> protocols) {
-        if (protocols == null || protocols.size() == 0) {
-            return null;
-        }
-        List<ProviderConfig> providers = new ArrayList<ProviderConfig>(protocols.size());
-        for (ProtocolConfig provider : protocols) {
-            providers.add(convertProtocolToProvider(provider));
-        }
-        return providers;
-    }
-
-    @Deprecated
-    private static final ProtocolConfig convertProviderToProtocol(ProviderConfig provider) {
-        ProtocolConfig protocol = new ProtocolConfig();
-        protocol.setName(provider.getProtocol().getName());
-        protocol.setServer(provider.getServer());
-        protocol.setClient(provider.getClient());
-        protocol.setCodec(provider.getCodec());
-        protocol.setHost(provider.getHost());
-        protocol.setPort(provider.getPort());
-        protocol.setPath(provider.getPath());
-        protocol.setPayload(provider.getPayload());
-        protocol.setThreads(provider.getThreads());
-        protocol.setParameters(provider.getParameters());
-        return protocol;
-    }
-
-    @Deprecated
-    private static final ProviderConfig convertProtocolToProvider(ProtocolConfig protocol) {
-        ProviderConfig provider = new ProviderConfig();
-        provider.setProtocol(protocol);
-        provider.setServer(protocol.getServer());
-        provider.setClient(protocol.getClient());
-        provider.setCodec(protocol.getCodec());
-        provider.setHost(protocol.getHost());
-        provider.setPort(protocol.getPort());
-        provider.setPath(protocol.getPath());
-        provider.setPayload(protocol.getPayload());
-        provider.setThreads(protocol.getThreads());
-        provider.setParameters(protocol.getParameters());
-        return provider;
-    }
-
-    private static Integer getRandomPort(String protocol) {
-        protocol = protocol.toLowerCase();
-        if (RANDOM_PORT_MAP.containsKey(protocol)) {
-            return RANDOM_PORT_MAP.get(protocol);
-        }
-        return Integer.MIN_VALUE;
-    }
-
-    private static void putRandomPort(String protocol, Integer port) {
-        protocol = protocol.toLowerCase();
-        if (!RANDOM_PORT_MAP.containsKey(protocol)) {
-            RANDOM_PORT_MAP.put(protocol, port);
-        }
-    }
-
-    public URL toUrl() {
-        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
-    }
-
-    public List<URL> toUrls() {
-        return urls;
-    }
-
-    @Parameter(excluded = true)
-    public boolean isExported() {
-        return exported;
-    }
-
-    @Parameter(excluded = true)
-    public boolean isUnexported() {
-        return unexported;
-    }
 
     /**
      * dubbo暴露服务有两种情况，一种是设置了延迟暴露（比如delay=”5000”），另外一种是没有设置延迟暴露或者延迟设置为-1（delay=”-1”）：
@@ -211,6 +124,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 使用export初始化的时候会将Bean对象转换成URL格式，所有Bean属性转换成URL的参数。
      */
     public synchronized void export() {
+        // 检查是否有<dubbo:provider>配置，然后给export和delay赋值
         if (provider != null) {
             if (export == null) {
                 export = provider.getExport();
@@ -259,8 +173,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // 检测 provider 是否为空，为空则新建一个，并通过系统变量为其初始化
         checkDefault();
 
-        // 下面几个 if 语句用于检测 provider、application 等核心配置类对象是否为空，
-        // 若为空，则尝试从其他配置类对象中获取相应的实例。
+        // 下面几个 if 语句用于检测 provider、application 等核心配置类对象是否为空，若为空，则尝试从其他配置类对象中获取相应的实例。
         if (provider != null) {
             if (application == null) {
                 application = provider.getApplication();
@@ -278,6 +191,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 protocols = provider.getProtocols();
             }
         }
+
         if (module != null) {
             if (registries == null) {
                 registries = module.getRegistries();
@@ -286,6 +200,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = module.getMonitor();
             }
         }
+
         if (application != null) {
             if (registries == null) {
                 registries = application.getRegistries();
@@ -370,45 +285,19 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
 
-    private void checkRef() {
-        // reference should not be null, and is the implementation of the given interface
-        if (ref == null) {
-            throw new IllegalStateException("ref not allow null!");
-        }
-        if (!interfaceClass.isInstance(ref)) {
-            throw new IllegalStateException("The class "
-                    + ref.getClass().getName() + " unimplemented interface "
-                    + interfaceClass + "!");
-        }
-    }
-
-    public synchronized void unexport() {
-        if (!exported) {
-            return;
-        }
-        if (unexported) {
-            return;
-        }
-        if (exporters != null && exporters.size() > 0) {
-            for (Exporter<?> exporter : exporters) {
-                try {
-                    exporter.unexport();
-                } catch (Throwable t) {
-                    logger.warn("unexpected err when unexport" + exporter, t);
-                }
-            }
-            exporters.clear();
-        }
-        unexported = true;
-    }
-
     /**
      * 根据 URL 服务暴露
      * Dubbo 允许我们使用不同的协议导出服务，也允许我们向多个注册中心注册服务。Dubbo 在 doExportUrls 方法中对多协议，多注册中心进行了支持。相关代码如下：
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
-        // 加载注册中心链接，获取注册中的配置信息，例如：registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=907616&registry=multicast&timestamp=1521707411058
+        // 加载注册中心链接，获取注册中的配置信息，
+        // 例如：registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService
+        // ?application=demo-provider
+        // &dubbo=2.0.0
+        // &pid=907616
+        // &registry=multicast
+        // &timestamp=1521707411058
         List<URL> registryURLs = loadRegistries(true);
         // 遍历 protocols，并在每个协议下导出服务
         for (ProtocolConfig protocolConfig : protocols) {
@@ -549,8 +438,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         }
 
-        // 这个应该是暴露服务所使用的令牌（注册中心注册服务时需要校验，校验方式有很多比如，IP名单校验、用户名/密码校验，这里应该是使用令牌校验）
-        // 添加 token 到 map 中
+        // 这个应该是暴露服务所使用的令牌（注册中心注册服务时需要校验，校验方式有很多比如，IP名单校验、用户名/密码校验，这里应该是使用令牌校验）添加 token 到 map 中
         if (!ConfigUtils.isEmpty(token)) {
             if (ConfigUtils.isDefault(token)) {
                 // 随机生成 token
@@ -566,7 +454,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             map.put("notify", "false");
         }
 
-        // export service
         // 获取上下文路径
         String contextPath = protocolConfig.getContextpath();
         if ((contextPath == null || contextPath.length() == 0) && provider != null) {
@@ -640,6 +527,121 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         this.urls.add(url);
     }
 
+    @Deprecated
+    private static final List<ProtocolConfig> convertProviderToProtocol(List<ProviderConfig> providers) {
+        if (providers == null || providers.size() == 0) {
+            return null;
+        }
+        List<ProtocolConfig> protocols = new ArrayList<ProtocolConfig>(providers.size());
+        for (ProviderConfig provider : providers) {
+            protocols.add(convertProviderToProtocol(provider));
+        }
+        return protocols;
+    }
+
+    @Deprecated
+    private static final List<ProviderConfig> convertProtocolToProvider(List<ProtocolConfig> protocols) {
+        if (protocols == null || protocols.size() == 0) {
+            return null;
+        }
+        List<ProviderConfig> providers = new ArrayList<ProviderConfig>(protocols.size());
+        for (ProtocolConfig provider : protocols) {
+            providers.add(convertProtocolToProvider(provider));
+        }
+        return providers;
+    }
+
+    @Deprecated
+    private static final ProtocolConfig convertProviderToProtocol(ProviderConfig provider) {
+        ProtocolConfig protocol = new ProtocolConfig();
+        protocol.setName(provider.getProtocol().getName());
+        protocol.setServer(provider.getServer());
+        protocol.setClient(provider.getClient());
+        protocol.setCodec(provider.getCodec());
+        protocol.setHost(provider.getHost());
+        protocol.setPort(provider.getPort());
+        protocol.setPath(provider.getPath());
+        protocol.setPayload(provider.getPayload());
+        protocol.setThreads(provider.getThreads());
+        protocol.setParameters(provider.getParameters());
+        return protocol;
+    }
+
+    @Deprecated
+    private static final ProviderConfig convertProtocolToProvider(ProtocolConfig protocol) {
+        ProviderConfig provider = new ProviderConfig();
+        provider.setProtocol(protocol);
+        provider.setServer(protocol.getServer());
+        provider.setClient(protocol.getClient());
+        provider.setCodec(protocol.getCodec());
+        provider.setHost(protocol.getHost());
+        provider.setPort(protocol.getPort());
+        provider.setPath(protocol.getPath());
+        provider.setPayload(protocol.getPayload());
+        provider.setThreads(protocol.getThreads());
+        provider.setParameters(protocol.getParameters());
+        return provider;
+    }
+
+    private static Integer getRandomPort(String protocol) {
+        protocol = protocol.toLowerCase();
+        if (RANDOM_PORT_MAP.containsKey(protocol)) {
+            return RANDOM_PORT_MAP.get(protocol);
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private static void putRandomPort(String protocol, Integer port) {
+        protocol = protocol.toLowerCase();
+        if (!RANDOM_PORT_MAP.containsKey(protocol)) {
+            RANDOM_PORT_MAP.put(protocol, port);
+        }
+    }
+
+    public URL toUrl() {
+        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
+    }
+
+    public List<URL> toUrls() {
+        return urls;
+    }
+
+    @Parameter(excluded = true)
+    public boolean isExported() {
+        return exported;
+    }
+
+    @Parameter(excluded = true)
+    public boolean isUnexported() {
+        return unexported;
+    }
+
+
+
+    public synchronized void unexport() {
+        if (!exported) {
+            return;
+        }
+        if (unexported) {
+            return;
+        }
+        if (exporters != null && exporters.size() > 0) {
+            for (Exporter<?> exporter : exporters) {
+                try {
+                    exporter.unexport();
+                } catch (Throwable t) {
+                    logger.warn("unexpected err when unexport" + exporter, t);
+                }
+            }
+            exporters.clear();
+        }
+        unexported = true;
+    }
+
+
+
+
+
     /**
      * 将服务暴露到本地，服务提供者暴露的服务可能服务提供者应用本身也可能会调用，这种情况时dubbo会将服务也暴露到本地，
      * 这样当本地调用时就不会被路由到其他机器去调用了
@@ -666,6 +668,21 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     protected Class getServiceClass(T ref) {
         return ref.getClass();
+    }
+
+    /**
+     * 配置<dubbo:service>的ref配置
+     */
+    private void checkRef() {
+        // reference should not be null, and is the implementation of the given interface
+        if (ref == null) {
+            throw new IllegalStateException("ref not allow null!");
+        }
+        if (!interfaceClass.isInstance(ref)) {
+            throw new IllegalStateException("The class "
+                    + ref.getClass().getName() + " unimplemented interface "
+                    + interfaceClass + "!");
+        }
     }
 
     /**
@@ -969,7 +986,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     /**
      * 生成一个唯一的服务接口名称
      *
-     * @return
+     * @return 例如：${group}/${interfacteName}:${version}
      */
     @Parameter(excluded = true)
     public String getUniqueServiceName() {
