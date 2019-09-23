@@ -41,9 +41,39 @@ import java.util.List;
  */
 public class DubboRegistryFactory extends AbstractRegistryFactory {
 
+    // 一下都是SPI扩展
+
     private Protocol protocol;
     private ProxyFactory proxyFactory;
     private Cluster cluster;
+
+    @Override
+    public Registry createRegistry(URL url) {
+        url = getRegistryURL(url);
+        List<URL> urls = new ArrayList<URL>();
+        urls.add(url.removeParameter(Constants.BACKUP_KEY));
+        String backup = url.getParameter(Constants.BACKUP_KEY);
+        if (backup != null && backup.length() > 0) {
+            String[] addresses = Constants.COMMA_SPLIT_PATTERN.split(backup);
+            for (String address : addresses) {
+                urls.add(url.setAddress(address));
+            }
+        }
+        RegistryDirectory<RegistryService> directory = new RegistryDirectory<RegistryService>(
+                RegistryService.class,
+                url.addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName())
+                   .addParameterAndEncoded(Constants.REFER_KEY, url.toParameterString())
+        );
+        Invoker<RegistryService> registryInvoker = cluster.join(directory);
+        RegistryService registryService = proxyFactory.getProxy(registryInvoker);
+
+        DubboRegistry registry = new DubboRegistry(registryInvoker, registryService);
+        directory.setRegistry(registry);
+        directory.setProtocol(protocol);
+        directory.notify(urls);
+        directory.subscribe(new URL(Constants.CONSUMER_PROTOCOL, NetUtils.getLocalHost(), 0, RegistryService.class.getName(), url.getParameters()));
+        return registry;
+    }
 
     private static URL getRegistryURL(URL url) {
         return url.setPath(RegistryService.class.getName())
@@ -63,38 +93,15 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
                 .addParameter("unsubscribe.1.callback", "false");
     }
 
+    // SPI自动注入
     public void setProtocol(Protocol protocol) {
         this.protocol = protocol;
     }
-
     public void setProxyFactory(ProxyFactory proxyFactory) {
         this.proxyFactory = proxyFactory;
     }
-
     public void setCluster(Cluster cluster) {
         this.cluster = cluster;
     }
 
-    @Override
-    public Registry createRegistry(URL url) {
-        url = getRegistryURL(url);
-        List<URL> urls = new ArrayList<URL>();
-        urls.add(url.removeParameter(Constants.BACKUP_KEY));
-        String backup = url.getParameter(Constants.BACKUP_KEY);
-        if (backup != null && backup.length() > 0) {
-            String[] addresses = Constants.COMMA_SPLIT_PATTERN.split(backup);
-            for (String address : addresses) {
-                urls.add(url.setAddress(address));
-            }
-        }
-        RegistryDirectory<RegistryService> directory = new RegistryDirectory<RegistryService>(RegistryService.class, url.addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName()).addParameterAndEncoded(Constants.REFER_KEY, url.toParameterString()));
-        Invoker<RegistryService> registryInvoker = cluster.join(directory);
-        RegistryService registryService = proxyFactory.getProxy(registryInvoker);
-        DubboRegistry registry = new DubboRegistry(registryInvoker, registryService);
-        directory.setRegistry(registry);
-        directory.setProtocol(protocol);
-        directory.notify(urls);
-        directory.subscribe(new URL(Constants.CONSUMER_PROTOCOL, NetUtils.getLocalHost(), 0, RegistryService.class.getName(), url.getParameters()));
-        return registry;
-    }
 }

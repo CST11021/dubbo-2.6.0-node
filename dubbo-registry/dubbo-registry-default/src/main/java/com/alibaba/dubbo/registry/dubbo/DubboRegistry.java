@@ -43,20 +43,22 @@ public class DubboRegistry extends FailbackRegistry {
 
     private final static Logger logger = LoggerFactory.getLogger(DubboRegistry.class);
 
-    // Reconnecting detection cycle: 3 seconds (unit:millisecond)
+    /** Reconnecting detection cycle: 3 seconds (unit:millisecond) */
     private static final int RECONNECT_PERIOD_DEFAULT = 3 * 1000;
 
-    // Scheduled executor service
+    /** Scheduled executor service */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboRegistryReconnectTimer", true));
 
-    // Reconnection timer, regular check connection is available. If unavailable, unlimited reconnection.
+    /** Reconnection timer, regular check connection is available. If unavailable, unlimited reconnection. */
     private final ScheduledFuture<?> reconnectFuture;
 
-    // The lock for client acquisition process, lock the creation process of the client instance to prevent repeated clients
+    /** The lock for client acquisition process, lock the creation process of the client instance to prevent repeated clients */
     private final ReentrantLock clientLock = new ReentrantLock();
 
+    /** {@link #registryService} 是通过 {@link com.alibaba.dubbo.rpc.ProxyFactory#getProxy(Invoker)} 返回的，这里的入参就是该变量*/
     private final Invoker<RegistryService> registryInvoker;
 
+    /** 该引用是通过 ProxyFactory 创建的代理实例，该实例会去调用对应的集群中执行的机器，并调用什么服务 */
     private final RegistryService registryService;
 
     public DubboRegistry(Invoker<RegistryService> registryInvoker, RegistryService registryService) {

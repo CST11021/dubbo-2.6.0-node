@@ -41,17 +41,9 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
 
     private static final ReentrantLock LOCK = new ReentrantLock();
 
-    /** Registry Collection Map<RegistryAddress, Registry> */
+    /** 保存所有的注册中心：Map<RegistryAddress, Registry> */
     private static final Map<String, Registry> REGISTRIES = new ConcurrentHashMap<String, Registry>();
 
-    /**
-     * Get all registries
-     *
-     * @return all registries
-     */
-    public static Collection<Registry> getRegistries() {
-        return Collections.unmodifiableCollection(REGISTRIES.values());
-    }
 
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
@@ -66,6 +58,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             if (registry != null) {
                 return registry;
             }
+
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
@@ -76,12 +69,22 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             LOCK.unlock();
         }
     }
+
     /**
      * 子类扩展该方法创建一个注册中心
      * @param url
      * @return
      */
     protected abstract Registry createRegistry(URL url);
+
+    /**
+     * Get all registries
+     *
+     * @return all registries
+     */
+    public static Collection<Registry> getRegistries() {
+        return Collections.unmodifiableCollection(REGISTRIES.values());
+    }
 
     /**
      * Close all created registries

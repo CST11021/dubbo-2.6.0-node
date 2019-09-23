@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * FailbackRegistry. (SPI, Prototype, ThreadSafe)
+ * 故障时自动恢复的注册中心，比如：ZookeeperRegistry、RedisRegistry、MulticastRegistry都会继承该类，但是SimpleRegistryService就不会
  *
  */
 public abstract class FailbackRegistry extends AbstractRegistry {
@@ -46,11 +47,15 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboRegistryFailedRetryTimer", true));
     /** 用于失败重试的计时器，定期检查是否存在失败请求，如果存在，则进行无限重试 */
     private final ScheduledFuture<?> retryFuture;
-    /** 用于保存注册失败的URL */
+    /** 保存注册失败的URL */
     private final Set<URL> failedRegistered = new ConcurrentHashSet<URL>();
+    /** 保存注销失败的URL */
     private final Set<URL> failedUnregistered = new ConcurrentHashSet<URL>();
+    /** 保存订阅失败对应的URL及URL对应的监听器 */
     private final ConcurrentMap<URL, Set<NotifyListener>> failedSubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
+    /** 保存取消订阅失败对应的URL及URL对应的监听器 */
     private final ConcurrentMap<URL, Set<NotifyListener>> failedUnsubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
+    /** URL变更时会通知对应的监听器，这里保存变更的URL和其对应的监听器 */
     private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = new ConcurrentHashMap<URL, Map<NotifyListener, List<URL>>>();
     /** 用于判断该注册中心是否可用，如果注册中心挂掉了那就不可用了 */
     private AtomicBoolean destroyed = new AtomicBoolean(false);

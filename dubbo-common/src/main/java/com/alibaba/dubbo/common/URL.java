@@ -77,6 +77,8 @@ public final class URL implements Serializable {
     private final String password;
     private final String host;
     private final int port;
+
+    /** 改值一般为实现类的全限定类名，例如：com.alibaba.dubbo.registry.RegistryService */
     private final String path;
     private final Map<String, String> parameters;
 
@@ -125,8 +127,8 @@ public final class URL implements Serializable {
         this(protocol, username, password, host, port, path, CollectionUtils.toStringMap(pairs));
     }
     public URL(String protocol, String username, String password, String host, int port, String path, Map<String, String> parameters) {
-        if ((username == null || username.length() == 0)
-                && password != null && password.length() > 0) {
+        if ((username == null || username.length() == 0) && password != null && password.length() > 0) {
+            // 有密码不能没有用户名
             throw new IllegalArgumentException("Invalid url, password without username!");
         }
         this.protocol = protocol;

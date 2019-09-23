@@ -30,10 +30,10 @@ import java.lang.reflect.InvocationTargetException;
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
 
-    /** 表示服务接口对应实现类 */
+    /** 表示服务接口对应实现类, 例如：com.alibaba.dubbo.demo.provider.DemoServiceImpl */
     private final T proxy;
 
-    /** 对应{@link #proxy}的类型 */
+    /** 对应{@link #proxy}的接口类型, 例如：com.alibaba.dubbo.demo.DemoService */
     private final Class<T> type;
 
     /** 服务接口相关的配置信息 */

@@ -30,7 +30,7 @@ import com.alibaba.dubbo.common.extension.SPI;
 public interface ProxyFactory {
 
     /**
-     * create proxy.创建一个代理对象
+     * 创建一个代理对象, T表示要调用的服务接口, Invoker封装了调用那台机器的那个服务，并且封装了入参是什么，出参是什么
      *
      * @param invoker
      * @return proxy
@@ -39,12 +39,11 @@ public interface ProxyFactory {
     <T> T getProxy(Invoker<T> invoker) throws RpcException;
 
     /**
-     * create invoker.
      * 根据入参将要暴露的服务封装为一个{@link Invoker}对象
      *
      * @param <T>
-     * @param proxy     一般这个代理对象就是服务接口的实现对象
-     * @param type      要代理的服务接口类型
+     * @param proxy     一般这个代理对象就是服务接口的实现对象，比如：com.alibaba.dubbo.demo.provider.DemoServiceImpl
+     * @param type      要代理的服务接口类型, 比如：com.alibaba.dubbo.demo.DemoService
      * @param url       要暴露的 URL
      * @return invoker
      */

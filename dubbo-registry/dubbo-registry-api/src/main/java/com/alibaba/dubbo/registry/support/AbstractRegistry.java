@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractRegistry. (SPI, Prototype, ThreadSafe)
+ * 该抽象注册服务主要关注注册中心的本地缓存文件和加载文件到内存
  *
  */
 public abstract class AbstractRegistry implements Registry {
@@ -70,14 +71,15 @@ public abstract class AbstractRegistry implements Registry {
      */
     private static final String URL_SPLIT = "\\s+";
 
-
     /** 表示注册中心的一个本地缓存文件 */
     private File file;
-    /** 表示暴露服务的本地缓存数据，以键值对的形式记录注册中心的列表，而其他的是通知服务提供者的列表。通过properties.load(file)方法将缓存在硬盘的数据加载到内存，Properties<服务接口类型的权限定类名，URL>*/
-    private final Properties properties = new Properties();
 
     /** 表示向注册中心注册服务的时候，是否同步将服务缓存到本地文件中 */
     private final boolean syncSaveFile;
+
+    /** 表示暴露服务的本地缓存数据，以键值对的形式记录注册中心的列表，而其他的是通知服务提供者的列表。通过properties.load(file)方法将缓存在硬盘的数据加载到内存，Properties<服务接口类型的权限定类名，URL>*/
+    private final Properties properties = new Properties();
+
     /** 当{@link #syncSaveFile}为false时，使用异步的方式同步到缓存文件，通过该ExecutorService来实现异步加载 */
     private final ExecutorService registryCacheExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("DubboSaveRegistryCache", true));
 
@@ -99,6 +101,7 @@ public abstract class AbstractRegistry implements Registry {
     // 构造器
 
     public AbstractRegistry(URL url) {
+        // 这里url为创建注册中心的url
         setUrl(url);
         // Start file save timer
         syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, false);
@@ -121,7 +124,9 @@ public abstract class AbstractRegistry implements Registry {
         // multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&interface=com.alibaba.dubbo.registry.RegistryService&pid=8080&timestamp=1526282882645
         notify(url.getBackupUrls());
     }
-    /** 将缓存在本地的注册中心数据加载到内存 */
+    /**
+     * 读取缓存文件{@link #file}的信息，并保存到{@link #properties}
+     */
     private void loadProperties() {
         if (file != null && file.exists()) {
             InputStream in = null;
