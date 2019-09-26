@@ -33,25 +33,25 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
 
     /** 表示一次远程调用的超时时间 */
     protected Integer timeout;
-    /** retry times */
+    /** 方法调用超时时的重试次数 */
     protected Integer retries;
-    // max concurrent invocations
+    /** 最大并发调用 */
     protected Integer actives;
-    // load balance
+    /** 负载均衡 */
     protected String loadbalance;
-    // whether to async
+    /** 是否异步调用 */
     protected Boolean async;
-    // whether to ack async-sent
+    /** whether to ack async-sent */
     protected Boolean sent;
-    // the name of mock class which gets called when a service fails to execute
+    /** the name of mock class which gets called when a service fails to execute  */
     protected String mock;
-    // merger
+    /** merger  */
     protected String merger;
-    // cache
+    /** cache  */
     protected String cache;
-    // validation
+    /** validation  */
     protected String validation;
-    // customized parameters
+    /** customized parameters  */
     protected Map<String, String> parameters;
 
 

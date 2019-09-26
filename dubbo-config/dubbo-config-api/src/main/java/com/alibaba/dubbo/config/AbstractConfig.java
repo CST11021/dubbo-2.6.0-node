@@ -90,7 +90,8 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     /**
-     * 给这个 config 设置一些默认的属性
+     * 给这个 config 设置一些默认的属性，遍历这个config的所有set方法
+     *
      * @param config
      */
     protected static void appendProperties(AbstractConfig config) {
