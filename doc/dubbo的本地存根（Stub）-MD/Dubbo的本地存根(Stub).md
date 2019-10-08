@@ -25,7 +25,7 @@ public class UserService implements UserInterface {
 }
 ```
 
-**2.服务分布配置**
+**2.服务导出配置**
 
 ```xml
 <dubbo:service  interface="org.huxin.dubbo.test.user.service.UserInterface" ref="userService" protocol="dubbo" retries="0"/>
@@ -93,7 +93,7 @@ public void testGetUserById(){
 
 
 
-
+**经测试，dubbo服务端配置存根类好像并没有什么用，默认缺省不要配置以免挖坑。**
 
 
 

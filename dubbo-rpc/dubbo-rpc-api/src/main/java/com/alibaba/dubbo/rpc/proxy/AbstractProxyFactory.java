@@ -32,11 +32,13 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
         Class<?>[] interfaces = null;
         String config = invoker.getUrl().getParameter("interfaces");
         if (config != null && config.length() > 0) {
+            // 逗号分隔
             String[] types = Constants.COMMA_SPLIT_PATTERN.split(config);
             if (types != null && types.length > 0) {
                 interfaces = new Class<?>[types.length + 2];
                 interfaces[0] = invoker.getInterface();
                 interfaces[1] = EchoService.class;
+
                 for (int i = 0; i < types.length; i++) {
                     interfaces[i + 1] = ReflectUtils.forName(types[i]);
                 }
@@ -45,6 +47,10 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
         if (interfaces == null) {
             interfaces = new Class<?>[]{invoker.getInterface(), EchoService.class};
         }
+        // 这里传入的interfaces是一个数组：
+        // [0]:Invoker#getInterface()
+        // [1]:EchoService.class
+        // [2-N]:url的interfaces参数，用逗号分隔
         return getProxy(invoker, interfaces);
     }
 

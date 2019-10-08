@@ -163,7 +163,12 @@ public abstract class AbstractConfig implements Serializable {
         }
     }
 
-    // 返回这个Class的简单类名，如果是Config或Bean为前缀的类名也会把该前缀干掉
+    /**
+     * 返回这个Class的简单类名，如果是以"Config"或"Bean"为开头的前缀，则会移除该前缀
+     *
+     * @param cls
+     * @return
+     */
     private static String getTagName(Class<?> cls) {
         String tag = cls.getSimpleName();
         for (String suffix : SUFFIXS) {
@@ -176,15 +181,30 @@ public abstract class AbstractConfig implements Serializable {
         return tag;
     }
 
+    /**
+     * 追加配置到parameters里面
+     *
+     * @param parameters
+     * @param config
+     */
     protected static void appendParameters(Map<String, String> parameters, Object config) {
         appendParameters(parameters, config, null);
     }
 
+    /**
+     * 变量所有的get方法，将所有get方法对应的配置项追加到parameters，如果有前缀的话，会将prefix作为前缀 + "." + value
+     *
+     * @param parameters
+     * @param config
+     * @param prefix
+     */
     @SuppressWarnings("unchecked")
     protected static void appendParameters(Map<String, String> parameters, Object config, String prefix) {
         if (config == null) {
             return;
         }
+
+        // 变量所有的get方法，将所有get方法对应的配置项追加到parameters，如果有前缀的话，会将prefix作为前缀 + "." + value
         Method[] methods = config.getClass().getMethods();
         for (Method method : methods) {
             try {
@@ -194,6 +214,7 @@ public abstract class AbstractConfig implements Serializable {
                         && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 0
                         && isPrimitive(method.getReturnType())) {
+
                     Parameter parameter = method.getAnnotation(Parameter.class);
                     if (method.getReturnType() == Object.class || parameter != null && parameter.excluded()) {
                         continue;

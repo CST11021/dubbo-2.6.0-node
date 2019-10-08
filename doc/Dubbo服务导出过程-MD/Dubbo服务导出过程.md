@@ -6,7 +6,7 @@ Dubbo服务导出的入口有两个地方：
 
 * 第一个是InitializingBean#afterPropertySet()：当设置了延迟暴露（比如delay=”5000”）时，会立即调用export()方法，并且是通过线程池的方式延迟暴露服务；
 
-* 第二个是Spring 容器发布刷新事件，Dubbo在接收到事件后，会立即执行服务导出逻辑：没有设置延迟暴露或者延迟设置为-1（delay=”-1”）时，dubbo会在Spring实例化完bean之后，在刷新容器最后一步发布ContextRefreshEvent事件的时候通知实现了ApplicationListener的类进行回调onApplicationEvent，dubbo会在这个方法中立即发布服务，注意此时不是通过线程池的方式发布。
+* 第二个是Spring 容器发布刷新事件，Dubbo在接收到事件后，会立即执行服务导出逻辑：没有设置延迟暴露或者延迟设置为-1（delay=”-1”）时，dubbo会在Spring实例化完bean之后，在刷新容器最后一步发布ContextRefreshEvent事件的时候通知实现了ApplicationListener的类进行回调onApplicationEvent，dubbo会在这个方法中**立即发布服务，注意此时不是通过线程池的方式发布**。
 
 ```xml
 dubbo暴露服务有两种情况，一种是设置了延迟暴露（比如delay=”5000”），另外一种是没有设置延迟暴露或者延迟设置为-1（delay=”-1”）：
@@ -166,4 +166,8 @@ dubbo服务的本地暴露，显然是针对当服务消费者和服务提供者
 
 - 源码：[dubbo-registry-zookeeper] ZookeeperRegistryFactory#createRegistry
 - 源码：[dubbo-remoting-zookeeper] CuratorZookeeperTransporter#createZookeeperClient
+
+
+
+
 

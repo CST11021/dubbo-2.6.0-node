@@ -40,7 +40,7 @@ public class RpcInvocation implements Invocation, Serializable {
     /** 表示目标方法的入参类型 */
     private Class<?>[] parameterTypes;
 
-    /** 表示调用的目标方法 */
+    /** 表示调用的方法参数 */
     private Object[] arguments;
 
     private Map<String, String> attachments;

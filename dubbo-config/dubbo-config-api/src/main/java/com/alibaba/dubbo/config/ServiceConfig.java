@@ -173,6 +173,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // 检测 provider 是否为空，为空则新建一个，并通过系统变量为其初始化
         checkDefault();
 
+
+
+
+
+
+
+
+
         // 下面几个 if 语句用于检测 provider、application 等核心配置类对象是否为空，若为空，则尝试从其他配置类对象中获取相应的实例。
         if (provider != null) {
             if (application == null) {
@@ -210,6 +218,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         }
 
+
+
+
+
         // 检测 ref 是否为泛化服务类型
         if (ref instanceof GenericService) {
             // 设置 interfaceClass 为 GenericService.class
@@ -220,8 +232,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         } else {// ref 非 GenericService 类型
             try {
-                interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
-                        .getContextClassLoader());
+                interfaceClass = Class.forName(interfaceName, true, Thread.currentThread().getContextClassLoader());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
@@ -233,7 +244,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             generic = Boolean.FALSE.toString();
         }
 
-        // local 和 stub 在功能应该是一致的，用于配置本地存根
+
+
+
+
+        // local 和 stub 在功能应该一致的，用于配置本地存根，local已经废弃
         if (local != null) {
             if ("true".equals(local)) {
                 local = interfaceName + "Local";
@@ -250,6 +265,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The local implementation class " + localClass.getName() + " not implement interface " + interfaceName);
             }
         }
+
+        // 服务端配置是存根类好像并没有什么用。。。。。。。。。。。。。。。。。。。。。。。
         if (stub != null) {
             if ("true".equals(stub)) {
                 stub = interfaceName + "Stub";
@@ -264,6 +281,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The stub implementation class " + stubClass.getName() + " not implement interface " + interfaceName);
             }
         }
+
+
+
+
 
         // 检测各种对象是否为空，为空则新建，或者抛出异常
         checkApplication();

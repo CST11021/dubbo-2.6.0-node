@@ -76,9 +76,12 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private String interfaceName;
     /** 表示配置的远程服务接口的类型 */
     private Class<?> interfaceClass;
-    // client type
+    /** client type */
     private String client;
-    // url for peer-to-peer invocation
+    /**
+     *  url for peer-to-peer invocation
+     *  用于直连服务的url
+     */
     private String url;
     /** 表示<dubbo:method/>配置 */
     private List<MethodConfig> methods;
@@ -120,46 +123,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
 
-    private static void checkAndConvertImplicitConfig(MethodConfig method, Map<String, String> map, Map<Object, Object> attributes) {
-        //check config conflict
-        if (Boolean.FALSE.equals(method.isReturn()) && (method.getOnreturn() != null || method.getOnthrow() != null)) {
-            throw new IllegalStateException("method config error : return attribute must be set true when onreturn or onthrow has been setted.");
-        }
-        //convert onreturn methodName to Method
-        String onReturnMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_RETURN_METHOD_KEY);
-        Object onReturnMethod = attributes.get(onReturnMethodKey);
-        if (onReturnMethod != null && onReturnMethod instanceof String) {
-            attributes.put(onReturnMethodKey, getMethodByName(method.getOnreturn().getClass(), onReturnMethod.toString()));
-        }
-        //convert onthrow methodName to Method
-        String onThrowMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_THROW_METHOD_KEY);
-        Object onThrowMethod = attributes.get(onThrowMethodKey);
-        if (onThrowMethod != null && onThrowMethod instanceof String) {
-            attributes.put(onThrowMethodKey, getMethodByName(method.getOnthrow().getClass(), onThrowMethod.toString()));
-        }
-        //convert oninvoke methodName to Method
-        String onInvokeMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_INVOKE_METHOD_KEY);
-        Object onInvokeMethod = attributes.get(onInvokeMethodKey);
-        if (onInvokeMethod != null && onInvokeMethod instanceof String) {
-            attributes.put(onInvokeMethodKey, getMethodByName(method.getOninvoke().getClass(), onInvokeMethod.toString()));
-        }
-    }
 
-    private static Method getMethodByName(Class<?> clazz, String methodName) {
-        try {
-            return ReflectUtils.findMethodByMethodName(clazz, methodName);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
 
-    public URL toUrl() {
-        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
-    }
-
-    public List<URL> toUrls() {
-        return urls;
-    }
 
     /**
      * 获取该Bean配置表示的远程服务接口的代理对象
@@ -174,31 +139,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         return ref;
     }
-
-    public synchronized void destroy() {
-        if (ref == null) {
-            return;
-        }
-        if (destroyed) {
-            return;
-        }
-        destroyed = true;
-        try {
-            invoker.destroy();
-        } catch (Throwable t) {
-            logger.warn("Unexpected err when destroy invoker of ReferenceConfig(" + url + ").", t);
-        }
-        invoker = null;
-        ref = null;
-    }
-
     private void init() {
         // 避免重复初始化
         if (initialized) {
             return;
         }
         initialized = true;
-        
+
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
@@ -208,7 +155,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         checkDefault();
         appendProperties(this);
 
-        // 设置接口及是否为泛化类型
+        // ------------- 设置接口及是否为泛化类型 -----------------
         if (getGeneric() == null && getConsumer() != null) {
             setGeneric(getConsumer().getGeneric());
         }
@@ -222,6 +169,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
             checkInterfaceAndMethods(interfaceClass, methods);
         }
+
+
+
+
+
+
+        // --------------- 查找环境变量或者本地配置，检查是否配置了直连服务 ---------------
 
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
@@ -257,7 +211,6 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
         }
 
-        // 打日志，非核心代码
         if (resolve != null && resolve.length() > 0) {
             url = resolve;
             if (logger.isWarnEnabled()) {
@@ -268,6 +221,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
         }
+
+
+
+
+
+
+        // --------------- 设置consumer、application、module、monitor等默认配置 ---------------
 
         if (consumer != null) {
             if (application == null) {
@@ -307,7 +267,11 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
 
 
-        // 用于保存服务接口的相关信息，方便后续为这个服务接口构建代理实现
+
+
+
+        // --------------- 构建URL的Map信息，方便后续为这个服务接口构建代理实现 ---------------
+
         Map<String, String> map = new HashMap<String, String>();
         Map<Object, Object> attributes = new HashMap<Object, Object>();
         map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
@@ -335,6 +299,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         appendParameters(map, module);
         appendParameters(map, consumer, Constants.DEFAULT_KEY);
         appendParameters(map, this);
+        // {group}/${interface}:${version}
         String prifix = StringUtils.getServiceKey(map);
         if (methods != null && methods.size() > 0) {
             for (MethodConfig method : methods) {
@@ -365,7 +330,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
     }
-
+    /**
+     * 检查{@link ReferenceConfig#consumer} 是否已经被设置，如果没有创建一个默认的消费者配置
+     */
+    private void checkDefault() {
+        if (consumer == null) {
+            consumer = new ConsumerConfig();
+        }
+        // 给这个消费者配置对象设置默认的属性
+        appendProperties(consumer);
+    }
     /**
      * 根据这个map创建一个代理该远程服务接口的代理对象
      *
@@ -387,7 +361,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         // 标识服务接口的代理对象是否指向本地的JVM，一般该属性为false
         final boolean isJvmRefer;
         if (isInjvm() == null) {
-            // if a url is specified, don't do local reference
+            // url 配置被指定，则不做本地引用
             if (url != null && url.length() > 0) {
                 isJvmRefer = false;
             } else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
@@ -400,7 +374,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             isJvmRefer = isInjvm().booleanValue();
         }
 
-        // 本地引用
+        // 本地引用：使用了Injvm协议，是一个伪协议，它不开启端口，不发起远程调用，只在JVM内直接关联，但执行Dubbo的Filter链
         if (isJvmRefer) {
             // 生成本地引用 URL，协议为 injvm
             URL url = new URL(Constants.LOCAL_PROTOCOL, NetUtils.LOCALHOST, 0, interfaceClass.getName()).addParameters(map);
@@ -505,16 +479,72 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         return (T) proxyFactory.getProxy(invoker);
     }
 
-    /**
-     * 检查{@link ReferenceConfig#consumer} 是否已经被设置，如果没有创建一个默认的消费者配置
-     */
-    private void checkDefault() {
-        if (consumer == null) {
-            consumer = new ConsumerConfig();
+
+    private static void checkAndConvertImplicitConfig(MethodConfig method, Map<String, String> map, Map<Object, Object> attributes) {
+        //check config conflict
+        if (Boolean.FALSE.equals(method.isReturn()) && (method.getOnreturn() != null || method.getOnthrow() != null)) {
+            throw new IllegalStateException("method config error : return attribute must be set true when onreturn or onthrow has been setted.");
         }
-        // 给这个消费者配置对象设置默认的属性
-        appendProperties(consumer);
+        //convert onreturn methodName to Method
+        String onReturnMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_RETURN_METHOD_KEY);
+        Object onReturnMethod = attributes.get(onReturnMethodKey);
+        if (onReturnMethod != null && onReturnMethod instanceof String) {
+            attributes.put(onReturnMethodKey, getMethodByName(method.getOnreturn().getClass(), onReturnMethod.toString()));
+        }
+        //convert onthrow methodName to Method
+        String onThrowMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_THROW_METHOD_KEY);
+        Object onThrowMethod = attributes.get(onThrowMethodKey);
+        if (onThrowMethod != null && onThrowMethod instanceof String) {
+            attributes.put(onThrowMethodKey, getMethodByName(method.getOnthrow().getClass(), onThrowMethod.toString()));
+        }
+        //convert oninvoke methodName to Method
+        String onInvokeMethodKey = StaticContext.getKey(map, method.getName(), Constants.ON_INVOKE_METHOD_KEY);
+        Object onInvokeMethod = attributes.get(onInvokeMethodKey);
+        if (onInvokeMethod != null && onInvokeMethod instanceof String) {
+            attributes.put(onInvokeMethodKey, getMethodByName(method.getOninvoke().getClass(), onInvokeMethod.toString()));
+        }
     }
+
+    private static Method getMethodByName(Class<?> clazz, String methodName) {
+        try {
+            return ReflectUtils.findMethodByMethodName(clazz, methodName);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public URL toUrl() {
+        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
+    }
+
+    public List<URL> toUrls() {
+        return urls;
+    }
+
+
+
+    public synchronized void destroy() {
+        if (ref == null) {
+            return;
+        }
+        if (destroyed) {
+            return;
+        }
+        destroyed = true;
+        try {
+            invoker.destroy();
+        } catch (Throwable t) {
+            logger.warn("Unexpected err when destroy invoker of ReferenceConfig(" + url + ").", t);
+        }
+        invoker = null;
+        ref = null;
+    }
+
+
+
+
+
+
 
     public Class<?> getInterfaceClass() {
         if (interfaceClass != null) {

@@ -98,7 +98,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
      * @param invokers invoker candidates
      * @param selected  exclude selected invokers or not
      * @return
-     * @throws RpcExceptione
+     * @throws RpcException
      */
     protected Invoker<T> select(LoadBalance loadbalance, Invocation invocation, List<Invoker<T>> invokers, List<Invoker<T>> selected) throws RpcException {
         if (invokers == null || invokers.size() == 0)

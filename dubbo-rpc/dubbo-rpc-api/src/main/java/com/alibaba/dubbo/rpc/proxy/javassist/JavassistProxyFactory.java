@@ -54,7 +54,10 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
      */
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
+        // 包装器不能正确处理这种情况:类名包含'$'
+
         // 将代理接口包装为一个 Wrapper 对象
+        // 判断proxy的类名是否包含$，如果不包含则使用导出的实现类类名，否则使用导出的接口类类名
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
 
         // JavassistProxyFactory 创建了一个继承自 AbstractProxyInvoker 类的匿名对象，并覆写了抽象方法 doInvoke。覆写后的 doInvoke

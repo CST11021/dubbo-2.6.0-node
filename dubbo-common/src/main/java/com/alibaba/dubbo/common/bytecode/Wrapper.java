@@ -40,7 +40,7 @@ import java.util.regex.Matcher;
  *
  */
 public abstract class Wrapper {
-    /** class wrapper map */
+    /** 缓存类对应的包装实例 */
     private static final Map<Class<?>, Wrapper> WRAPPER_MAP = new ConcurrentHashMap<Class<?>, Wrapper>();
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     /** Object 对象方法 */
@@ -86,35 +86,43 @@ public abstract class Wrapper {
             throw new NoSuchMethodException("Method [" + mn + "] not found.");
         }
     };
+
+    /** 用来统计包装类的个数 */
     private static AtomicLong WRAPPER_CLASS_COUNTER = new AtomicLong(0);
 
     /**
-     * get wrapper.
+     * 根据类类型返回一个包装实例
      *
-     * @param c Class instance.
+     * @param c 这里可能为导出的接口实现类，也可能为接口类
      * @return Wrapper instance(not null).
      */
     public static Wrapper getWrapper(Class<?> c) {
-        while (ClassGenerator.isDynamicClass(c)) // can not wrapper on dynamic class.
+        // 不能对动态类进行包装，这里会一直向父类查找，知道找到接口类为止
+        while (ClassGenerator.isDynamicClass(c))
             c = c.getSuperclass();
 
+        // 如果找到的是Object类，则返回OBJECT_WRAPPER
         if (c == Object.class)
             return OBJECT_WRAPPER;
 
         Wrapper ret = WRAPPER_MAP.get(c);
         if (ret == null) {
+            // 缓存里没有的话，就创建一个包装实例
             ret = makeWrapper(c);
+            // 放入缓存
             WRAPPER_MAP.put(c, ret);
         }
         return ret;
     }
 
     /**
-     * 创建一个入参 c 对应的Wrapper实例
-     * @param c
+     * 创建一个Wrapper实例
+     *
+     * @param c 要包装的接口类型
      * @return
      */
     private static Wrapper makeWrapper(Class<?> c) {
+        // 不能为原始类型创建包装器
         if (c.isPrimitive())
             throw new IllegalArgumentException("Can not create wrapper for primitive type: " + c);
 
@@ -129,10 +137,14 @@ public abstract class Wrapper {
         c2.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c3.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
 
-        Map<String, Class<?>> pts = new HashMap<String, Class<?>>(); // <property name, property types>
-        Map<String, Method> ms = new LinkedHashMap<String, Method>(); // <method desc, Method instance>
-        List<String> mns = new ArrayList<String>(); // method names.
-        List<String> dmns = new ArrayList<String>(); // declaring method names.
+        // <property name, property types>
+        Map<String, Class<?>> pts = new HashMap<String, Class<?>>();
+        // <method desc, Method instance>
+        Map<String, Method> ms = new LinkedHashMap<String, Method>();
+        // method names.
+        List<String> mns = new ArrayList<String>();
+        // declaring method names.
+        List<String> dmns = new ArrayList<String>();
 
         // get all public field.
         for (Field f : c.getFields()) {
@@ -153,7 +165,8 @@ public abstract class Wrapper {
             c3.append(" try{");
         }
         for (Method m : methods) {
-            if (m.getDeclaringClass() == Object.class) //ignore Object's method.
+            //ignore Object's method.
+            if (m.getDeclaringClass() == Object.class)
                 continue;
 
             String mn = m.getName();
@@ -224,18 +237,30 @@ public abstract class Wrapper {
 
         // make class
         long id = WRAPPER_CLASS_COUNTER.getAndIncrement();
+
         ClassGenerator cc = ClassGenerator.newInstance(cl);
+        // 设置类名
         cc.setClassName((Modifier.isPublic(c.getModifiers()) ? Wrapper.class.getName() : c.getName() + "$sw") + id);
+        // 设置父类类名
         cc.setSuperClass(Wrapper.class);
 
+        // 添加默认构造器
         cc.addDefaultConstructor();
-        cc.addField("public static String[] pns;"); // property name array.
-        cc.addField("public static " + Map.class.getName() + " pts;"); // property type map.
-        cc.addField("public static String[] mns;"); // all method name array.
-        cc.addField("public static String[] dmns;"); // declared method name array.
+
+        // 添加字段
+
+        // property name array.
+        cc.addField("public static String[] pns;");
+        // property type map.
+        cc.addField("public static " + Map.class.getName() + " pts;");
+        // all method name array.
+        cc.addField("public static String[] mns;");
+        // declared method name array.
+        cc.addField("public static String[] dmns;");
         for (int i = 0, len = ms.size(); i < len; i++)
             cc.addField("public static Class[] mts" + i + ";");
 
+        // 添加方法
         cc.addMethod("public String[] getPropertyNames(){ return pns; }");
         cc.addMethod("public boolean hasProperty(String n){ return pts.containsKey($1); }");
         cc.addMethod("public Class getPropertyType(String n){ return (Class)pts.get($1); }");
