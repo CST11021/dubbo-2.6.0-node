@@ -40,7 +40,7 @@ Dubbo允许我们使用不同的协议导出服务，也允许我们向多个注
 多协议导出：由于不同的服务在性能上适用不同协议进行传输，比如大数据用短连接协议，小数据大并发用长连接协议。比如：在使用dubbo过程中碰到了需要上传图片这样的需求，而dubbo协议适合于小数据量大并发的服务调用，像上传文件这种需求推荐使用hessian协议。
 
 ```
-比如之前hera有提供文件上传的服务，它是通过dubbo协议来调用，将文件上传到oss，然后再将下载路径保存到mysql，想这种场景起始可以使用hessian协议来导出服务。
+比如之前hera有提供文件上传的服务，它是通过dubbo协议来调用，将文件上传到oss，然后再将下载路径保存到mysql，这种场景其实可以使用hessian协议来导出服务。
 比较好的解决方式：因为dubbo协议适合于小数据量大并发的服务，所以我们只限制文件上传为30M，但是后来产测工具软件做的越来越大有的甚至达到80M的大小，我们就将oss上传的迁移到上层的业务系统，底层hera仅提供mysql的文件路径存储。
 ```
 
@@ -170,4 +170,57 @@ dubbo服务的本地暴露，显然是针对当服务消费者和服务提供者
 
 
 
+
+服务导出伪代码
+
+```java
+public void export() {
+	
+	// 1、检查必要配置有配置，比如应用端口、注册中心、协议等配置，以及<dubbo:provider/>默认的服务参数配置
+	checkConfig();
+
+	// 2、将导出的服务相关配置组装为URL对象，注意这里的url为多个，因为可能存在多个注册中心
+	List<URL> urls = loadRegistries();
+
+	// 3、遍历所有协议进行服务导出，dubbo支持多协议多注册中心
+	for (ProtocolConfig protocol : protocols) {
+		doExport(protocol, urls);
+	}
+  
+}
+
+
+pulbic void doExport(protocol, urls) {
+	
+	// 对每个url进行服务导出
+	for (URL url : urls) {
+
+		// 使用代理工厂类获取Invoker对象
+		Invoker<?> invoker = proxyFactory.getInvoker(serviceImpl, interfaceClass, url);
+
+		// 使用通信协议导出服务
+		Exporter<?> exporter = protocolExport(invoker);
+
+		// 使用注册中心导出服务
+		register(invoker);
+
+		// 将Exporter保存到内存
+		addExporter(exporter);
+	}
+
+}
+
+public Exporter protocolExport(invoker) {
+
+	// 1、创建服务key，例如：com.alibaba.dubbo.demo.DemoService:20880
+	String key = serviceKey(url);
+
+	// 2、创建Exporter
+	Exporter exporter = buildExporter(key, invoker);
+
+	// 3、启动服务，这样就可以监听来自客户端的调用请求了
+	createServer(url)
+
+}
+```
 

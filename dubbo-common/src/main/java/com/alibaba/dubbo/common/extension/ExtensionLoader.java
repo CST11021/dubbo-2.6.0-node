@@ -156,8 +156,11 @@ public class ExtensionLoader<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionLoader.class);
 
+    /** 用于保存原生SPI扩展的服务 */
     private static final String SERVICES_DIRECTORY = "META-INF/services/";
+    /** 用于保存第三方自定义的dubbo扩展服务 */
     private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
+    /** META-INF/dubbo/internal/ 目录，dubbo所有内部的实现都放在这里 */
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
