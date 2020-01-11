@@ -186,59 +186,14 @@ public class DubboProtocol extends AbstractProtocol {
         return INSTANCE;
     }
 
-    public Collection<ExchangeServer> getServers() {
-        return Collections.unmodifiableCollection(serverMap.values());
-    }
 
-    public Collection<Exporter<?>> getExporters() {
-        return Collections.unmodifiableCollection(exporterMap.values());
-    }
-
-    Map<String, Exporter<?>> getExporterMap() {
-        return exporterMap;
-    }
-
-    private boolean isClientSide(Channel channel) {
-        InetSocketAddress address = channel.getRemoteAddress();
-        URL url = channel.getUrl();
-        return url.getPort() == address.getPort() &&
-                NetUtils.filterLocalHost(channel.getUrl().getIp())
-                        .equals(NetUtils.filterLocalHost(address.getAddress().getHostAddress()));
-    }
-
-    Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
-        boolean isCallBackServiceInvoke = false;
-        boolean isStubServiceInvoke = false;
-        int port = channel.getLocalAddress().getPort();
-        String path = inv.getAttachments().get(Constants.PATH_KEY);
-        // if it's callback service on client side
-        isStubServiceInvoke = Boolean.TRUE.toString().equals(inv.getAttachments().get(Constants.STUB_EVENT_KEY));
-        if (isStubServiceInvoke) {
-            port = channel.getRemoteAddress().getPort();
-        }
-        //callback
-        isCallBackServiceInvoke = isClientSide(channel) && !isStubServiceInvoke;
-        if (isCallBackServiceInvoke) {
-            path = inv.getAttachments().get(Constants.PATH_KEY) + "." + inv.getAttachments().get(Constants.CALLBACK_SERVICE_KEY);
-            inv.getAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());
-        }
-        String serviceKey = serviceKey(port, path, inv.getAttachments().get(Constants.VERSION_KEY), inv.getAttachments().get(Constants.GROUP_KEY));
-
-        DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
-
-        if (exporter == null)
-            throw new RemotingException(channel, "Not found exported service: " + serviceKey + " in " + exporterMap.keySet() + ", may be version or group mismatch " + ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress() + ", message:" + inv);
-
-        return exporter.getInvoker();
-    }
-
-    public Collection<Invoker<?>> getInvokers() {
-        return Collections.unmodifiableCollection(invokers);
-    }
 
     public int getDefaultPort() {
         return DEFAULT_PORT;
     }
+
+
+
 
     /**
      * dubbo从要暴露的服务的URL中取得相关的配置（host，port等）进行服务端server的创建，通过
@@ -284,7 +239,6 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
         return exporter;
     }
-
     /** 开启服务，等待客户端连接 */
     private void openServer(URL url) {
         // 获取服务提供者的地址：ip:port
@@ -301,7 +255,6 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
     }
-
     /**
      * 创建一个服务对应的server，每个服务都有对应的服务来监听来自客户端的调用请求
      *
@@ -335,6 +288,17 @@ public class DubboProtocol extends AbstractProtocol {
         return server;
     }
 
+
+
+
+
+    public <T> Invoker<T> refer(Class<T> serviceType, URL url) throws RpcException {
+        optimizeSerialization(url);
+        // create rpc invoker.
+        DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
+        invokers.add(invoker);
+        return invoker;
+    }
     /**
      * 从url中解析优化序列化的类，并保存到{@link #optimizers}
      *
@@ -346,26 +310,26 @@ public class DubboProtocol extends AbstractProtocol {
         if (StringUtils.isEmpty(className) || optimizers.contains(className)) {
             return;
         }
-        
+
         logger.info("Optimizing the serialization process for Kryo, FST, etc...");
-        
+
         try {
             Class clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
             // clazz必须为SerializationOptimizer的子类
             if (!SerializationOptimizer.class.isAssignableFrom(clazz)) {
                 throw new RpcException("The serialization optimizer " + className + " isn't an instance of " + SerializationOptimizer.class.getName());
             }
-            
+
             SerializationOptimizer optimizer = (SerializationOptimizer) clazz.newInstance();
-            
+
             if (optimizer.getSerializableClasses() == null) {
                 return;
             }
-            
+
             for (Class c : optimizer.getSerializableClasses()) {
                 SerializableClassRegistry.registerClass(c);
             }
-            
+
             optimizers.add(className);
         } catch (ClassNotFoundException e) {
             throw new RpcException("Cannot find the serialization optimizer class: " + className, e);
@@ -375,15 +339,12 @@ public class DubboProtocol extends AbstractProtocol {
             throw new RpcException("Cannot instantiate the serialization optimizer class: " + className, e);
         }
     }
-
-    public <T> Invoker<T> refer(Class<T> serviceType, URL url) throws RpcException {
-        optimizeSerialization(url);
-        // create rpc invoker.
-        DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
-        invokers.add(invoker);
-        return invoker;
-    }
-
+    /**
+     * 返回用于服务调用的客户端
+     *
+     * @param url
+     * @return
+     */
     private ExchangeClient[] getClients(URL url) {
         // whether to share connection
         boolean service_share_connect = false;
@@ -404,7 +365,6 @@ public class DubboProtocol extends AbstractProtocol {
         }
         return clients;
     }
-
     /**
      * Get shared connection
      */
@@ -427,7 +387,6 @@ public class DubboProtocol extends AbstractProtocol {
             return client;
         }
     }
-
     /**
      * Create new connection
      */
@@ -461,6 +420,9 @@ public class DubboProtocol extends AbstractProtocol {
         }
         return client;
     }
+
+
+
 
     public void destroy() {
         for (String key : new ArrayList<String>(serverMap.keySet())) {
@@ -506,5 +468,53 @@ public class DubboProtocol extends AbstractProtocol {
         }
         stubServiceMethodsMap.clear();
         super.destroy();
+    }
+
+
+
+
+    public Collection<ExchangeServer> getServers() {
+        return Collections.unmodifiableCollection(serverMap.values());
+    }
+    public Collection<Exporter<?>> getExporters() {
+        return Collections.unmodifiableCollection(exporterMap.values());
+    }
+    Map<String, Exporter<?>> getExporterMap() {
+        return exporterMap;
+    }
+    Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
+        boolean isCallBackServiceInvoke = false;
+        boolean isStubServiceInvoke = false;
+        int port = channel.getLocalAddress().getPort();
+        String path = inv.getAttachments().get(Constants.PATH_KEY);
+        // if it's callback service on client side
+        isStubServiceInvoke = Boolean.TRUE.toString().equals(inv.getAttachments().get(Constants.STUB_EVENT_KEY));
+        if (isStubServiceInvoke) {
+            port = channel.getRemoteAddress().getPort();
+        }
+        //callback
+        isCallBackServiceInvoke = isClientSide(channel) && !isStubServiceInvoke;
+        if (isCallBackServiceInvoke) {
+            path = inv.getAttachments().get(Constants.PATH_KEY) + "." + inv.getAttachments().get(Constants.CALLBACK_SERVICE_KEY);
+            inv.getAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());
+        }
+        String serviceKey = serviceKey(port, path, inv.getAttachments().get(Constants.VERSION_KEY), inv.getAttachments().get(Constants.GROUP_KEY));
+
+        DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
+
+        if (exporter == null)
+            throw new RemotingException(channel, "Not found exported service: " + serviceKey + " in " + exporterMap.keySet() + ", may be version or group mismatch " + ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress() + ", message:" + inv);
+
+        return exporter.getInvoker();
+    }
+    private boolean isClientSide(Channel channel) {
+        InetSocketAddress address = channel.getRemoteAddress();
+        URL url = channel.getUrl();
+        return url.getPort() == address.getPort() &&
+                NetUtils.filterLocalHost(channel.getUrl().getIp())
+                        .equals(NetUtils.filterLocalHost(address.getAddress().getHostAddress()));
+    }
+    public Collection<Invoker<?>> getInvokers() {
+        return Collections.unmodifiableCollection(invokers);
     }
 }

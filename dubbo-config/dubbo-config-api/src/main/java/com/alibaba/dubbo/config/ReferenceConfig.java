@@ -384,7 +384,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
         } else {
-            // url 不为空，表明用户可能想进行点对点调用
+
+
+
+            // 1、url 不为空，表明用户可能想进行点对点调用
             if (url != null && url.length() > 0) {
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
@@ -400,8 +403,12 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         }
                     }
                 }
-            } else {
-                // 加载注册中心 url
+            }
+
+
+
+            // 2、加载注册中心 url
+            else {
                 // 获取注册中的配置信息:
                 // registry://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer
                 // &dubbo=2.0.0&pid=20448&registry=multicast&timestamp=1526365457306
@@ -427,12 +434,24 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
-            // 单个注册中心或服务提供者(服务直连，下同)
+
+
+
+
+
+
+
+
+            // ①单个注册中心或服务提供者(服务直连，下同)
             if (urls.size() == 1) {
                 // 调用 RegistryProtocol 的 refer 构建 Invoker 实例
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             }
-            // 如果配置了多个注册中心
+
+
+
+
+            // ②如果配置了多个注册中心
             else {
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;

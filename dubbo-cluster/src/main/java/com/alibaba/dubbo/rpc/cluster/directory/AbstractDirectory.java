@@ -42,7 +42,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDirectory.class);
 
-    /** 用来表示提供服务目标机器，可是多个 */
+    /** 用来表示提供服务目标机器，可以是多个 */
     private final URL url;
     /** Directory是用来封装同一服务接口的多个服务提供者，该字段用来标识该服务接口是否已被注销 */
     private volatile boolean destroyed = false;
@@ -78,7 +78,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
             throw new RpcException("Directory already destroyed .url: " + getUrl());
         }
 
-        // 先获取所有的服务提供者
+        // 先获取所有的服务提供者，该实现由子类扩展
         List<Invoker<T>> invokers = doList(invocation);
 
         // 遍历所有的路由规则，对Invoker进行过滤
@@ -98,6 +98,24 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
     }
     protected abstract List<Invoker<T>> doList(Invocation invocation) throws RpcException;
 
+
+
+    public void destroy() {
+        destroyed = true;
+    }
+
+
+
+    // getter and setter ...
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+    public URL getUrl() {
+        return url;
+    }
+    public List<Router> getRouters() {
+        return routers;
+    }
     protected void setRouters(List<Router> routers) {
         // copy list
         routers = routers == null ? new ArrayList<Router>() : new ArrayList<Router>(routers);
@@ -111,20 +129,6 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         routers.add(new MockInvokersSelector());
         Collections.sort(routers);
         this.routers = routers;
-    }
-
-    public void destroy() {
-        destroyed = true;
-    }
-
-    public boolean isDestroyed() {
-        return destroyed;
-    }
-    public URL getUrl() {
-        return url;
-    }
-    public List<Router> getRouters() {
-        return routers;
     }
     public URL getConsumerUrl() {
         return consumerUrl;
