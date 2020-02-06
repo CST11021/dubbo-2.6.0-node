@@ -6,7 +6,9 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 
 /**
  * @author whz
@@ -27,25 +29,37 @@ public class HessionTest {
      */
     @Test
     public void bugTest() throws IOException {
+        // 1、创建一个要序列化的实例
         UserInfo user = new UserInfo();
         user.setUsername("hello world");
         user.setPassword("buzhidao");
         user.setAge(21);
 
+        // 2、创建一个Hessian的序列化输出流实例，该实例为AbstractHessianOutput的实例
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        //Hessian的序列化输出
         HessianOutput ho = new HessianOutput(os);
+
+        // 3、进行序列化
         ho.writeObject(user);
 
         byte[] userByte = os.toByteArray();
-        ByteArrayInputStream is = new ByteArrayInputStream(userByte);
+        for (int i = 0; i < userByte.length; i++) {
+            System.out.print((char)userByte[i]);
+        }
 
 
-        //Hessian的反序列化读取对象
-        HessianInput hi = new HessianInput(is);
-        UserInfo u = (UserInfo) hi.readObject();
-        System.out.println("姓名：" + u.getUsername());// null
-        System.out.println("年龄：" + u.getAge());     // 21
+        System.out.println("\n结束");
+
+
+
+        // byte[] userByte = os.toByteArray();
+        // ByteArrayInputStream is = new ByteArrayInputStream(userByte);
+        //
+        // //Hessian的反序列化读取对象
+        // HessianInput hi = new HessianInput(is);
+        // UserInfo u = (UserInfo) hi.readObject();
+        // System.out.println("姓名：" + u.getUsername());// null
+        // System.out.println("年龄：" + u.getAge());     // 21
     }
 
 }

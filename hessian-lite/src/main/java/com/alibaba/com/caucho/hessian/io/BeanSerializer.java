@@ -61,8 +61,8 @@ import java.util.logging.Logger;
  * Serializing an object for known object types.
  */
 public class BeanSerializer extends AbstractSerializer {
-    private static final Logger log
-            = Logger.getLogger(BeanSerializer.class.getName());
+
+    private static final Logger log = Logger.getLogger(BeanSerializer.class.getName());
 
     private static final Object[] NULL_ARGS = new Object[0];
     private Method[] _methods;
@@ -146,9 +146,7 @@ public class BeanSerializer extends AbstractSerializer {
     private void introspectWriteReplace(Class cl, ClassLoader loader) {
         try {
             String className = cl.getName() + "HessianSerializer";
-
             Class serializerClass = Class.forName(className, false, loader);
-
             Object serializerObject = serializerClass.newInstance();
 
             Method writeReplace = getWriteReplace(serializerClass, cl);
@@ -177,8 +175,7 @@ public class BeanSerializer extends AbstractSerializer {
             for (int i = 0; i < methods.length; i++) {
                 Method method = methods[i];
 
-                if (method.getName().equals("writeReplace") &&
-                        method.getParameterTypes().length == 0)
+                if (method.getName().equals("writeReplace") && method.getParameterTypes().length == 0)
                     return method;
             }
         }
@@ -202,8 +199,7 @@ public class BeanSerializer extends AbstractSerializer {
         return null;
     }
 
-    public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException {
+    public void writeObject(Object obj, AbstractHessianOutput out) throws IOException {
         if (out.addRef(obj))
             return;
 

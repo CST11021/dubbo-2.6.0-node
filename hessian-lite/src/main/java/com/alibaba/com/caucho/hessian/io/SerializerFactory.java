@@ -85,25 +85,37 @@ import java.util.logging.Logger;
 import static com.alibaba.com.caucho.hessian.io.java8.Java8TimeSerializer.create;
 
 /**
- * Factory for returning serialization methods.
+ * 返回序列化方法的工厂：
+ * SerializerFactory继承AbstractSerializerFactory，而且在SerializerFactory有很多静态map用来存放类与序列化和反序列化工具类的映射，
+ * 这样如果已经用过的序列化工具就可以直接拿出来用，不必再重新实例化工具类。
+ *
+ * 在SerializerFactory中，实现了抽象类的getSerializer方法，根据不同的需要被序列化的类来获得不同的序列化工具，一共有17种序列化工具，
+ * hessian为不同的类型的java对象实现了不同的序列化工具，默认的序列化工具是JavaSerializer
  */
 public class SerializerFactory extends AbstractSerializerFactory {
-    private static final Logger log
-            = Logger.getLogger(SerializerFactory.class.getName());
 
-    private static Deserializer OBJECT_DESERIALIZER
-            = new BasicDeserializer(BasicDeserializer.OBJECT);
+    private static final Logger log = Logger.getLogger(SerializerFactory.class.getName());
 
+    private static Deserializer OBJECT_DESERIALIZER = new BasicDeserializer(BasicDeserializer.OBJECT);
+
+    /** 缓存Class对应的Serializer实例 */
     private static HashMap _staticSerializerMap;
+    /** 缓存Class对应的Deserializer实例 */
     private static HashMap _staticDeserializerMap;
+    /** 缓存Class类型名对应的Deserializer实例 */
     private static HashMap _staticTypeMap;
 
+    // 初始化：_staticSerializerMap、_staticDeserializerMap和_staticTypeMap
     static {
         _staticSerializerMap = new HashMap();
         _staticDeserializerMap = new HashMap();
         _staticTypeMap = new HashMap();
 
+        // void类型
+
         addBasic(void.class, "void", BasicSerializer.NULL);
+
+        // 基础包装类型
 
         addBasic(Boolean.class, "boolean", BasicSerializer.BOOLEAN);
         addBasic(Byte.class, "byte", BasicSerializer.BYTE);
@@ -117,6 +129,8 @@ public class SerializerFactory extends AbstractSerializerFactory {
         addBasic(Object.class, "object", BasicSerializer.OBJECT);
         addBasic(java.util.Date.class, "date", BasicSerializer.DATE);
 
+        // 基础类型
+
         addBasic(boolean.class, "boolean", BasicSerializer.BOOLEAN);
         addBasic(byte.class, "byte", BasicSerializer.BYTE);
         addBasic(short.class, "short", BasicSerializer.SHORT);
@@ -125,6 +139,8 @@ public class SerializerFactory extends AbstractSerializerFactory {
         addBasic(float.class, "float", BasicSerializer.FLOAT);
         addBasic(double.class, "double", BasicSerializer.DOUBLE);
         addBasic(char.class, "char", BasicSerializer.CHARACTER);
+
+        // 数组类型
 
         addBasic(boolean[].class, "[boolean", BasicSerializer.BOOLEAN_ARRAY);
         addBasic(byte[].class, "[byte", BasicSerializer.BYTE_ARRAY);
@@ -138,29 +154,24 @@ public class SerializerFactory extends AbstractSerializerFactory {
         addBasic(Object[].class, "[object", BasicSerializer.OBJECT_ARRAY);
 
         _staticSerializerMap.put(Class.class, new ClassSerializer());
-
         _staticDeserializerMap.put(Number.class, new BasicDeserializer(BasicSerializer.NUMBER));
-
         _staticSerializerMap.put(BigDecimal.class, new StringValueSerializer());
+
         try {
-            _staticDeserializerMap.put(BigDecimal.class,
-                    new StringValueDeserializer(BigDecimal.class));
-            _staticDeserializerMap.put(BigInteger.class,
-                    new BigIntegerDeserializer());
+            _staticDeserializerMap.put(BigDecimal.class, new StringValueDeserializer(BigDecimal.class));
+            _staticDeserializerMap.put(BigInteger.class, new BigIntegerDeserializer());
         } catch (Throwable e) {
         }
 
         _staticSerializerMap.put(File.class, new StringValueSerializer());
         try {
-            _staticDeserializerMap.put(File.class,
-                    new StringValueDeserializer(File.class));
+            _staticDeserializerMap.put(File.class, new StringValueDeserializer(File.class));
         } catch (Throwable e) {
         }
 
         _staticSerializerMap.put(ObjectName.class, new StringValueSerializer());
         try {
-            _staticDeserializerMap.put(ObjectName.class,
-                    new StringValueDeserializer(ObjectName.class));
+            _staticDeserializerMap.put(ObjectName.class, new StringValueDeserializer(ObjectName.class));
         } catch (Throwable e) {
         }
 
@@ -168,18 +179,13 @@ public class SerializerFactory extends AbstractSerializerFactory {
         _staticSerializerMap.put(java.sql.Time.class, new SqlDateSerializer());
         _staticSerializerMap.put(java.sql.Timestamp.class, new SqlDateSerializer());
 
-        _staticSerializerMap.put(java.io.InputStream.class,
-                new InputStreamSerializer());
-        _staticDeserializerMap.put(java.io.InputStream.class,
-                new InputStreamDeserializer());
+        _staticSerializerMap.put(java.io.InputStream.class, new InputStreamSerializer());
+        _staticDeserializerMap.put(java.io.InputStream.class, new InputStreamDeserializer());
 
         try {
-            _staticDeserializerMap.put(java.sql.Date.class,
-                    new SqlDateDeserializer(java.sql.Date.class));
-            _staticDeserializerMap.put(java.sql.Time.class,
-                    new SqlDateDeserializer(java.sql.Time.class));
-            _staticDeserializerMap.put(java.sql.Timestamp.class,
-                    new SqlDateDeserializer(java.sql.Timestamp.class));
+            _staticDeserializerMap.put(java.sql.Date.class, new SqlDateDeserializer(java.sql.Date.class));
+            _staticDeserializerMap.put(java.sql.Time.class, new SqlDateDeserializer(java.sql.Time.class));
+            _staticDeserializerMap.put(java.sql.Timestamp.class, new SqlDateDeserializer(java.sql.Timestamp.class));
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -192,6 +198,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
         } catch (Throwable e) {
         }
 
+        // 添加java8中时间序列化处理类
         try {
             if (isJava8()) {
                 _staticSerializerMap.put(Class.forName("java.time.LocalTime"), create(LocalTimeHandle.class));
@@ -216,39 +223,216 @@ public class SerializerFactory extends AbstractSerializerFactory {
         }
     }
 
+    /** 默认的Serializer，默认为JavaSerializer，一些自定义的类类型，比如User等都会返回默认的 */
     protected Serializer _defaultSerializer;
 
-    // Additional factories
+    /** 额外的AbstractSerializerFactory工厂，一般为空 */
     protected ArrayList _factories = new ArrayList();
 
+    /** 处理集合类型的序列化 */
     protected CollectionSerializer _collectionSerializer;
+    /** 处理Map类型的序列化 */
     protected MapSerializer _mapSerializer;
+
+    /** 有时序列化，需要实例化一个类 */
     private ClassLoader _loader;
     private Deserializer _hashMapDeserializer;
     private Deserializer _arrayListDeserializer;
+
+    /** 每次获取类对应的Serializer后，都会缓存起来 */
     private HashMap _cachedSerializerMap;
+    /** 每次获取类对应的Deserializer后，都会缓存起来 */
     private HashMap _cachedDeserializerMap;
+    /** 每次获取类对应的Deserializer后，都会缓存起来 */
     private HashMap _cachedTypeDeserializerMap;
+
+    /** 表示是否允许序列化的类型不继承Serializable */
     private boolean _isAllowNonSerializable;
+
+
+
+    // 构造器
 
     public SerializerFactory() {
         this(Thread.currentThread().getContextClassLoader());
     }
-
     public SerializerFactory(ClassLoader loader) {
         _loader = loader;
     }
 
-    private static void addBasic(Class cl, String typeName, int type) {
-        _staticSerializerMap.put(cl, new BasicSerializer(type));
 
-        Deserializer deserializer = new BasicDeserializer(type);
-        _staticDeserializerMap.put(cl, deserializer);
-        _staticTypeMap.put(typeName, deserializer);
+
+    /**
+     * 根据类来决定用哪种序列化工具类。
+     * 根据class返回一个Serializer实例，实现了Serializer接口的类才可以被序列化（_isAllowNonSerializable可以控制，一般情况下需要实现该接口）
+     *
+     * @param cl 需要序列化的对象的类
+     * @return
+     */
+    public Serializer getSerializer(Class cl) throws HessianProtocolException {
+        Serializer serializer;
+
+        // 1、先从缓存获取对应的Serializer实例，如果是基础类型的一般可以从该缓存中获取到，如果是自定义的类类型比如User，则返回为null
+        serializer = (Serializer) _staticSerializerMap.get(cl);
+        if (serializer != null)
+            return serializer;
+
+        // 2、从_cachedSerializerMap获取，看看这个类之前是否序列化过
+        if (_cachedSerializerMap != null) {
+            synchronized (_cachedSerializerMap) {
+                serializer = (Serializer) _cachedSerializerMap.get(cl);
+            }
+
+            if (serializer != null)
+                return serializer;
+        }
+
+        // 遍历工厂，看看能不能获取到对应的Serializer，一般扩展工厂都为空
+        for (int i = 0; serializer == null && _factories != null && i < _factories.size(); i++) {
+            AbstractSerializerFactory factory;
+            factory = (AbstractSerializerFactory) _factories.get(i);
+            serializer = factory.getSerializer(cl);
+        }
+
+
+
+        if (serializer != null) {
+
+        }
+        //must before "else if (JavaSerializer.getWriteReplace(cl) != null)"
+        else if (isZoneId(cl))
+            serializer = ZoneIdSerializer.getInstance();
+        else if (isEnumSet(cl))
+            serializer = EnumSetSerializer.getInstance();
+        else if (JavaSerializer.getWriteReplace(cl) != null)
+            serializer = new JavaSerializer(cl, _loader);
+        else if (HessianRemoteObject.class.isAssignableFrom(cl))
+            serializer = new RemoteSerializer();
+        else if (Map.class.isAssignableFrom(cl)) {
+            if (_mapSerializer == null)
+                _mapSerializer = new MapSerializer();
+            serializer = _mapSerializer;
+        } else if (Collection.class.isAssignableFrom(cl)) {
+            if (_collectionSerializer == null) {
+                _collectionSerializer = new CollectionSerializer();
+            }
+            serializer = _collectionSerializer;
+        } else if (cl.isArray())
+            serializer = new ArraySerializer();
+        else if (Throwable.class.isAssignableFrom(cl))
+            serializer = new ThrowableSerializer(cl, getClassLoader());
+        else if (InputStream.class.isAssignableFrom(cl))
+            serializer = new InputStreamSerializer();
+        else if (Iterator.class.isAssignableFrom(cl))
+            serializer = IteratorSerializer.create();
+        else if (Enumeration.class.isAssignableFrom(cl))
+            serializer = EnumerationSerializer.create();
+        else if (Calendar.class.isAssignableFrom(cl))
+            serializer = CalendarSerializer.create();
+        else if (Locale.class.isAssignableFrom(cl))
+            serializer = LocaleSerializer.create();
+        else if (Enum.class.isAssignableFrom(cl))
+            serializer = new EnumSerializer(cl);
+
+
+
+
+
+        // 上面的都获取不到serializer，则使用默认的序列化工具
+        if (serializer == null)
+            serializer = getDefaultSerializer(cl);
+
+        // 返回前添加到缓存
+        if (_cachedSerializerMap == null)
+            _cachedSerializerMap = new HashMap(8);
+        synchronized (_cachedSerializerMap) {
+            _cachedSerializerMap.put(cl, serializer);
+        }
+
+        return serializer;
     }
 
-    public ClassLoader getClassLoader() {
-        return _loader;
+    /**
+     * 根据类来决定用哪种反序列化工具类。
+     * 根据class返回一个Serializer实例，实现了Serializer接口的类才可以被反序列化（_isAllowNonSerializable可以控制，一般情况下需要实现该接口）
+     *
+     * @param cl 需要反序列化的对象的类
+     * @return
+     */
+    public Deserializer getDeserializer(Class cl) throws HessianProtocolException {
+        Deserializer deserializer;
+
+        // 1、先从静态缓存里获取
+        deserializer = (Deserializer) _staticDeserializerMap.get(cl);
+        if (deserializer != null)
+            return deserializer;
+
+        if (_cachedDeserializerMap != null) {
+            synchronized (_cachedDeserializerMap) {
+                deserializer = (Deserializer) _cachedDeserializerMap.get(cl);
+            }
+            if (deserializer != null)
+                return deserializer;
+        }
+
+        // 一般扩展工厂都为空
+        for (int i = 0; deserializer == null && _factories != null && i < _factories.size(); i++) {
+            AbstractSerializerFactory factory;
+            factory = (AbstractSerializerFactory) _factories.get(i);
+            deserializer = factory.getDeserializer(cl);
+        }
+
+
+        if (deserializer != null) {
+        } else if (Collection.class.isAssignableFrom(cl))
+            deserializer = new CollectionDeserializer(cl);
+        else if (Map.class.isAssignableFrom(cl))
+            deserializer = new MapDeserializer(cl);
+        else if (cl.isInterface())
+            deserializer = new ObjectDeserializer(cl);
+        else if (cl.isArray())
+            deserializer = new ArrayDeserializer(cl.getComponentType());
+        else if (Enumeration.class.isAssignableFrom(cl))
+            deserializer = EnumerationDeserializer.create();
+        else if (Enum.class.isAssignableFrom(cl))
+            deserializer = new EnumDeserializer(cl);
+        else if (Class.class.equals(cl))
+            deserializer = new ClassDeserializer(_loader);
+        else
+            deserializer = getDefaultDeserializer(cl);
+
+
+        // 确定了Deserializer后，缓存起来
+        if (_cachedDeserializerMap == null)
+            _cachedDeserializerMap = new HashMap(8);
+        synchronized (_cachedDeserializerMap) {
+            _cachedDeserializerMap.put(cl, deserializer);
+        }
+
+        return deserializer;
+    }
+
+
+
+
+
+    /**
+     * 添加基础类型对应序列化实例和反序列化工具类的实例
+     *
+     * @param cl            基础类型
+     * @param typeName      类型名称
+     * @param type          类型值，每个基础类型都有对应的值
+     */
+    private static void addBasic(Class cl, String typeName, int type) {
+        // 1、添加类型对应的Serializer实例
+        _staticSerializerMap.put(cl, new BasicSerializer(type));
+
+        // 2、添加类型对应的Deserializer实例
+        Deserializer deserializer = new BasicDeserializer(type);
+        _staticDeserializerMap.put(cl, deserializer);
+
+        // 3、添加类型名对应的Deserializer实例
+        _staticTypeMap.put(typeName, deserializer);
     }
 
     /**
@@ -288,187 +472,21 @@ public class SerializerFactory extends AbstractSerializerFactory {
     }
 
     /**
-     * Returns the serializer for a class.
+     * 返回默认的Serializer，默认为JavaSerializer
      *
-     * @param cl the class of the object that needs to be serialized.
-     * @return a serializer object for the serialization.
-     */
-    public Serializer getSerializer(Class cl)
-            throws HessianProtocolException {
-        Serializer serializer;
-
-        serializer = (Serializer) _staticSerializerMap.get(cl);
-        if (serializer != null)
-            return serializer;
-
-        if (_cachedSerializerMap != null) {
-            synchronized (_cachedSerializerMap) {
-                serializer = (Serializer) _cachedSerializerMap.get(cl);
-            }
-
-            if (serializer != null)
-                return serializer;
-        }
-
-        for (int i = 0;
-             serializer == null && _factories != null && i < _factories.size();
-             i++) {
-            AbstractSerializerFactory factory;
-
-            factory = (AbstractSerializerFactory) _factories.get(i);
-
-            serializer = factory.getSerializer(cl);
-        }
-
-        if (serializer != null) {
-
-        } else if (isZoneId(cl)) //must before "else if (JavaSerializer.getWriteReplace(cl) != null)"
-            serializer = ZoneIdSerializer.getInstance();
-        else if (isEnumSet(cl))
-            serializer = EnumSetSerializer.getInstance();
-        else if (JavaSerializer.getWriteReplace(cl) != null)
-            serializer = new JavaSerializer(cl, _loader);
-
-        else if (HessianRemoteObject.class.isAssignableFrom(cl))
-            serializer = new RemoteSerializer();
-
-//    else if (BurlapRemoteObject.class.isAssignableFrom(cl))
-//      serializer = new RemoteSerializer();
-
-        else if (Map.class.isAssignableFrom(cl)) {
-            if (_mapSerializer == null)
-                _mapSerializer = new MapSerializer();
-
-            serializer = _mapSerializer;
-        } else if (Collection.class.isAssignableFrom(cl)) {
-            if (_collectionSerializer == null) {
-                _collectionSerializer = new CollectionSerializer();
-            }
-
-            serializer = _collectionSerializer;
-        } else if (cl.isArray())
-            serializer = new ArraySerializer();
-
-        else if (Throwable.class.isAssignableFrom(cl))
-            serializer = new ThrowableSerializer(cl, getClassLoader());
-
-        else if (InputStream.class.isAssignableFrom(cl))
-            serializer = new InputStreamSerializer();
-
-        else if (Iterator.class.isAssignableFrom(cl))
-            serializer = IteratorSerializer.create();
-
-        else if (Enumeration.class.isAssignableFrom(cl))
-            serializer = EnumerationSerializer.create();
-
-        else if (Calendar.class.isAssignableFrom(cl))
-            serializer = CalendarSerializer.create();
-
-        else if (Locale.class.isAssignableFrom(cl))
-            serializer = LocaleSerializer.create();
-
-        else if (Enum.class.isAssignableFrom(cl))
-            serializer = new EnumSerializer(cl);
-
-        if (serializer == null)
-            serializer = getDefaultSerializer(cl);
-
-        if (_cachedSerializerMap == null)
-            _cachedSerializerMap = new HashMap(8);
-
-        synchronized (_cachedSerializerMap) {
-            _cachedSerializerMap.put(cl, serializer);
-        }
-
-        return serializer;
-    }
-
-    /**
-     * Returns the default serializer for a class that isn't matched
-     * directly.  Application can override this method to produce
-     * bean-style serialization instead of field serialization.
-     *
-     * @param cl the class of the object that needs to be serialized.
-     * @return a serializer object for the serialization.
+     * @param cl
+     * @return
      */
     protected Serializer getDefaultSerializer(Class cl) {
         if (_defaultSerializer != null)
             return _defaultSerializer;
 
-        if (!Serializable.class.isAssignableFrom(cl)
-                && !_isAllowNonSerializable) {
+        // 序列化类一定要继承Serializable
+        if (!Serializable.class.isAssignableFrom(cl) && !_isAllowNonSerializable) {
             throw new IllegalStateException("Serialized class " + cl.getName() + " must implement java.io.Serializable");
         }
 
         return new JavaSerializer(cl, _loader);
-    }
-
-    /**
-     * Returns the deserializer for a class.
-     *
-     * @param cl the class of the object that needs to be deserialized.
-     * @return a deserializer object for the serialization.
-     */
-    public Deserializer getDeserializer(Class cl)
-            throws HessianProtocolException {
-        Deserializer deserializer;
-
-        deserializer = (Deserializer) _staticDeserializerMap.get(cl);
-        if (deserializer != null)
-            return deserializer;
-
-        if (_cachedDeserializerMap != null) {
-            synchronized (_cachedDeserializerMap) {
-                deserializer = (Deserializer) _cachedDeserializerMap.get(cl);
-            }
-
-            if (deserializer != null)
-                return deserializer;
-        }
-
-
-        for (int i = 0;
-             deserializer == null && _factories != null && i < _factories.size();
-             i++) {
-            AbstractSerializerFactory factory;
-            factory = (AbstractSerializerFactory) _factories.get(i);
-
-            deserializer = factory.getDeserializer(cl);
-        }
-
-        if (deserializer != null) {
-        } else if (Collection.class.isAssignableFrom(cl))
-            deserializer = new CollectionDeserializer(cl);
-
-        else if (Map.class.isAssignableFrom(cl))
-            deserializer = new MapDeserializer(cl);
-
-        else if (cl.isInterface())
-            deserializer = new ObjectDeserializer(cl);
-
-        else if (cl.isArray())
-            deserializer = new ArrayDeserializer(cl.getComponentType());
-
-        else if (Enumeration.class.isAssignableFrom(cl))
-            deserializer = EnumerationDeserializer.create();
-
-        else if (Enum.class.isAssignableFrom(cl))
-            deserializer = new EnumDeserializer(cl);
-
-        else if (Class.class.equals(cl))
-            deserializer = new ClassDeserializer(_loader);
-
-        else
-            deserializer = getDefaultDeserializer(cl);
-
-        if (_cachedDeserializerMap == null)
-            _cachedDeserializerMap = new HashMap(8);
-
-        synchronized (_cachedDeserializerMap) {
-            _cachedDeserializerMap.put(cl, deserializer);
-        }
-
-        return deserializer;
     }
 
     /**
@@ -486,8 +504,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a list.
      */
-    public Object readList(AbstractHessianInput in, int length, String type)
-            throws HessianProtocolException, IOException {
+    public Object readList(AbstractHessianInput in, int length, String type) throws HessianProtocolException, IOException {
         Deserializer deserializer = getDeserializer(type);
 
         if (deserializer != null)
@@ -499,8 +516,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Object readMap(AbstractHessianInput in, String type)
-            throws HessianProtocolException, IOException {
+    public Object readMap(AbstractHessianInput in, String type) throws HessianProtocolException, IOException {
         Deserializer deserializer = getDeserializer(type);
 
         if (deserializer != null)
@@ -517,10 +533,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Object readObject(AbstractHessianInput in,
-                             String type,
-                             String[] fieldNames)
-            throws HessianProtocolException, IOException {
+    public Object readObject(AbstractHessianInput in, String type, String[] fieldNames) throws HessianProtocolException, IOException {
         Deserializer deserializer = getDeserializer(type);
 
         if (deserializer != null)
@@ -537,8 +550,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Deserializer getObjectDeserializer(String type, Class cl)
-            throws HessianProtocolException {
+    public Deserializer getObjectDeserializer(String type, Class cl) throws HessianProtocolException {
         Deserializer reader = getObjectDeserializer(type);
 
         if (cl == null
@@ -559,8 +571,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Deserializer getObjectDeserializer(String type)
-            throws HessianProtocolException {
+    public Deserializer getObjectDeserializer(String type) throws HessianProtocolException {
         Deserializer deserializer = getDeserializer(type);
 
         if (deserializer != null)
@@ -577,8 +588,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Deserializer getListDeserializer(String type, Class cl)
-            throws HessianProtocolException {
+    public Deserializer getListDeserializer(String type, Class cl) throws HessianProtocolException {
         Deserializer reader = getListDeserializer(type);
 
         if (cl == null
@@ -598,8 +608,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Reads the object as a map.
      */
-    public Deserializer getListDeserializer(String type)
-            throws HessianProtocolException {
+    public Deserializer getListDeserializer(String type) throws HessianProtocolException {
         Deserializer deserializer = getDeserializer(type);
 
         if (deserializer != null)
@@ -616,8 +625,7 @@ public class SerializerFactory extends AbstractSerializerFactory {
     /**
      * Returns a deserializer based on a string type.
      */
-    public Deserializer getDeserializer(String type)
-            throws HessianProtocolException {
+    public Deserializer getDeserializer(String type) throws HessianProtocolException {
         if (type == null || type.equals(""))
             return null;
 
@@ -681,12 +689,16 @@ public class SerializerFactory extends AbstractSerializerFactory {
     }
 
     /**
-     * check if the environment is java 8 or beyond
+     * 检查是否为java8环境
      *
      * @return if on java 8
      */
     private static boolean isJava8() {
         String javaVersion = System.getProperty("java.specification.version");
         return Double.valueOf(javaVersion) >= 1.8;
+    }
+
+    public ClassLoader getClassLoader() {
+        return _loader;
     }
 }

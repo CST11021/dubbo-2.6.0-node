@@ -52,9 +52,14 @@ import java.io.IOException;
 import java.util.Date;
 
 /**
- * Serializing an object for known object types.
+ * 序列化java的基础类型：小类型都会转为大类型进行处理
  */
 public class BasicSerializer extends AbstractSerializer {
+
+    // ------------
+    // java基础类型
+    // ------------
+
     public static final int NULL = 0;
     public static final int BOOLEAN = NULL + 1;
     public static final int BYTE = BOOLEAN + 1;
@@ -70,6 +75,10 @@ public class BasicSerializer extends AbstractSerializer {
     public static final int NUMBER = DATE + 1;
     public static final int OBJECT = NUMBER + 1;
 
+    // ------------
+    // 以下是数组类型
+    // ------------
+
     public static final int BOOLEAN_ARRAY = OBJECT + 1;
     public static final int BYTE_ARRAY = BOOLEAN_ARRAY + 1;
     public static final int SHORT_ARRAY = BYTE_ARRAY + 1;
@@ -81,47 +90,51 @@ public class BasicSerializer extends AbstractSerializer {
     public static final int STRING_ARRAY = CHARACTER_ARRAY + 1;
     public static final int OBJECT_ARRAY = STRING_ARRAY + 1;
 
+    /** 每种类型的对应的值，这里用整数表示 */
     private int code;
 
     public BasicSerializer(int code) {
         this.code = code;
     }
 
-    public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException {
+    /**
+     *
+     * @param obj   要被序列化的对象，该对象类型对应的{@link #code}的类型
+     * @param out   输出流
+     * @throws IOException
+     */
+    public void writeObject(Object obj, AbstractHessianOutput out) throws IOException {
         switch (code) {
+
+            // 基础类型处理：
+
             case BOOLEAN:
                 out.writeBoolean(((Boolean) obj).booleanValue());
                 break;
-
             case BYTE:
             case SHORT:
             case INTEGER:
                 out.writeInt(((Number) obj).intValue());
                 break;
-
             case LONG:
                 out.writeLong(((Number) obj).longValue());
                 break;
-
             case FLOAT:
             case DOUBLE:
                 out.writeDouble(((Number) obj).doubleValue());
                 break;
-
             case CHARACTER:
             case CHARACTER_OBJECT:
                 out.writeString(String.valueOf(obj));
                 break;
-
             case STRING:
                 out.writeString((String) obj);
                 break;
-
             case DATE:
                 out.writeUTCDate(((Date) obj).getTime());
                 break;
 
+            // 处理数组类型：
             case BOOLEAN_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -136,13 +149,11 @@ public class BasicSerializer extends AbstractSerializer {
 
                 break;
             }
-
             case BYTE_ARRAY: {
                 byte[] data = (byte[]) obj;
                 out.writeBytes(data, 0, data.length);
                 break;
             }
-
             case SHORT_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -157,7 +168,6 @@ public class BasicSerializer extends AbstractSerializer {
                     out.writeListEnd();
                 break;
             }
-
             case INTEGER_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -174,7 +184,6 @@ public class BasicSerializer extends AbstractSerializer {
 
                 break;
             }
-
             case LONG_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -190,7 +199,6 @@ public class BasicSerializer extends AbstractSerializer {
                     out.writeListEnd();
                 break;
             }
-
             case FLOAT_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -206,7 +214,6 @@ public class BasicSerializer extends AbstractSerializer {
                     out.writeListEnd();
                 break;
             }
-
             case DOUBLE_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -221,7 +228,6 @@ public class BasicSerializer extends AbstractSerializer {
                     out.writeListEnd();
                 break;
             }
-
             case STRING_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -238,13 +244,11 @@ public class BasicSerializer extends AbstractSerializer {
                     out.writeListEnd();
                 break;
             }
-
             case CHARACTER_ARRAY: {
                 char[] data = (char[]) obj;
                 out.writeString(data, 0, data.length);
                 break;
             }
-
             case OBJECT_ARRAY: {
                 if (out.addRef(obj))
                     return;
@@ -262,6 +266,7 @@ public class BasicSerializer extends AbstractSerializer {
                 break;
             }
 
+            // 处理null
             case NULL:
                 out.writeNull();
                 break;

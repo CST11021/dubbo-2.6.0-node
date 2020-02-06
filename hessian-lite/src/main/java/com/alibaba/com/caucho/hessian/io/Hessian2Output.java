@@ -159,7 +159,6 @@ public class Hessian2Output extends AbstractHessianOutput implements Hessian2Con
      * C
      * </pre></code>
      *
-     * @param method the method name to call.
      */
     public void startCall() throws IOException {
         flushIfFull();
@@ -352,7 +351,10 @@ public class Hessian2Output extends AbstractHessianOutput implements Hessian2Con
     }
 
     /**
-     * Writes any object to the output stream.
+     * 将一个对象写到输出流程中
+     *
+     * @param object            需要序列化的对象
+     * @throws IOException
      */
     public void writeObject(Object object) throws IOException {
         if (object == null) {
@@ -360,10 +362,9 @@ public class Hessian2Output extends AbstractHessianOutput implements Hessian2Con
             return;
         }
 
+        // 根据对象获取序列化的方法，然后写到输出流
         Serializer serializer;
-
         serializer = findSerializerFactory().getSerializer(object.getClass());
-
         serializer.writeObject(object, this);
     }
 
@@ -539,6 +540,10 @@ public class Hessian2Output extends AbstractHessianOutput implements Hessian2Con
             writeString(type);
         }
     }
+
+
+
+
 
     /**
      * Writes a boolean value to the stream.  The boolean will be written

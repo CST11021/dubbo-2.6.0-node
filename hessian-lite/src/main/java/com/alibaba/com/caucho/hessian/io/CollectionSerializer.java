@@ -55,9 +55,10 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Serializing a JDK 1.2 Collection.
+ * 序列化集合类
  */
 public class CollectionSerializer extends AbstractSerializer {
+
     private boolean _sendJavaType = true;
 
     /**
@@ -74,8 +75,7 @@ public class CollectionSerializer extends AbstractSerializer {
         _sendJavaType = sendJavaType;
     }
 
-    public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException {
+    public void writeObject(Object obj, AbstractHessianOutput out) throws IOException {
         if (out.addRef(obj))
             return;
 
@@ -83,7 +83,6 @@ public class CollectionSerializer extends AbstractSerializer {
 
         Class cl = obj.getClass();
         boolean hasEnd;
-
         if (cl.equals(ArrayList.class)
                 || !_sendJavaType
                 || !Serializable.class.isAssignableFrom(cl))
@@ -91,10 +90,10 @@ public class CollectionSerializer extends AbstractSerializer {
         else
             hasEnd = out.writeListBegin(list.size(), obj.getClass().getName());
 
+        // 将集合里的元素一个一个进行序列化
         Iterator iter = list.iterator();
         while (iter.hasNext()) {
             Object value = iter.next();
-
             out.writeObject(value);
         }
 

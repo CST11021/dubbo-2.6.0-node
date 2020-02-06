@@ -52,12 +52,19 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * Serializing an object.
+ * 序列化一个对象，所有需要序列化工具类都自继承该类
  */
 abstract public class AbstractSerializer implements Serializer {
-    protected static final Logger log
-            = Logger.getLogger(AbstractSerializer.class.getName());
 
-    abstract public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException;
+    protected static final Logger log = Logger.getLogger(AbstractSerializer.class.getName());
+
+    /**
+     * 序列化对象，将序列化后的字节写入out
+     *
+     * @param obj   要被序列化的对象
+     * @param out   输出流
+     * @throws IOException
+     */
+    abstract public void writeObject(Object obj, AbstractHessianOutput out) throws IOException;
+
 }

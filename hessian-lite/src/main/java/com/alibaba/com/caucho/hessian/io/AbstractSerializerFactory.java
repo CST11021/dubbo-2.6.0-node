@@ -49,24 +49,35 @@
 package com.alibaba.com.caucho.hessian.io;
 
 /**
- * Factory for returning serialization methods.
+ * 用于返回序列化方法的工厂，继承关系如下：
+ *
+ * AbstractSerializerFactory
+ *
+ *  -> SerializerFactory
+ *      -> BeanSerializerFactory
+ *      -> Hessian2SerializerFactory
+ *
+ *  -> ExtSerializerFactory
+ *
+ *  Hessian 1.0和2.0的都工厂都差不多，只需关注SerializerFactory即可
  */
 abstract public class AbstractSerializerFactory {
-    /**
-     * Returns the serializer for a class.
-     *
-     * @param cl the class of the object that needs to be serialized.
-     * @return a serializer object for the serialization.
-     */
-    abstract public Serializer getSerializer(Class cl)
-            throws HessianProtocolException;
 
     /**
-     * Returns the deserializer for a class.
+     * 根据类来决定用哪种序列化工具类。
+     * 根据class返回一个Serializer实例，实现了Serializer接口的类才可以被序列化
      *
-     * @param cl the class of the object that needs to be deserialized.
-     * @return a deserializer object for the serialization.
+     * @param cl 需要序列化的对象的类
+     * @return
      */
-    abstract public Deserializer getDeserializer(Class cl)
-            throws HessianProtocolException;
+    abstract public Serializer getSerializer(Class cl) throws HessianProtocolException;
+
+    /**
+     * 根据类来决定用哪种反序列化工具类。
+     * 根据class返回一个Serializer实例，实现了Serializer接口的类才可以被反序列化
+     *
+     * @param cl 需要反序列化的对象的类
+     * @return
+     */
+    abstract public Deserializer getDeserializer(Class cl) throws HessianProtocolException;
 }

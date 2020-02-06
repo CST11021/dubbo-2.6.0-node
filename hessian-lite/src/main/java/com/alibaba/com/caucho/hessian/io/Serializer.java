@@ -51,8 +51,17 @@ package com.alibaba.com.caucho.hessian.io;
 import java.io.IOException;
 
 /**
- * Serializing an object.
+ * 序列化一个对象，所有序列化工具类都实现了该接口
  */
 public interface Serializer {
+
+    /**
+     * 序列化对象，将序列化后的字节写入out
+     *
+     * @param obj   要被序列化的对象
+     * @param out   输出流
+     * @throws IOException
+     */
     public void writeObject(Object obj, AbstractHessianOutput out) throws IOException;
+
 }

@@ -55,6 +55,7 @@ import java.lang.reflect.Method;
  * Serializing an object for known object types.
  */
 public class EnumSerializer extends AbstractSerializer {
+
     private Method _name;
 
     public EnumSerializer(Class cl) {
@@ -69,8 +70,7 @@ public class EnumSerializer extends AbstractSerializer {
         }
     }
 
-    public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException {
+    public void writeObject(Object obj, AbstractHessianOutput out) throws IOException {
         if (out.addRef(obj))
             return;
 

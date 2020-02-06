@@ -23,6 +23,11 @@ import java.lang.reflect.Constructor;
 import com.alibaba.com.caucho.hessian.io.AbstractHessianOutput;
 import com.alibaba.com.caucho.hessian.io.AbstractSerializer;
 
+/**
+ * java8时间相关的序列化类
+ *
+ * @param <T>
+ */
 public class Java8TimeSerializer<T> extends AbstractSerializer {
 
     // Type of handle

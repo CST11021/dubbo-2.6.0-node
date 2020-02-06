@@ -83,6 +83,7 @@ import java.lang.reflect.Modifier;
  * </pre>
  */
 public class HessianSerializerOutput extends HessianOutput {
+
     /**
      * Creates a new Hessian output stream, initialized with an
      * underlying output stream.
@@ -102,10 +103,9 @@ public class HessianSerializerOutput extends HessianOutput {
     /**
      * Applications which override this can do custom serialization.
      *
-     * @param object the object to write.
+     * @param obj the object to write.
      */
-    public void writeObjectImpl(Object obj)
-            throws IOException {
+    public void writeObjectImpl(Object obj) throws IOException {
         Class cl = obj.getClass();
 
         try {
@@ -140,4 +140,5 @@ public class HessianSerializerOutput extends HessianOutput {
             throw new IOExceptionWrapper(e);
         }
     }
+
 }

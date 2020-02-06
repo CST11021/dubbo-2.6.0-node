@@ -53,8 +53,8 @@ import java.io.OutputStream;
 import java.util.IdentityHashMap;
 
 /**
- * Output stream for Hessian requests, compatible with microedition
- * Java.  It only uses classes and types available in JDK.
+ * Output stream for Hessian requests, compatible with microedition Java.
+ * It only uses classes and types available in JDK.
  * <p>
  * <p>Since HessianOutput does not depend on any classes other than
  * in the JDK, it can be extracted independently into a smaller package.
@@ -73,30 +73,33 @@ import java.util.IdentityHashMap;
  * </pre>
  */
 public class HessianOutput extends AbstractHessianOutput {
-    // the output stream/
-    protected OutputStream os;
-    // map of references
-    private IdentityHashMap _refs;
-    private int _version = 1;
 
     /**
-     * Creates a new Hessian output stream, initialized with an
-     * underlying output stream.
-     *
-     * @param os the underlying output stream.
+     * 序列化时写到对应的流
      */
+    protected OutputStream os;
+
+    /**
+     * Map<序列化的对象实例，所在的Map索引位置>
+     */
+    private IdentityHashMap _refs;
+
+    private int _version = 1;
+
+
+    // 构造器：初始化os、_refs和_serializerFactory
+
+    public HessianOutput() {
+    }
     public HessianOutput(OutputStream os) {
         init(os);
     }
-
     /**
-     * Creates an uninitialized Hessian output stream.
-     */
-    public HessianOutput() {
-    }
-
-    /**
-     * Initializes the output
+     * 初始化{@link #os}
+     * 初始化{@link #_refs}
+     * 初始化{@link #_serializerFactory}
+     *
+     * @param os
      */
     public void init(OutputStream os) {
         this.os = os;
@@ -107,18 +110,15 @@ public class HessianOutput extends AbstractHessianOutput {
             _serializerFactory = new SerializerFactory();
     }
 
-    /**
-     * Sets the client's version.
-     */
-    public void setVersion(int version) {
-        _version = version;
-    }
+
+
+
+    // 调用目标方法相关
 
     /**
      * Writes a complete method call.
      */
-    public void call(String method, Object[] args)
-            throws IOException {
+    public void call(String method, Object[] args) throws IOException {
         int length = args != null ? args.length : 0;
 
         startCall(method, length);
@@ -128,7 +128,6 @@ public class HessianOutput extends AbstractHessianOutput {
 
         completeCall();
     }
-
     /**
      * Starts the method call.  Clients would use <code>startCall</code>
      * instead of <code>call</code> if they wanted finer control over
@@ -141,8 +140,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param method the method name to call.
      */
-    public void startCall(String method, int length)
-            throws IOException {
+    public void startCall(String method, int length) throws IOException {
         os.write('c');
         os.write(_version);
         os.write(0);
@@ -153,7 +151,6 @@ public class HessianOutput extends AbstractHessianOutput {
         os.write(len);
         printString(method, 0, len);
     }
-
     /**
      * Writes the call tag.  This would be followed by the
      * headers and the method tag.
@@ -162,33 +159,13 @@ public class HessianOutput extends AbstractHessianOutput {
      * c major minor
      * </pre></code>
      *
-     * @param method the method name to call.
+     * method the method name to call.
      */
-    public void startCall()
-            throws IOException {
+    public void startCall() throws IOException {
         os.write('c');
         os.write(0);
         os.write(1);
     }
-
-    /**
-     * Writes the method tag.
-     * <p>
-     * <code><pre>
-     * m b16 b8 method-name
-     * </pre></code>
-     *
-     * @param method the method name to call.
-     */
-    public void writeMethod(String method)
-            throws IOException {
-        os.write('m');
-        int len = method.length();
-        os.write(len >> 8);
-        os.write(len);
-        printString(method, 0, len);
-    }
-
     /**
      * Completes.
      * <p>
@@ -196,40 +173,13 @@ public class HessianOutput extends AbstractHessianOutput {
      * z
      * </pre></code>
      */
-    public void completeCall()
-            throws IOException {
+    public void completeCall() throws IOException {
         os.write('z');
     }
 
-    /**
-     * Starts the reply
-     * <p>
-     * <p>A successful completion will have a single value:
-     * <p>
-     * <pre>
-     * r
-     * </pre>
-     */
-    public void startReply()
-            throws IOException {
-        os.write('r');
-        os.write(1);
-        os.write(0);
-    }
 
-    /**
-     * Completes reading the reply
-     * <p>
-     * <p>A successful completion will have a single value:
-     * <p>
-     * <pre>
-     * z
-     * </pre>
-     */
-    public void completeReply()
-            throws IOException {
-        os.write('z');
-    }
+
+    // 序列化header头
 
     /**
      * Writes a header name.  The header value must immediately follow.
@@ -238,8 +188,7 @@ public class HessianOutput extends AbstractHessianOutput {
      * H b16 b8 foo <em>value</em>
      * </pre></code>
      */
-    public void writeHeader(String name)
-            throws IOException {
+    public void writeHeader(String name) throws IOException {
         int len = name.length();
 
         os.write('H');
@@ -249,9 +198,10 @@ public class HessianOutput extends AbstractHessianOutput {
         printString(name);
     }
 
+    // 序列化错误信息
+
     /**
-     * Writes a fault.  The fault will be written
-     * as a descriptive string followed by an object:
+     * Writes a fault.  The fault will be written as a descriptive string followed by an object:
      * <p>
      * <code><pre>
      * f
@@ -270,8 +220,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param code the fault code, a three digit
      */
-    public void writeFault(String code, String message, Object detail)
-            throws IOException {
+    public void writeFault(String code, String message, Object detail) throws IOException {
         os.write('f');
         writeString("code");
         writeString(code);
@@ -286,22 +235,81 @@ public class HessianOutput extends AbstractHessianOutput {
         os.write('z');
     }
 
+    // 序列化远程对象
+
     /**
-     * Writes any object to the output stream.
+     * 将远程对象引用写入流，类型是远程接口的类型。
+     * <p>
+     * <code><pre>
+     * 'r' 't' b16 b8 type url
+     * </pre></code>
      */
-    public void writeObject(Object object)
-            throws IOException {
+    public void writeRemote(String type, String url) throws IOException {
+        os.write('r');
+        os.write('t');
+        printLenString(type);
+        os.write('S');
+        printLenString(url);
+    }
+
+    // 序列化站位标识符P
+
+    /**
+     * Writes a placeholder.
+     * <p>
+     * <code><pre>
+     * P
+     * </pre></code>
+     */
+    public void writePlaceholder() throws IOException {
+        os.write('P');
+    }
+
+    // 序列化类
+
+    /**
+     * 将一个对象写到输出流程中，序列化流程：
+     * -> HessianOutput#writeObject
+     *    -> SerializerFactory#getSerializer#writeObject
+     *       -> HessianOutput#writeString
+     *       -> HessianOutput#writeBoolean
+     *       -> HessianOutput#writeInt
+     *       ...
+     *
+     * @param object            需要序列化的对象
+     * @throws IOException
+     */
+    public void writeObject(Object object) throws IOException {
+        // 处理null的情况
         if (object == null) {
             writeNull();
             return;
         }
 
+        // 根据类型获取一个Serializer，默认是JavaSerializer（如果char等其他类型会返回BasicSerializer），然后委托给serializer.writeObject方法
         Serializer serializer;
-
         serializer = _serializerFactory.getSerializer(object.getClass());
 
         serializer.writeObject(object, this);
     }
+    /**
+     * Writes the method tag.
+     * <p>
+     * <code><pre>
+     * m b16 b8 method-name
+     * </pre></code>
+     *
+     * @param method the method name to call.
+     */
+    public void writeMethod(String method) throws IOException {
+        os.write('m');
+        int len = method.length();
+        os.write(len >> 8);
+        os.write(len);
+        printString(method, 0, len);
+    }
+
+    // 序列化List时以V开始z结束
 
     /**
      * Writes the list header to the stream.  List writers will call
@@ -314,8 +322,7 @@ public class HessianOutput extends AbstractHessianOutput {
      * l b32 b24 b16 b8
      * </pre></code>
      */
-    public boolean writeListBegin(int length, String type)
-            throws IOException {
+    public boolean writeListBegin(int length, String type) throws IOException {
         os.write('V');
 
         if (type != null) {
@@ -333,55 +340,38 @@ public class HessianOutput extends AbstractHessianOutput {
 
         return true;
     }
-
     /**
-     * Writes the tail of the list to the stream.
+     * 写入一个结束标识符"z"到流中
+     *
+     * @throws IOException
      */
-    public void writeListEnd()
-            throws IOException {
+    public void writeListEnd() throws IOException {
         os.write('z');
     }
 
+    // 序列化Map时以Mt开始后z结束
+
     /**
-     * Writes the map header to the stream.  Map writers will call
-     * <code>writeMapBegin</code> followed by the map contents and then
-     * call <code>writeMapEnd</code>.
-     * <p>
-     * <code><pre>
-     * Mt b16 b8 (<key> <value>)z
-     * </pre></code>
+     * 保存（Mt + 全限定类名）到流中
+     *
+     * @param type              类名，例如：com.test.User
+     * @throws IOException
      */
-    public void writeMapBegin(String type)
-            throws IOException {
+    public void writeMapBegin(String type) throws IOException {
         os.write('M');
         os.write('t');
         printLenString(type);
     }
-
     /**
-     * Writes the tail of the map to the stream.
+     * 写入一个结束标识符"z"到流中
+     *
+     * @throws IOException
      */
-    public void writeMapEnd()
-            throws IOException {
+    public void writeMapEnd() throws IOException {
         os.write('z');
     }
 
-    /**
-     * Writes a remote object reference to the stream.  The type is the
-     * type of the remote interface.
-     * <p>
-     * <code><pre>
-     * 'r' 't' b16 b8 type url
-     * </pre></code>
-     */
-    public void writeRemote(String type, String url)
-            throws IOException {
-        os.write('r');
-        os.write('t');
-        printLenString(type);
-        os.write('S');
-        printLenString(url);
-    }
+    // 序列化基础类型
 
     /**
      * Writes a boolean value to the stream.  The boolean will be written
@@ -394,14 +384,12 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the boolean value to write.
      */
-    public void writeBoolean(boolean value)
-            throws IOException {
+    public void writeBoolean(boolean value) throws IOException {
         if (value)
             os.write('T');
         else
             os.write('F');
     }
-
     /**
      * Writes an integer value to the stream.  The integer will be written
      * with the following syntax:
@@ -412,15 +400,13 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the integer value to write.
      */
-    public void writeInt(int value)
-            throws IOException {
+    public void writeInt(int value) throws IOException {
         os.write('I');
         os.write(value >> 24);
         os.write(value >> 16);
         os.write(value >> 8);
         os.write(value);
     }
-
     /**
      * Writes a long value to the stream.  The long will be written
      * with the following syntax:
@@ -431,8 +417,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the long value to write.
      */
-    public void writeLong(long value)
-            throws IOException {
+    public void writeLong(long value) throws IOException {
         os.write('L');
         os.write((byte) (value >> 56));
         os.write((byte) (value >> 48));
@@ -443,7 +428,6 @@ public class HessianOutput extends AbstractHessianOutput {
         os.write((byte) (value >> 8));
         os.write((byte) (value));
     }
-
     /**
      * Writes a double value to the stream.  The double will be written
      * with the following syntax:
@@ -454,8 +438,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the double value to write.
      */
-    public void writeDouble(double value)
-            throws IOException {
+    public void writeDouble(double value) throws IOException {
         long bits = Double.doubleToLongBits(value);
 
         os.write('D');
@@ -468,7 +451,6 @@ public class HessianOutput extends AbstractHessianOutput {
         os.write((byte) (bits >> 8));
         os.write((byte) (bits));
     }
-
     /**
      * Writes a date to the stream.
      * <p>
@@ -478,8 +460,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param time the date in milliseconds from the epoch in UTC
      */
-    public void writeUTCDate(long time)
-            throws IOException {
+    public void writeUTCDate(long time) throws IOException {
         os.write('d');
         os.write((byte) (time >> 56));
         os.write((byte) (time >> 48));
@@ -490,22 +471,12 @@ public class HessianOutput extends AbstractHessianOutput {
         os.write((byte) (time >> 8));
         os.write((byte) (time));
     }
-
     /**
-     * Writes a null value to the stream.
-     * The null will be written with the following syntax
-     * <p>
-     * <code><pre>
-     * N
-     * </pre></code>
-     *
-     * @param value the string value to write.
+     * 将空值写入流。null将使用'N'表示
      */
-    public void writeNull()
-            throws IOException {
+    public void writeNull() throws IOException {
         os.write('N');
     }
-
     /**
      * Writes a string value to the stream using UTF-8 encoding.
      * The string will be written with the following syntax:
@@ -522,8 +493,7 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the string value to write.
      */
-    public void writeString(String value)
-            throws IOException {
+    public void writeString(String value) throws IOException {
         if (value == null) {
             os.write('N');
         } else {
@@ -556,7 +526,6 @@ public class HessianOutput extends AbstractHessianOutput {
             printString(value, offset, length);
         }
     }
-
     /**
      * Writes a string value to the stream using UTF-8 encoding.
      * The string will be written with the following syntax:
@@ -571,10 +540,8 @@ public class HessianOutput extends AbstractHessianOutput {
      * N
      * </pre></code>
      *
-     * @param value the string value to write.
      */
-    public void writeString(char[] buffer, int offset, int length)
-            throws IOException {
+    public void writeString(char[] buffer, int offset, int length) throws IOException {
         if (buffer == null) {
             os.write('N');
         } else {
@@ -604,7 +571,6 @@ public class HessianOutput extends AbstractHessianOutput {
             printString(buffer, offset, length);
         }
     }
-
     /**
      * Writes a byte array to the stream.
      * The array will be written with the following syntax:
@@ -619,16 +585,13 @@ public class HessianOutput extends AbstractHessianOutput {
      * N
      * </pre></code>
      *
-     * @param value the string value to write.
      */
-    public void writeBytes(byte[] buffer)
-            throws IOException {
+    public void writeBytes(byte[] buffer) throws IOException {
         if (buffer == null)
             os.write('N');
         else
             writeBytes(buffer, 0, buffer.length);
     }
-
     /**
      * Writes a byte array to the stream.
      * The array will be written with the following syntax:
@@ -643,10 +606,8 @@ public class HessianOutput extends AbstractHessianOutput {
      * N
      * </pre></code>
      *
-     * @param value the string value to write.
      */
-    public void writeBytes(byte[] buffer, int offset, int length)
-            throws IOException {
+    public void writeBytes(byte[] buffer, int offset, int length) throws IOException {
         if (buffer == null) {
             os.write('N');
         } else {
@@ -669,17 +630,14 @@ public class HessianOutput extends AbstractHessianOutput {
             os.write(buffer, offset, length);
         }
     }
-
     /**
      * Writes a byte buffer to the stream.
      * <p>
      * <code><pre>
      * </pre></code>
      */
-    public void writeByteBufferStart()
-            throws IOException {
+    public void writeByteBufferStart() throws IOException {
     }
-
     /**
      * Writes a byte buffer to the stream.
      * <p>
@@ -687,8 +645,7 @@ public class HessianOutput extends AbstractHessianOutput {
      * b b16 b18 bytes
      * </pre></code>
      */
-    public void writeByteBufferPart(byte[] buffer, int offset, int length)
-            throws IOException {
+    public void writeByteBufferPart(byte[] buffer, int offset, int length) throws IOException {
         while (length > 0) {
             int sublen = length;
 
@@ -705,7 +662,6 @@ public class HessianOutput extends AbstractHessianOutput {
             offset += sublen;
         }
     }
-
     /**
      * Writes a byte buffer to the stream.
      * <p>
@@ -713,13 +669,69 @@ public class HessianOutput extends AbstractHessianOutput {
      * b b16 b18 bytes
      * </pre></code>
      */
-    public void writeByteBufferEnd(byte[] buffer, int offset, int length)
-            throws IOException {
+    public void writeByteBufferEnd(byte[] buffer, int offset, int length) throws IOException {
         writeBytes(buffer, offset, length);
     }
 
+    // reply
+
     /**
-     * Writes a reference.
+     * Starts the reply
+     * <p>
+     * <p>A successful completion will have a single value:
+     * <p>
+     * <pre>
+     * r
+     * </pre>
+     */
+    public void startReply() throws IOException {
+        os.write('r');
+        os.write(1);
+        os.write(0);
+    }
+    /**
+     * Completes reading the reply
+     * <p>
+     * <p>A successful completion will have a single value:
+     * <p>
+     * <pre>
+     * z
+     * </pre>
+     */
+    public void completeReply() throws IOException {
+        os.write('z');
+    }
+
+    // ref
+
+    /**
+     * 缓存object，如果该object实例已经存在，则返回true，否则返回false。
+     * 返回值表示该对象实例是否序列化过
+     *
+     * @param object 要序列化的对象实例
+     * @return
+     * @throws IOException
+     */
+    public boolean addRef(Object object) throws IOException {
+        if (_refs == null) {
+            // 在IdentityHashMap中，判断两个键值k1和k2相等的条件是k1 == k2，注意这里是指引用相同 。
+            _refs = new IdentityHashMap();
+        }
+
+        Integer ref = (Integer) _refs.get(object);
+        if (ref != null) {
+            // 已经序列化过,则只需要序列化该object的一个标识(一个整型值）
+            int value = ref.intValue();
+            writeRef(value);
+            return true;
+        } else {
+            // 第一次序列化该对象，则存入该object的标示(当前map.size)
+            _refs.put(object, new Integer(_refs.size()));
+            return false;
+        }
+    }
+    /**
+     * 根据类型所在的Map索引位置，进行序列化话
      * <p>
      * <code><pre>
      * R b32 b24 b16 b8
@@ -727,64 +739,24 @@ public class HessianOutput extends AbstractHessianOutput {
      *
      * @param value the integer value to write.
      */
-    public void writeRef(int value)
-            throws IOException {
+    public void writeRef(int value) throws IOException {
         os.write('R');
         os.write(value >> 24);
         os.write(value >> 16);
         os.write(value >> 8);
         os.write(value);
     }
-
     /**
-     * Writes a placeholder.
-     * <p>
-     * <code><pre>
-     * P
-     * </pre></code>
-     */
-    public void writePlaceholder()
-            throws IOException {
-        os.write('P');
-    }
-
-    /**
-     * If the object has already been written, just write its ref.
-     *
-     * @return true if we're writing a ref.
-     */
-    public boolean addRef(Object object)
-            throws IOException {
-        if (_refs == null)
-            _refs = new IdentityHashMap();
-
-        Integer ref = (Integer) _refs.get(object);
-
-        if (ref != null) {
-            int value = ref.intValue();
-
-            writeRef(value);
-            return true;
-        } else {
-            _refs.put(object, new Integer(_refs.size()));
-
-            return false;
-        }
-    }
-
-    /**
-     * Resets the references for streaming.
+     * 重置_refs
      */
     public void resetReferences() {
         if (_refs != null)
             _refs.clear();
     }
-
     /**
      * Removes a reference.
      */
-    public boolean removeRef(Object obj)
-            throws IOException {
+    public boolean removeRef(Object obj) throws IOException {
         if (_refs != null) {
             _refs.remove(obj);
 
@@ -792,12 +764,10 @@ public class HessianOutput extends AbstractHessianOutput {
         } else
             return false;
     }
-
     /**
      * Replaces a reference from one object to another.
      */
-    public boolean replaceRef(Object oldRef, Object newRef)
-            throws IOException {
+    public boolean replaceRef(Object oldRef, Object newRef) throws IOException {
         Integer value = (Integer) _refs.remove(oldRef);
 
         if (value != null) {
@@ -807,13 +777,32 @@ public class HessianOutput extends AbstractHessianOutput {
             return false;
     }
 
+    // os处理
+
+    public void flush() throws IOException {
+        if (this.os != null)
+            this.os.flush();
+    }
+    public void close() throws IOException {
+        if (this.os != null)
+            this.os.flush();
+    }
+
+
+
+
+
+
+
+
+    // 将字符写入流中
+
     /**
-     * Prints a string to the stream, encoded as UTF-8 with preceeding length
+     * 将字符串及其的长度保存到流，编码为UTF-8，并带有附加的长度
      *
-     * @param v the string to print.
+     * @param v 表示要写入到流中的字符串
      */
-    public void printLenString(String v)
-            throws IOException {
+    public void printLenString(String v) throws IOException {
         if (v == null) {
             os.write(0);
             os.write(0);
@@ -825,24 +814,20 @@ public class HessianOutput extends AbstractHessianOutput {
             printString(v, 0, len);
         }
     }
-
     /**
-     * Prints a string to the stream, encoded as UTF-8
+     * 使用UTF-8编码，将打印字符串到流中
      *
      * @param v the string to print.
      */
-    public void printString(String v)
-            throws IOException {
+    public void printString(String v) throws IOException {
         printString(v, 0, v.length());
     }
-
     /**
-     * Prints a string to the stream, encoded as UTF-8
+     * 使用UTF-8编码，将打印字符串到流中
      *
      * @param v the string to print.
      */
-    public void printString(String v, int offset, int length)
-            throws IOException {
+    public void printString(String v, int offset, int length) throws IOException {
         for (int i = 0; i < length; i++) {
             char ch = v.charAt(i + offset);
 
@@ -858,14 +843,12 @@ public class HessianOutput extends AbstractHessianOutput {
             }
         }
     }
-
     /**
-     * Prints a string to the stream, encoded as UTF-8
+     * 使用UTF-8编码，将打印字符串到流中
      *
      * @param v the string to print.
      */
-    public void printString(char[] v, int offset, int length)
-            throws IOException {
+    public void printString(char[] v, int offset, int length) throws IOException {
         for (int i = 0; i < length; i++) {
             char ch = v[i + offset];
 
@@ -882,15 +865,15 @@ public class HessianOutput extends AbstractHessianOutput {
         }
     }
 
-    public void flush()
-            throws IOException {
-        if (this.os != null)
-            this.os.flush();
+
+
+    // setter...
+
+    /**
+     * Sets the client's version.
+     */
+    public void setVersion(int version) {
+        _version = version;
     }
 
-    public void close()
-            throws IOException {
-        if (this.os != null)
-            this.os.flush();
-    }
 }

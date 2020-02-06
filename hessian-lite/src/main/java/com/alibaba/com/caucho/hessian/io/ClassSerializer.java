@@ -51,11 +51,11 @@ package com.alibaba.com.caucho.hessian.io;
 import java.io.IOException;
 
 /**
- * Serializing a remote object.
+ * 序列化一个远程对象
  */
 public class ClassSerializer extends AbstractSerializer {
-    public void writeObject(Object obj, AbstractHessianOutput out)
-            throws IOException {
+
+    public void writeObject(Object obj, AbstractHessianOutput out) throws IOException {
         Class cl = (Class) obj;
 
         if (cl == null) {
