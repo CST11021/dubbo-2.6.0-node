@@ -58,7 +58,7 @@ public class AllTypeObject implements Serializable {
 
     private float _float;
     private Float _Float;
-    private float _floatArray;
+    private float[] _floatArray;
 
     private double _double;
     private Double _Double;
@@ -322,11 +322,11 @@ public class AllTypeObject implements Serializable {
         this._Float = _Float;
     }
 
-    public float get_floatArray() {
+    public float[] get_floatArray() {
         return _floatArray;
     }
 
-    public void set_floatArray(float _floatArray) {
+    public void set_floatArray(float[] _floatArray) {
         this._floatArray = _floatArray;
     }
 

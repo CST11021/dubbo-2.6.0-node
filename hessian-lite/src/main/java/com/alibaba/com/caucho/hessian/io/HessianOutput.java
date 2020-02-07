@@ -352,7 +352,7 @@ public class HessianOutput extends AbstractHessianOutput {
     // 序列化Map时以Mt开始后z结束
 
     /**
-     * 保存（Mt + 全限定类名）到流中
+     * 保存（Mt + 0x00 + ${类名的字符串长度} + ${全限定类名}）到流中
      *
      * @param type              类名，例如：com.test.User
      * @throws IOException
