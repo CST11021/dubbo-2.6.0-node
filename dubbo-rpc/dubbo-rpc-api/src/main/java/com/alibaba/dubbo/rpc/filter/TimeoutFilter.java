@@ -29,7 +29,8 @@ import com.alibaba.dubbo.rpc.RpcException;
 import java.util.Arrays;
 
 /**
- * Log any invocation timeout, but don't stop server from running
+ * 例如：<dubbo:service interface="com.alibaba.dubbo.demo.DemoService" ref="demoService" timeout="1000"/>
+ * 当配置了服务超时时间时，如果客户端调用的服务超时了，则服务提供者的应用，会把超时日志打印出来
  */
 @Activate(group = Constants.PROVIDER)
 public class TimeoutFilter implements Filter {

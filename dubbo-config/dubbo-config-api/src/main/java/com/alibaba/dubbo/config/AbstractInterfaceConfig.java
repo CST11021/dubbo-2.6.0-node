@@ -74,7 +74,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     protected ApplicationConfig application;
     /** module info */
     protected ModuleConfig module;
-    /** registry centers 注册中心：对应的配置<dubbo:registry/> */
+    /** 注册中心：对应的配置<dubbo:registry/> */
     protected List<RegistryConfig> registries;
     /** connection events */
     protected String onconnect;

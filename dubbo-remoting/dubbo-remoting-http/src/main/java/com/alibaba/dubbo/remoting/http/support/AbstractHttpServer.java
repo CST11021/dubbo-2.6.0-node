@@ -27,10 +27,11 @@ import java.net.InetSocketAddress;
  */
 public abstract class AbstractHttpServer implements HttpServer {
 
+    /** 通过该url获取用于创建HTTP服务所需要的信息 */
     private final URL url;
-
+    /** 用于处理来自dubbo消费端的HTTP请求 */
     private final HttpHandler handler;
-
+    /** 表示该HTTP服务是否关闭 */
     private volatile boolean closed;
 
     public AbstractHttpServer(URL url, HttpHandler handler) {

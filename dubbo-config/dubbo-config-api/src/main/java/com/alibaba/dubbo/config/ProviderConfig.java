@@ -40,9 +40,9 @@ public class ProviderConfig extends AbstractServiceConfig {
 
     private static final long serialVersionUID = 6913423882496634749L;
 
-    // ======== protocol default values, it'll take effect when protocol's attributes are not set ========
+    // ======== 协议默认值，未设置协议属性时生效 ========
 
-    // service IP addresses (used when there are multiple network cards available)
+    /** 服务IP地址（在有多个网卡可用时使用）*/
     private String host;
     // service port
     private Integer port;

@@ -90,8 +90,6 @@ public @interface Activate {
      */
     String[] after() default {};
 
-    /**
-     * 值越小优先级越高
-     */
+    /** 值越小优先级越高 */
     int order() default 0;
 }

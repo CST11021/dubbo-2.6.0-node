@@ -64,14 +64,12 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
     }
-
     public Integer getRetries() {
         return retries;
     }
     public void setRetries(Integer retries) {
         this.retries = retries;
     }
-
     public String getLoadbalance() {
         return loadbalance;
     }
@@ -79,28 +77,24 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
         checkExtension(LoadBalance.class, "loadbalance", loadbalance);
         this.loadbalance = loadbalance;
     }
-
     public Boolean isAsync() {
         return async;
     }
     public void setAsync(Boolean async) {
         this.async = async;
     }
-
     public Integer getActives() {
         return actives;
     }
     public void setActives(Integer actives) {
         this.actives = actives;
     }
-
     public Boolean getSent() {
         return sent;
     }
     public void setSent(Boolean sent) {
         this.sent = sent;
     }
-
     @Parameter(escaped = true)
     public String getMock() {
         return mock;
@@ -120,28 +114,24 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
         }
         this.mock = mock;
     }
-
     public String getMerger() {
         return merger;
     }
     public void setMerger(String merger) {
         this.merger = merger;
     }
-
     public String getCache() {
         return cache;
     }
     public void setCache(String cache) {
         this.cache = cache;
     }
-
     public String getValidation() {
         return validation;
     }
     public void setValidation(String validation) {
         this.validation = validation;
     }
-
     public Map<String, String> getParameters() {
         return parameters;
     }

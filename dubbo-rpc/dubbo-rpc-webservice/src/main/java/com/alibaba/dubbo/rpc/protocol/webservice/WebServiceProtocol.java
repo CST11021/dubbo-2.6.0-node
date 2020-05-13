@@ -125,10 +125,21 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
         return super.getErrorCode(e);
     }
 
+    /**
+     * 用于处理HTTP请求
+     */
     private class WebServiceHandler implements HttpHandler {
 
         private volatile ServletController servletController;
 
+        /**
+         * 该方法用于处理HTTP请求
+         *
+         * @param request  request.
+         * @param response response.
+         * @throws IOException
+         * @throws ServletException
+         */
         public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if (servletController == null) {
                 HttpServlet httpServlet = DispatcherServlet.getInstance();

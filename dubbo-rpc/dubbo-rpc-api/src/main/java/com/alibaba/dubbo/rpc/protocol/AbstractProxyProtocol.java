@@ -60,6 +60,26 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         this.proxyFactory = proxyFactory;
     }
 
+    /**
+     * 导出服务以进行远程调用：
+     * 1. 协议应在收到请求后记录请求源地址：RpcContext.getContext().setRemoteAddress();
+     * 2. export()必须是幂等的，即，导出相同的URL时一次调用和两次调用之间没有区别
+     * 3.调用程序实例由框架传递，协议无需关心
+     *
+     * @param <T>               服务的类型
+     * @param invoker           服务的执行体
+     * @return exporter         暴露服务的引用，用于取消暴露
+     * @throws RpcException     当暴露服务出错时抛出，比如端口已占用
+     *
+     *
+     *  Dubbo处理服务暴露的关键就在Invoker转换到Exporter的过程，我们以Dubbo和rmi这两种典型协议的实现来进行说明：
+     *      Dubbo的实现：
+     *          Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端发来的各种请求，通讯细节由dubbo自己实现。
+     *
+     *      Rmi的实现：
+     *          RMI协议的Invoker转为Exporter发生在RmiProtocol类的export方法，他通过Spring或Dubbo或JDK来实现服务，通讯细节由JDK底层来实现。
+     *
+     */
     @SuppressWarnings("unchecked")
     public <T> Exporter<T> export(final Invoker<T> invoker) throws RpcException {
         // 从缓存获取导出的服务
@@ -69,6 +89,7 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
             return exporter;
         }
 
+        // 具体的服务导出委托给doExport()方法
         final Runnable runnable = doExport(proxyFactory.getProxy(invoker), invoker.getInterface(), invoker.getUrl());
         exporter = new AbstractExporter<T>(invoker) {
             public void unexport() {
@@ -133,6 +154,12 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         return re;
     }
 
+    /**
+     * 从url提取 ip:port
+     *
+     * @param url
+     * @return
+     */
     protected String getAddr(URL url) {
         String bindIp = url.getParameter(Constants.BIND_IP_KEY, url.getHost());
         if (url.getParameter(Constants.ANYHOST_KEY, false)) {
@@ -145,6 +172,16 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         return RpcException.UNKNOWN_EXCEPTION;
     }
 
+    /**
+     * 具体的服务导出交给每个协议实现类自己去实现
+     *
+     * @param impl
+     * @param type
+     * @param url
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     protected abstract <T> Runnable doExport(T impl, Class<T> type, URL url) throws RpcException;
 
     protected abstract <T> T doRefer(Class<T> type, URL url) throws RpcException;

@@ -32,10 +32,8 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
 
     /** 表示服务接口对应实现类, 例如：com.alibaba.dubbo.demo.provider.DemoServiceImpl */
     private final T proxy;
-
     /** 对应{@link #proxy}的接口类型, 例如：com.alibaba.dubbo.demo.DemoService */
     private final Class<T> type;
-
     /** 服务接口相关的配置信息 */
     private final URL url;
 
@@ -69,6 +67,13 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
     public void destroy() {
     }
 
+    /**
+     * 将代理对象T的目标方法
+     *
+     * @param invocation    封装了调用的接口方法及入参类型、入参值等
+     * @return
+     * @throws RpcException
+     */
     public Result invoke(Invocation invocation) throws RpcException {
         try {
             return new RpcResult(doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments()));

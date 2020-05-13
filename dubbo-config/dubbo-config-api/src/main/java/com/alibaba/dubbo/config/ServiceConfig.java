@@ -75,12 +75,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
+    /** Map<协议名，协议对应的端口> */
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
     /** 延迟暴露服务时，会使用该线程池服务进行服务暴露 */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
-    /** 保存暴露的服务 */
+    /** 保存导出的服务 */
     private final List<URL> urls = new ArrayList<URL>();
-    /** 服务暴露后会封装为一个Exporter对象，并保存到该属性中，详见{@link ServiceConfig#doExportUrlsFor1Protocol(ProtocolConfig, List)}方法*/
+    /**
+     * 服务暴露后会封装为一个Exporter对象，并保存到该属性中，详见{@link ServiceConfig#doExportUrlsFor1Protocol(ProtocolConfig, List)}方法，
+     * 一个服务可能会被导出多次，多协议多注册中心都会被导出多次
+     */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     /** 表示暴露的服务接口类型，这里使用接口的全限定类名 */
     private String interfaceName;
@@ -91,7 +95,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     /** service name, e.g: com.alibaba.dubbo.demo.DemoService */
     private String path;
    /**
-    * 对应方法配置，例如
+    * 导出服务的方法配置，例如
       <dubbo:service interface="com.alibaba.dubbo.demo.HelloService" ref="helloService">
             <dubbo:method name="sayHello"/>
       </dubbo:service>
@@ -99,12 +103,21 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private List<MethodConfig> methods;
     /** 表示提供服务的应用配置 */
     private ProviderConfig provider;
-    /** 用于标识是否已经暴露服务 */
+    /** 标记该服务是否已经导出 */
     private transient volatile boolean exported;
     /** 当ServiceBean被销毁时，会调用 ServiceBean#destroy() 方法，在该方法中会将该字段置为true */
     private transient volatile boolean unexported;
     /** 用于标记是否为泛化服务类型，"true"表示是，"false"表示否 */
     private volatile String generic;
+
+
+
+
+
+
+
+
+
 
     public ServiceConfig() {
     }
@@ -112,6 +125,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         appendAnnotation(Service.class, service);
     }
 
+
+
+
+
+
+
+
+
+    // 导出服务
 
     /**
      * dubbo暴露服务有两种情况，一种是设置了延迟暴露（比如delay=”5000”），另外一种是没有设置延迟暴露或者延迟设置为-1（delay=”-1”）：
@@ -147,7 +169,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             doExport();
         }
     }
-
     /**
      * 1、首先会检查各种配置信息，填充各种属性，总之就是保证我在开始暴露服务之前，所有的东西都准备好了，并且是正确的。
      * 2、加载所有的注册中心，因为我们暴露服务需要注册到注册中心中去。
@@ -305,7 +326,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         ProviderModel providerModel = new ProviderModel(getUniqueServiceName(), this, ref);
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
-
     /**
      * 根据 URL 服务暴露
      * Dubbo 允许我们使用不同的协议导出服务，也允许我们向多个注册中心注册服务。Dubbo 在 doExportUrls 方法中对多协议，多注册中心进行了支持。相关代码如下：
@@ -331,7 +351,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
-
     /**
      * 根据 URL 的协议头，进行不同协议的服务暴露
      *
@@ -362,8 +381,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         appendParameters(map, protocolConfig);
         appendParameters(map, this);
 
-        // 遍历暴露服务接口的内部方法
-        // methods 为 MethodConfig 集合，MethodConfig 中存储了 <dubbo:method> 标签的配置信息
+
+
+
+
+
+
+
+
+        // 遍历暴露服务接口的内部方法，methods 为 MethodConfig 集合，MethodConfig 中存储了 <dubbo:method> 标签的配置信息
         if (methods != null && methods.size() > 0) {
             for (MethodConfig method : methods) {
                 // 添加 MethodConfig 对象的字段信息到 map 中，键 = 方法名.属性名。
@@ -437,6 +463,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             } // end of methods for
         }
 
+
+
+
+
+
+
+
+
         // 检测 generic 是否为 "true"，并根据检测结果向 map 中添加不同的信息
         if (ProtocolUtils.isGeneric(generic)) {
             map.put("generic", generic);
@@ -487,6 +521,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // 组装 URL：这个通过这个url就可以知道该服务是由谁提供的，使用的是什么协议等信息
         URL url = new URL(name, host, port, (contextPath == null || contextPath.length() == 0 ? "" : contextPath + "/") + path, map);
 
+
+        // 到此为止，就将服务暴露所需要的信息都封装在URL里了
+
+
+
+
+
+
+
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -497,21 +540,43 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         // 根据 url 中的 scope 参数决定服务导出方式，分别如下：
         // scope = none，不导出服务
-        // scope != remote，导出到本地
-        // scope != local，导出到远程
+        // scope = remote，导出到远程
+        // scope = local，导出到本地
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
+
+
+
+
 
             // 如果这个服务的作用域不是remote的话，就将服务暴露到本地：调用一次ProtocolFilterWrapper -> ProtocolListener -> InjvmProtocol
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
 
+
+
+
             // export to remote if the config is not local (export to local only when config is local)
             if (!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                 }
+
+
+                // 在 Dubbo 中，Invoker 是一个非常重要的模型。在服务提供端，以及服务引用端均会出现 Invoker。Dubbo 官方文档中对
+                //
+                //    Invoker 进行了说明，这里引用一下。
+                //      Invoker 是实体域，它是 Dubbo 的核心模型，其它模型都向它靠扰，或转换成它，它代表一个可执行体，可向它发起
+                //      invoke 调用，它有可能是一个本地的实现，也可能是一个远程的实现，也可能一个集群实现。
+                //
+                // 既然 Invoker 如此重要，那么我们很有必要搞清楚 Invoker 的用途。Invoker 是由 ProxyFactory 创建而来，Dubbo 默认的 ProxyFactory 实现类是JavassistProxyFactory。
+
+
+
                 if (registryURLs != null && registryURLs.size() > 0) {
+
+                    // 遍历注册中心，依次导出服务
+
                     for (URL registryURL : registryURLs) {
                         url = url.addParameterIfAbsent("dynamic", registryURL.getParameter("dynamic"));
                         URL monitorUrl = loadMonitor(registryURL);
@@ -529,14 +594,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
+
+
                 } else {
-                    // 在 Dubbo 中，Invoker 是一个非常重要的模型。在服务提供端，以及服务引用端均会出现 Invoker。Dubbo 官方文档中对
-                    //
-                    //    Invoker 进行了说明，这里引用一下。
-                    //      Invoker 是实体域，它是 Dubbo 的核心模型，其它模型都向它靠扰，或转换成它，它代表一个可执行体，可向它发起
-                    //      invoke 调用，它有可能是一个本地的实现，也可能是一个远程的实现，也可能一个集群实现。
-                    //
-                    // 既然 Invoker 如此重要，那么我们很有必要搞清楚 Invoker 的用途。Invoker 是由 ProxyFactory 创建而来，Dubbo 默认的 ProxyFactory 实现类是JavassistProxyFactory。
+
                     Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
@@ -546,62 +607,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         }
         this.urls.add(url);
-    }
-
-    @Deprecated
-    private static final List<ProtocolConfig> convertProviderToProtocol(List<ProviderConfig> providers) {
-        if (providers == null || providers.size() == 0) {
-            return null;
-        }
-        List<ProtocolConfig> protocols = new ArrayList<ProtocolConfig>(providers.size());
-        for (ProviderConfig provider : providers) {
-            protocols.add(convertProviderToProtocol(provider));
-        }
-        return protocols;
-    }
-
-    @Deprecated
-    private static final List<ProviderConfig> convertProtocolToProvider(List<ProtocolConfig> protocols) {
-        if (protocols == null || protocols.size() == 0) {
-            return null;
-        }
-        List<ProviderConfig> providers = new ArrayList<ProviderConfig>(protocols.size());
-        for (ProtocolConfig provider : protocols) {
-            providers.add(convertProtocolToProvider(provider));
-        }
-        return providers;
-    }
-
-    @Deprecated
-    private static final ProtocolConfig convertProviderToProtocol(ProviderConfig provider) {
-        ProtocolConfig protocol = new ProtocolConfig();
-        protocol.setName(provider.getProtocol().getName());
-        protocol.setServer(provider.getServer());
-        protocol.setClient(provider.getClient());
-        protocol.setCodec(provider.getCodec());
-        protocol.setHost(provider.getHost());
-        protocol.setPort(provider.getPort());
-        protocol.setPath(provider.getPath());
-        protocol.setPayload(provider.getPayload());
-        protocol.setThreads(provider.getThreads());
-        protocol.setParameters(provider.getParameters());
-        return protocol;
-    }
-
-    @Deprecated
-    private static final ProviderConfig convertProtocolToProvider(ProtocolConfig protocol) {
-        ProviderConfig provider = new ProviderConfig();
-        provider.setProtocol(protocol);
-        provider.setServer(protocol.getServer());
-        provider.setClient(protocol.getClient());
-        provider.setCodec(protocol.getCodec());
-        provider.setHost(protocol.getHost());
-        provider.setPort(protocol.getPort());
-        provider.setPath(protocol.getPath());
-        provider.setPayload(protocol.getPayload());
-        provider.setThreads(protocol.getThreads());
-        provider.setParameters(protocol.getParameters());
-        return provider;
     }
 
     private static Integer getRandomPort(String protocol) {
@@ -637,8 +642,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
-
-
     public synchronized void unexport() {
         if (!exported) {
             return;
@@ -658,10 +661,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
         unexported = true;
     }
-
-
-
-
 
     /**
      * 将服务暴露到本地，服务提供者暴露的服务可能服务提供者应用本身也可能会调用，这种情况时dubbo会将服务也暴露到本地，
@@ -954,25 +953,21 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return methods;
     }
 
-    // ======== Deprecated ========
+
 
     @SuppressWarnings("unchecked")
     public void setMethods(List<? extends MethodConfig> methods) {
         this.methods = (List<MethodConfig>) methods;
     }
-
     public ProviderConfig getProvider() {
         return provider;
     }
-
     public void setProvider(ProviderConfig provider) {
         this.provider = provider;
     }
-
     public String getGeneric() {
         return generic;
     }
-
     public void setGeneric(String generic) {
         if (StringUtils.isEmpty(generic)) {
             return;
@@ -983,10 +978,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             throw new IllegalArgumentException("Unsupported generic type " + generic);
         }
     }
-
     public List<URL> getExportedUrls() {
         return urls;
     }
+
+
+
+    // ======== Deprecated ========
 
     /**
      * @deprecated Replace to getProtocols()
@@ -995,7 +993,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     public List<ProviderConfig> getProviders() {
         return convertProtocolToProvider(protocols);
     }
-
     /**
      * @deprecated Replace to setProtocols()
      */
@@ -1003,7 +1000,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     public void setProviders(List<ProviderConfig> providers) {
         this.protocols = convertProviderToProtocol(providers);
     }
-
     /**
      * 生成一个唯一的服务接口名称
      *
@@ -1021,4 +1017,57 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
         return buf.toString();
     }
+    @Deprecated
+    private static final List<ProtocolConfig> convertProviderToProtocol(List<ProviderConfig> providers) {
+        if (providers == null || providers.size() == 0) {
+            return null;
+        }
+        List<ProtocolConfig> protocols = new ArrayList<ProtocolConfig>(providers.size());
+        for (ProviderConfig provider : providers) {
+            protocols.add(convertProviderToProtocol(provider));
+        }
+        return protocols;
+    }
+    @Deprecated
+    private static final List<ProviderConfig> convertProtocolToProvider(List<ProtocolConfig> protocols) {
+        if (protocols == null || protocols.size() == 0) {
+            return null;
+        }
+        List<ProviderConfig> providers = new ArrayList<ProviderConfig>(protocols.size());
+        for (ProtocolConfig provider : protocols) {
+            providers.add(convertProtocolToProvider(provider));
+        }
+        return providers;
+    }
+    @Deprecated
+    private static final ProtocolConfig convertProviderToProtocol(ProviderConfig provider) {
+        ProtocolConfig protocol = new ProtocolConfig();
+        protocol.setName(provider.getProtocol().getName());
+        protocol.setServer(provider.getServer());
+        protocol.setClient(provider.getClient());
+        protocol.setCodec(provider.getCodec());
+        protocol.setHost(provider.getHost());
+        protocol.setPort(provider.getPort());
+        protocol.setPath(provider.getPath());
+        protocol.setPayload(provider.getPayload());
+        protocol.setThreads(provider.getThreads());
+        protocol.setParameters(provider.getParameters());
+        return protocol;
+    }
+    @Deprecated
+    private static final ProviderConfig convertProtocolToProvider(ProtocolConfig protocol) {
+        ProviderConfig provider = new ProviderConfig();
+        provider.setProtocol(protocol);
+        provider.setServer(protocol.getServer());
+        provider.setClient(protocol.getClient());
+        provider.setCodec(protocol.getCodec());
+        provider.setHost(protocol.getHost());
+        provider.setPort(protocol.getPort());
+        provider.setPath(protocol.getPath());
+        provider.setPayload(protocol.getPayload());
+        provider.setThreads(protocol.getThreads());
+        provider.setParameters(protocol.getParameters());
+        return provider;
+    }
+
 }

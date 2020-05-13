@@ -45,33 +45,46 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HttpProtocol extends AbstractProxyProtocol {
 
+    /** http协议的默认端口是80 */
     public static final int DEFAULT_PORT = 80;
-
+    /** key：0.0.0.0:80 */
     private final Map<String, HttpServer> serverMap = new ConcurrentHashMap<String, HttpServer>();
-
+    /**
+     * key：/com.alibaba.dubbo.demo.DemoService
+     * value：HttpInvokerServiceExporter用于处理请求
+     */
     private final Map<String, HttpInvokerServiceExporter> skeletonMap = new ConcurrentHashMap<String, HttpInvokerServiceExporter>();
-
+    /** 通过Dubbo自适应扩展机制复制，默认使用Jetty */
     private HttpBinder httpBinder;
 
     public HttpProtocol() {
         super(RemoteAccessException.class);
     }
 
-    public void setHttpBinder(HttpBinder httpBinder) {
-        this.httpBinder = httpBinder;
-    }
 
-    public int getDefaultPort() {
-        return DEFAULT_PORT;
-    }
 
+    /**
+     * HTTP协议的服务导出：
+     *
+     * @param impl  该对象为一个代理对象，通过 代理了DemoServiceImpl对象
+     * @param type  服务接口类型：com.alibaba.dubbo.demo.DemoService
+     * @param url   例如：http://192.168.1.101:80/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.1.101&bind.port=80&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=12372&side=provider&timestamp=1588412482078
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     protected <T> Runnable doExport(final T impl, Class<T> type, URL url) throws RpcException {
+        // 从url提取 ip:port
         String addr = getAddr(url);
+
+        // 通过
         HttpServer server = serverMap.get(addr);
         if (server == null) {
             server = httpBinder.bind(url, new InternalHandler());
             serverMap.put(addr, server);
         }
+
+        // 将服务调用委托给了String的HttpInvokerServiceExporter类，通过该类，可以通过HTTP的方式调用对应的服务方法
         final HttpInvokerServiceExporter httpServiceExporter = new HttpInvokerServiceExporter();
         httpServiceExporter.setServiceInterface(type);
         httpServiceExporter.setService(impl);
@@ -80,6 +93,7 @@ public class HttpProtocol extends AbstractProxyProtocol {
         } catch (Exception e) {
             throw new RpcException(e.getMessage(), e);
         }
+
         final String path = url.getAbsolutePath();
         skeletonMap.put(path, httpServiceExporter);
         return new Runnable() {
@@ -133,15 +147,42 @@ public class HttpProtocol extends AbstractProxyProtocol {
         return super.getErrorCode(e);
     }
 
+
+    /**
+     * dubbo的自适应扩展机制会调用该方法设置httpBinder对象，默认使用jetty的HttpBinder
+     *
+     * @param httpBinder
+     */
+    public void setHttpBinder(HttpBinder httpBinder) {
+        this.httpBinder = httpBinder;
+    }
+    public int getDefaultPort() {
+        return DEFAULT_PORT;
+    }
+
+    /**
+     * 用于处理HTTP请求
+     */
     private class InternalHandler implements HttpHandler {
 
-        public void handle(HttpServletRequest request, HttpServletResponse response)
-                throws IOException, ServletException {
+        /**
+         * 该方法用于处理HTTP请求
+         *
+         * @param request  request.
+         * @param response response.
+         * @throws IOException
+         * @throws ServletException
+         */
+        public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            // 获取请求的uri，例如：/com.alibaba.dubbo.demo.DemoService
             String uri = request.getRequestURI();
             HttpInvokerServiceExporter skeleton = skeletonMap.get(uri);
+
+            // 必须是post请求
             if (!request.getMethod().equalsIgnoreCase("POST")) {
                 response.setStatus(500);
             } else {
+                // 在线程上下文件中设置请求来自的客户端地址和端口
                 RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
                 try {
                     skeleton.handleRequest(request, response);

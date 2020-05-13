@@ -39,8 +39,9 @@ public class JettyHttpServer extends AbstractHttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(JettyHttpServer.class);
 
+    /** Jetty服务 */
     private Server server;
-
+    /** 用于获取创建Jetty服务的信息 */
     private URL url;
 
     public JettyHttpServer(URL url, final HttpHandler handler) {
@@ -51,6 +52,7 @@ public class JettyHttpServer extends AbstractHttpServer {
         Log.setLog(new StdErrLog());
         Log.getLog().setDebugEnabled(false);
 
+        // 请求分发：设置端口对应的请求处理器
         DispatcherServlet.addHttpHandler(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()), handler);
 
         int threads = url.getParameter(Constants.THREADS_KEY, Constants.DEFAULT_THREADS);

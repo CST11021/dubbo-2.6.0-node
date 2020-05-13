@@ -26,6 +26,13 @@ import com.alibaba.dubbo.remoting.http.HttpServer;
  */
 public class JettyHttpBinder implements HttpBinder {
 
+    /**
+     * 将url绑定到一个HTTP服务上，并开始监听来自客户端的请求
+     *
+     * @param url       服务暴露的URL
+     * @param handler   处理请求的实现
+     * @return server.
+     */
     public HttpServer bind(URL url, HttpHandler handler) {
         return new JettyHttpServer(url, handler);
     }

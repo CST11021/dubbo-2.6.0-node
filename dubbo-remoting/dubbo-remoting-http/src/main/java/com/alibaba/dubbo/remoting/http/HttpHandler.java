@@ -22,12 +22,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * http invocation handler.
+ * 用于处理HTTP请求
  */
 public interface HttpHandler {
 
     /**
-     * invoke.
+     * 该方法用于处理HTTP请求
      *
      * @param request  request.
      * @param response response.

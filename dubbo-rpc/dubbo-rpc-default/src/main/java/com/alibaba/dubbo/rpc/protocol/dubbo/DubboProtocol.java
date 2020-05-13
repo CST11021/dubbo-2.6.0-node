@@ -175,10 +175,18 @@ public class DubboProtocol extends AbstractProtocol {
         }
     };
 
+
+
+
+
+
+
+
+
+
     public DubboProtocol() {
         INSTANCE = this;
     }
-
     public static DubboProtocol getDubboProtocol() {
         if (INSTANCE == null) {
             ExtensionLoader.getExtensionLoader(Protocol.class).getExtension(DubboProtocol.NAME); // load
@@ -188,9 +196,7 @@ public class DubboProtocol extends AbstractProtocol {
 
 
 
-    public int getDefaultPort() {
-        return DEFAULT_PORT;
-    }
+
 
 
 
@@ -287,6 +293,14 @@ public class DubboProtocol extends AbstractProtocol {
         }
         return server;
     }
+
+
+
+
+
+
+
+
 
 
 
@@ -424,6 +438,17 @@ public class DubboProtocol extends AbstractProtocol {
 
 
 
+
+
+
+
+
+
+
+
+    public int getDefaultPort() {
+        return DEFAULT_PORT;
+    }
     public void destroy() {
         for (String key : new ArrayList<String>(serverMap.keySet())) {
             ExchangeServer server = serverMap.remove(key);

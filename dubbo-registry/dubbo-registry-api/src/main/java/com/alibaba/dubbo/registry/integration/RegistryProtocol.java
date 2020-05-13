@@ -51,11 +51,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RegistryProtocol implements Protocol {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistryProtocol.class);
+    /** 表示注册中心协议本身 */
     private static RegistryProtocol INSTANCE;
     /** 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调。 */
     private final Map<URL, NotifyListener> overrideListeners = new ConcurrentHashMap<URL, NotifyListener>();
-    /** To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
-        providerUrl <--> exporter
+    /**
+     * 为了解决RMI重复暴露端口冲突的问题，已经暴露的服务不再暴露。
         缓存已经暴露的服务，key：{@link URL#toFullString()} ，value：{@link Exporter}
         通过协议暴露后会返回一个Exporter对象，然后包装为一个ExporterChangeableWrapper对象缓存到这里，详见：{@link #doLocalExport(Invoker)}方法
      */
@@ -66,17 +67,24 @@ public class RegistryProtocol implements Protocol {
 
     /** 用于将多个Invoker伪装为一个 */
     private Cluster cluster;
-    /** 表示要暴露该服务所使用的协议实现 */
+    /** 真正的服务导出协议，比如：dubbo、HTTP协议等，在将服务注册到注册中心前，会先通过该对象导出服务 */
     private Protocol protocol;
     /** 用于构建注册中心实现的工厂类 */
     private RegistryFactory registryFactory;
     private ProxyFactory proxyFactory;
 
 
+
+
+
+
+
+
+
+
     public RegistryProtocol() {
         INSTANCE = this;
     }
-
     public static RegistryProtocol getRegistryProtocol() {
         if (INSTANCE == null) {
             ExtensionLoader.getExtensionLoader(Protocol.class).getExtension(Constants.REGISTRY_PROTOCOL);
@@ -88,13 +96,20 @@ public class RegistryProtocol implements Protocol {
 
 
 
+
+
+
+    // ===== 服务导出 =====
+
+
+
     /**
      * 主要做如下一些操作：
      *
-     * 调用 doLocalExport 导出服务
-     * 向注册中心注册服务
-     * 向注册中心进行订阅 override 数据
-     * 创建并返回 DestroyableExporter
+     * 1、调用 doLocalExport 导出服务
+     * 2、向注册中心注册服务
+     * 3、向注册中心进行订阅 override 数据
+     * 4、创建并返回 DestroyableExporter
      *
      * 注册时应该是将 registedProviderUrl 传递到注册中心，注册中心记录相应信息；这里我们可以理解为，消费者访问注册中心时，
      * 根据消费者需要获得的服务去读取服务提供者（url）；而订阅时，则是根据 overrideSubscribeUrl 地址和 overrideSubscribeListener
@@ -111,14 +126,23 @@ public class RegistryProtocol implements Protocol {
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
         // 获取注册中心 URL，以 zookeeper 注册中心为例，得到的示例 URL 如下：
-        // zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.2&export=dubbo%3A%2F%2F172.17.48.52%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider
+        // zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?
+        // application=demo-provider
+        // &dubbo=2.0.2
+        // &export=dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
         URL registryUrl = getRegistryUrl(originInvoker);
 
         // 根据 URL 加载 Registry 实现类，比如 ZookeeperRegistry
         final Registry registry = getRegistry(originInvoker);
 
         // 获取已注册的服务提供者 URL，比如：
-        // dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.2&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+        // dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
+        // ?anyhost=true
+        // &application=demo-provider
+        // &dubbo=2.0.2
+        // &generic=false
+        // &interface=com.alibaba.dubbo.demo.DemoService
+        // &methods=sayHello
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
         boolean register = registedProviderUrl.getParameter("register", true);
@@ -139,7 +163,15 @@ public class RegistryProtocol implements Protocol {
         // FIXME：Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
         // FIXME： 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
         // 获取订阅 URL，比如：
-        // provider://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?category=configurators&check=false&anyhost=true&application=demo-provider&dubbo=2.0.2&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello
+        // provider://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
+        // ?category=configurators
+        // &check=false
+        // &anyhost=true
+        // &application=demo-provider
+        // &dubbo=2.0.2
+        // &generic=false
+        // &interface=com.alibaba.dubbo.demo.DemoService
+        // &methods=sayHello
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
@@ -148,7 +180,7 @@ public class RegistryProtocol implements Protocol {
         // 订阅 overrideSubscribeUrl 这个服务
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
-        //保证每次export都返回一个新的exporter实例
+        // 保证每次export都返回一个新的exporter实例
         return new Exporter<T>() {
             public Invoker<T> getInvoker() {
                 return exporter.getInvoker();
@@ -367,6 +399,12 @@ public class RegistryProtocol implements Protocol {
     }
 
 
+
+
+    // ===== 服务导入 =====
+
+
+
     /**
      *
      * @param type              服务的类型
@@ -435,6 +473,19 @@ public class RegistryProtocol implements Protocol {
 
 
 
+
+
+
+
+
+
+
+
+
+
+    public int getDefaultPort() {
+        return 9090;
+    }
     public void destroy() {
         List<Exporter<?>> exporters = new ArrayList<Exporter<?>>(bounds.values());
         for (Exporter<?> exporter : exporters) {
@@ -446,11 +497,20 @@ public class RegistryProtocol implements Protocol {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
     // getter and setter ...
 
-    public int getDefaultPort() {
-        return 9090;
-    }
+
     public Map<URL, NotifyListener> getOverrideListeners() {
         return overrideListeners;
     }
@@ -467,6 +527,15 @@ public class RegistryProtocol implements Protocol {
     public void setProxyFactory(ProxyFactory proxyFactory) {
         this.proxyFactory = proxyFactory;
     }
+
+
+
+
+
+
+
+
+
 
 
 

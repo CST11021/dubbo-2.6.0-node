@@ -21,10 +21,13 @@ import com.alibaba.dubbo.common.URL;
 
 import java.net.InetSocketAddress;
 
+/**
+ * 表示一个HTTP服务，用来监听来自dubbo消费端的HTTP请求，服务导出（暴露）的过程就是创建该实例对象
+ */
 public interface HttpServer extends Resetable {
 
     /**
-     * get http handler.
+     * 返回一个用于处理HTTP请求的对象实例
      *
      * @return http handler.
      */

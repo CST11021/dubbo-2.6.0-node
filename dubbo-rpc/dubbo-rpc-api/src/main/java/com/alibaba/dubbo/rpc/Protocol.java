@@ -34,30 +34,17 @@ import com.alibaba.dubbo.common.extension.SPI;
 public interface Protocol {
 
     /**
-     * Get default port when user doesn't config the port.
-     * 获取默认的端口
+     * 获取获取协议的默认端口，不同的协议有不同的默认端口，比如dubbo协议的默认是20880，HTTP协议的默认端口是80
      *
      * @return default port
      */
     int getDefaultPort();
 
     /**
-     * Export service for remote invocation: <br>
-     * 1. Protocol should record request source address after receive a request:
-     * RpcContext.getContext().setRemoteAddress();<br>
-     * 2. export() must be idempotent, that is, there's no difference between invoking once and invoking twice when
-     * export the same URL<br>
-     * 3. Invoker instance is passed in by the framework, protocol needs not to care <br>
-     *
-     * @param <T>     Service type
-     * @param invoker Service invoker
-     * @return exporter reference for exported service, useful for unexport the service later
-     * @throws RpcException thrown when error occurs during export the service, for example: port is occupied
-     *
-     * 暴露远程服务：<br>
-     * 1. 协议在接收请求时，应记录请求来源方地址信息：RpcContext.getContext().setRemoteAddress();<br>
-     * 2. export()必须是幂等的，也就是暴露同一个URL的Invoker两次，和暴露一次没有区别。<br>
-     * 3. export()传入的Invoker由框架实现并传入，协议不需要关心。<br>
+     * 导出服务以进行远程调用：
+     * 1. 协议应在收到请求后记录请求源地址：RpcContext.getContext().setRemoteAddress();
+     * 2. export()必须是幂等的，即，导出相同的URL时一次调用和两次调用之间没有区别
+     * 3.调用程序实例由框架传递，协议无需关心
      *
      * @param <T>               服务的类型
      * @param invoker           服务的执行体
@@ -66,10 +53,11 @@ public interface Protocol {
      *
      *
      *  Dubbo处理服务暴露的关键就在Invoker转换到Exporter的过程，我们以Dubbo和rmi这两种典型协议的实现来进行说明：
-     *      Dubbo的实现： Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，
-     *                    并接收客户端发来的各种请求，通讯细节由dubbo自己实现。
-     *      Rmi的实现：   RMI协议的Invoker转为Exporter发生在RmiProtocol类的export方法，他通过Spring或Dubbo或JDK来实现服务，
-     *                    通讯细节由JDK底层来实现。
+     *      Dubbo的实现：
+     *          Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端发来的各种请求，通讯细节由dubbo自己实现。
+     *
+     *      Rmi的实现：
+     *          RMI协议的Invoker转为Exporter发生在RmiProtocol类的export方法，他通过Spring或Dubbo或JDK来实现服务，通讯细节由JDK底层来实现。
      *
      */
     @Adaptive
@@ -77,23 +65,9 @@ public interface Protocol {
 
     /**
      * Refer a remote service: <br>
-     * 1. When user calls `invoke()` method of `Invoker` object which's returned from `refer()` call, the protocol
-     * needs to correspondingly execute `invoke()` method of `Invoker` object <br>
-     * 2. It's protocol's responsibility to implement `Invoker` which's returned from `refer()`. Generally speaking,
-     * protocol sends remote request in the `Invoker` implementation. <br>
-     * 3. When there's check=false set in URL, the implementation must not throw exception but try to recover when
-     * connection fails.
-     *
-     * @param <T>  Service type
-     * @param type Service class
-     * @param url  URL address for the remote service
-     * @return invoker service's local proxy
-     * @throws RpcException when there's any error while connecting to the service provider
-     *
-     * 引用远程服务：<br>
-     * 1. 当用户调用refer()所返回的Invoker对象的invoke()方法时，协议需相应执行同URL远端export()传入的Invoker对象的invoke()方法。<br>
-     * 2. refer()返回的Invoker由协议实现，协议通常需要在此Invoker中发送远程请求。<br>
-     * 3. 当url中有设置check=false时，连接失败不能抛出异常，需内部自动恢复。<br>
+     * 1. 当用户调用从refer()调用返回的Invoker对象的invoke()方法时，协议需要相应地执行Invoker对象的invoke()方法。
+     * 2. 实现由`refer()`返回的`Invoker`是协议的责任。一般来说，协议在Invoker实现中发送远程请求。
+     * 3. 如果在URL中设置了check = false，则实现不得抛出异常，而应尝试在连接失败时恢复。
      *
      * @param <T>               服务的类型
      * @param type              服务的类型

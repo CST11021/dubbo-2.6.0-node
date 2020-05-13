@@ -1163,6 +1163,8 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
+
+        // 判断入参values有没有包含："-default"
         if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
             getExtensionClasses();
             for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
@@ -1179,11 +1181,11 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
             }
             Collections.sort(exts, ActivateComparator.COMPARATOR);
         }
+
         List<T> usrs = new ArrayList<T>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
-            if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX)
-                    && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
+            if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX) && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
                 if (Constants.DEFAULT_KEY.equals(name)) {
                     if (usrs.size() > 0) {
                         exts.addAll(0, usrs);
@@ -1212,7 +1214,7 @@ public class Protocol$Adaptive implements com.alibaba.dubbo.rpc.Protocol {
         return getActivateExtension(url, key, null);
     }
     /**
-     * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
+     * 这相当于 {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
      *
      * @param url   url
      * @param key   url parameter key which used to get extension point names

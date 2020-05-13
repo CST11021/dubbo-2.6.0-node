@@ -25,14 +25,12 @@ import com.alibaba.dubbo.common.extension.SPI;
 public interface Filter {
 
     /**
-     * do invoke filter.
-     * <p>
-     * <code>
+     * 通过Invoker调用目标方法前，会调用一系列表的过滤器方法，调用过程如下：
+     *
      * // before filter
      * Result result = invoker.invoke(invocation);
      * // after filter
      * return result;
-     * </code>
      *
      * @param invoker    service
      * @param invocation invocation.

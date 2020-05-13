@@ -22,8 +22,19 @@ import java.util.List;
 
 public interface ZookeeperClient {
 
+    /**
+     * 创建节点
+     *
+     * @param path          节点路径
+     * @param ephemeral     是否临时节点
+     */
     void create(String path, boolean ephemeral);
 
+    /**
+     * 删除节点
+     *
+     * @param path
+     */
     void delete(String path);
 
     List<String> getChildren(String path);

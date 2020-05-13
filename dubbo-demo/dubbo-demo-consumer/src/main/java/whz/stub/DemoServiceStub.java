@@ -1,4 +1,4 @@
-package com.alibaba.dubbo.demo.consumer;
+package whz.stub;
 
 import com.alibaba.dubbo.demo.DemoService;
 

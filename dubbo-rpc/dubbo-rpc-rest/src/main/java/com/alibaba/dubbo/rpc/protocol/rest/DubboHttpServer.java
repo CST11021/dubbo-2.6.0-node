@@ -78,8 +78,19 @@ public class DubboHttpServer extends BaseRestServer {
         return deployment;
     }
 
+    /**
+     * 用于处理HTTP请求
+     */
     private class RestHandler implements HttpHandler {
 
+        /**
+         * 该方法用于处理HTTP请求
+         *
+         * @param request  request.
+         * @param response response.
+         * @throws IOException
+         * @throws ServletException
+         */
         public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
             dispatcher.service(request, response);

@@ -49,6 +49,7 @@ public class ProtocolListenerWrapper implements Protocol {
 
     }
 
+    /** 对应真正的协议实现，例如：dubbo协议，HTTP协议、injvm协议等 */
     private final Protocol protocol;
 
     public ProtocolListenerWrapper(Protocol protocol) {
@@ -58,6 +59,35 @@ public class ProtocolListenerWrapper implements Protocol {
         this.protocol = protocol;
     }
 
+
+
+    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
+            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务
+            return protocol.export(invoker);
+        }
+
+        return new ListenerExporterWrapper<T>(protocol.export(invoker),
+                Collections.unmodifiableList(
+                        ExtensionLoader.getExtensionLoader(ExporterListener.class)
+                                .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));
+    }
+
+    public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+            return protocol.refer(type, url);
+        }
+
+        return new ListenerInvokerWrapper<T>(protocol.refer(type, url),
+                Collections.unmodifiableList(
+                        ExtensionLoader.getExtensionLoader(InvokerListener.class)
+                                .getActivateExtension(url, Constants.INVOKER_LISTENER_KEY)));
+    }
+
+
+
+    // 没有其他逻辑，直接委托给对应的方法
+
     /**
      * 返回真正协议实现的端口
      *
@@ -66,27 +96,6 @@ public class ProtocolListenerWrapper implements Protocol {
     public int getDefaultPort() {
         return protocol.getDefaultPort();
     }
-
-    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
-            // 如果该URL是要暴露到注册中心的，则直接调用对应的协议扩展点实现来暴露服务
-            return protocol.export(invoker);
-        }
-        return new ListenerExporterWrapper<T>(protocol.export(invoker),
-                Collections.unmodifiableList(ExtensionLoader.getExtensionLoader(ExporterListener.class)
-                        .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));
-    }
-
-    public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
-        if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
-            return protocol.refer(type, url);
-        }
-        return new ListenerInvokerWrapper<T>(protocol.refer(type, url),
-                Collections.unmodifiableList(
-                        ExtensionLoader.getExtensionLoader(InvokerListener.class)
-                                .getActivateExtension(url, Constants.INVOKER_LISTENER_KEY)));
-    }
-
     public void destroy() {
         protocol.destroy();
     }

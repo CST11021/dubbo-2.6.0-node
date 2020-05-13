@@ -43,7 +43,6 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
     }
 
     /**
-     * create invoker.
      * 根据入参将要暴露的服务封装为一个{@link Invoker}对象
      *
      * @param <T>
@@ -53,7 +52,6 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
      * @return invoker
      */
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
-        // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
         // 包装器不能正确处理这种情况:类名包含'$'
 
         // 将代理接口包装为一个 Wrapper 对象

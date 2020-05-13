@@ -22,15 +22,16 @@ import com.alibaba.dubbo.common.extension.Adaptive;
 import com.alibaba.dubbo.common.extension.SPI;
 
 /**
- * HttpBinder
+ * 将url绑定到一个HTTP服务上，并开始监听来自客户端的请求
  */
 @SPI("jetty")
 public interface HttpBinder {
 
     /**
-     * bind the server.
+     * 将url绑定到一个HTTP服务上，并开始监听来自客户端的请求
      *
-     * @param url server url.
+     * @param url       服务暴露的URL
+     * @param handler   处理请求的实现
      * @return server.
      */
     @Adaptive({Constants.SERVER_KEY})
