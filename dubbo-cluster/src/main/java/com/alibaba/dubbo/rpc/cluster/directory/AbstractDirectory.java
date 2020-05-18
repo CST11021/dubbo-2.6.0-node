@@ -42,6 +42,8 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDirectory.class);
 
+
+
     /** 用来表示提供服务目标机器，可以是多个 */
     private final URL url;
     /** Directory是用来封装同一服务接口的多个服务提供者，该字段用来标识该服务接口是否已被注销 */
@@ -50,6 +52,10 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
     private volatile URL consumerUrl;
     /** 获取所有的服务提供后，会通过Router进行过滤后，再使用Directory封装多个服务提供者，最后通过负载均衡确定一个要用于本次调用的目标服务*/
     private volatile List<Router> routers;
+
+
+
+
 
     public AbstractDirectory(URL url) {
         this(url, null);
@@ -64,6 +70,11 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         this.consumerUrl = consumerUrl;
         setRouters(routers);
     }
+
+
+
+
+    // 核心方法
 
     /**
      * 根据请求的方法签名及入参，返回多个{@link Invoker}对象（可能存在多个服务提供者）。

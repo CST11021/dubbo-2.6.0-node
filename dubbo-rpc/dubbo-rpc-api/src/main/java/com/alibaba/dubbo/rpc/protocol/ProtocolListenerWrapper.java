@@ -49,7 +49,10 @@ public class ProtocolListenerWrapper implements Protocol {
 
     }
 
-    /** 对应真正的协议实现，例如：dubbo协议，HTTP协议、injvm协议等 */
+    /**
+     * 服务导出时：对应真正的协议实现，例如：dubbo协议，HTTP协议、injvm协议等
+     * 服务导入时：对应{@link ProtocolFilterWrapper}
+     */
     private final Protocol protocol;
 
     public ProtocolListenerWrapper(Protocol protocol) {

@@ -78,12 +78,14 @@ public class Main {
                             } catch (Throwable t) {
                                 logger.error(t.getMessage(), t);
                             }
+
                             try {
                                 LOCK.lock();
                                 STOP.signal();
                             } finally {
                                 LOCK.unlock();
                             }
+
                         }
                     }
                 });
@@ -100,6 +102,8 @@ public class Main {
             logger.error(e.getMessage(), e);
             System.exit(1);
         }
+
+        // 等钩子里的容器优雅停止后，会释放锁，这里再结束线程
         try {
             LOCK.lock();
             STOP.await();
@@ -108,6 +112,7 @@ public class Main {
         } finally {
             LOCK.unlock();
         }
+
     }
 
 }

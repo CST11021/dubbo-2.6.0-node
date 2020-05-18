@@ -36,7 +36,11 @@ import java.util.List;
  */
 public class ProtocolFilterWrapper implements Protocol {
 
-    /** 通过SPI自适应扩展机制，该实现类是{@link ProtocolListenerWrapper} */
+    /**
+     * 通过SPI自适应扩展机制:
+     * 服务导出时：该实现类是{@link ProtocolListenerWrapper}
+     * 服务导入时：该实现类对应真正的协议实现，例如：RegistryProtocol、dubbo协议，HTTP协议、injvm协议等
+     */
     private final Protocol protocol;
 
     public ProtocolFilterWrapper(Protocol protocol) {
@@ -78,7 +82,8 @@ public class ProtocolFilterWrapper implements Protocol {
         Invoker<T> last = invoker;
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
 
-        // 过滤链如：EchoFilter -> ClassLoaderFilter -> GenericFilter -> ContextFilter -> TraceFilter -> TimeoutFilter -> MonitorFilter -> ExceptionFilter
+        // 服务导出，过滤链如：EchoFilter -> ClassLoaderFilter -> GenericFilter -> ContextFilter -> TraceFilter -> TimeoutFilter -> MonitorFilter -> ExceptionFilter
+        // 服务引入，过滤链如：ConsumerContextFilter -> FutureFilter -> MonitorFilter
         if (filters.size() > 0) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);

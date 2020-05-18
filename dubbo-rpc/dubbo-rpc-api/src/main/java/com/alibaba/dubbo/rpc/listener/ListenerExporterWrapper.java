@@ -32,7 +32,7 @@ public class ListenerExporterWrapper<T> implements Exporter<T> {
     private static final Logger logger = LoggerFactory.getLogger(ListenerExporterWrapper.class);
 
     private final Exporter<T> exporter;
-
+    /** 监听{@link #exporter}，当服务被导出前，会调用{@link ExporterListener#exported(Exporter)}方法，服务注销时调调用{@link ExporterListener#unexported(Exporter)}方法 */
     private final List<ExporterListener> listeners;
 
     public ListenerExporterWrapper(Exporter<T> exporter, List<ExporterListener> listeners) {

@@ -40,6 +40,13 @@ import java.util.regex.Pattern;
 
 /**
  * 条件路由：
+ * 条件路由规则由两个条件组成，分别用于对服务消费者和提供者进行匹配。比如有这样一条规则：
+ * host = 10.20.153.10 => host = 10.20.153.11
+ * 该条规则表示 IP 为 10.20.153.10 的服务消费者只可调用 IP 为 10.20.153.11 机器上的服务，不可调用其他机器上的服务。
+ *
+ * 如果服务消费者匹配条件为空，表示不对服务消费者进行限制。如果服务提供者匹配条件为空，表示对某些服务消费者禁用服务。
+ *
+ * 条件路由规则是一条字符串，对于 Dubbo 来说，它并不能直接理解字符串的意思，需要将其解析成内部格式才行。
  *
  */
 public class ConditionRouter implements Router, Comparable<Router> {
@@ -53,28 +60,43 @@ public class ConditionRouter implements Router, Comparable<Router> {
     private final Map<String, MatchPair> whenCondition;
     private final Map<String, MatchPair> thenCondition;
 
+
+
+
     public ConditionRouter(URL url) {
         this.url = url;
+        // 获取 priority 和 force 配置
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         this.force = url.getParameter(Constants.FORCE_KEY, false);
+
         try {
+            // 获取路由规则
             String rule = url.getParameterAndDecoded(Constants.RULE_KEY);
             if (rule == null || rule.trim().length() == 0) {
                 throw new IllegalArgumentException("Illegal route rule!");
             }
+
             rule = rule.replace("consumer.", "").replace("provider.", "");
+            // 定位 => 分隔符
             int i = rule.indexOf("=>");
+            // 分别获取服务消费者和提供者匹配规则
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();
+
+            // 解析服务消费者匹配规则
             Map<String, MatchPair> when = StringUtils.isBlank(whenRule) || "true".equals(whenRule) ? new HashMap<String, MatchPair>() : parseRule(whenRule);
+            // 解析服务提供者匹配规则
             Map<String, MatchPair> then = StringUtils.isBlank(thenRule) || "false".equals(thenRule) ? null : parseRule(thenRule);
-            // NOTE: It should be determined on the business level whether the `When condition` can be empty or not.
+            // 将解析出的匹配规则分别赋值给 whenCondition 和 thenCondition 成员变量
             this.whenCondition = when;
             this.thenCondition = then;
         } catch (ParseException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
+
+
+
 
 
     public URL getUrl() {
@@ -227,6 +249,9 @@ public class ConditionRouter implements Router, Comparable<Router> {
         ConditionRouter c = (ConditionRouter) o;
         return this.priority == c.priority ? url.toFullString().compareTo(c.url.toFullString()) : (this.priority > c.priority ? 1 : -1);
     }
+
+
+
     private static final class MatchPair {
         final Set<String> matches = new HashSet<String>();
         final Set<String> mismatches = new HashSet<String>();

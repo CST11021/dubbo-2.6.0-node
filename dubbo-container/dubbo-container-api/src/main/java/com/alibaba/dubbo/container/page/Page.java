@@ -47,8 +47,7 @@ public class Page {
         this(navigation, title, columns == null ? null : Arrays.asList(columns), rows);
     }
 
-    public Page(String navigation, String title,
-                List<String> columns, List<List<String>> rows) {
+    public Page(String navigation, String title, List<String> columns, List<List<String>> rows) {
         this.navigation = navigation;
         this.title = title;
         this.columns = columns;

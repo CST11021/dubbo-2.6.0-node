@@ -49,16 +49,29 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         this.invokers = invokers;
     }
 
+
+
+    @Override
+    protected List<Invoker<T>> doList(Invocation invocation) throws RpcException {
+        return invokers;
+    }
+
+
     public Class<T> getInterface() {
         return invokers.get(0).getInterface();
     }
 
+    /**
+     * 检测服务目录是否可用
+     *
+     * @return
+     */
     public boolean isAvailable() {
         if (isDestroyed()) {
             return false;
         }
 
-        // 只要存在一个可用的Invoker，就表示该服务可以被调用
+        // 只要有一个 Invoker 是可用的，就认为当前目录是可用的
         for (Invoker<T> invoker : invokers) {
             if (invoker.isAvailable()) {
                 return true;
@@ -78,10 +91,6 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         invokers.clear();
     }
 
-    @Override
-    protected List<Invoker<T>> doList(Invocation invocation) throws RpcException {
 
-        return invokers;
-    }
 
 }

@@ -30,7 +30,7 @@ import com.alibaba.dubbo.rpc.support.ProtocolUtils;
 import java.util.Map;
 
 /**
- * InjvmProtocol
+ * InjvmProtocol：本地服务导出协议，需要注意的是这一个static实例，所有一个JVM需要导出的服务都通过该实例导出，并最终缓存到InjvmExporter中
  */
 public class InjvmProtocol extends AbstractProtocol implements Protocol {
 

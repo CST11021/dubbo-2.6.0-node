@@ -22,6 +22,8 @@ import com.alibaba.dubbo.common.Node;
  * 可以通过该接口返回服务的接口类型或返回目标服务的调用结果
  * Invoker. (API/SPI, Prototype, ThreadSafe)
  *
+ * 当导出服务时，会将本地服务包装未一个invoke实例，在通过协议进行导出
+ *
  * @see com.alibaba.dubbo.rpc.Protocol#refer(Class, com.alibaba.dubbo.common.URL)
  * @see com.alibaba.dubbo.rpc.InvokerListener
  * @see com.alibaba.dubbo.rpc.protocol.AbstractInvoker

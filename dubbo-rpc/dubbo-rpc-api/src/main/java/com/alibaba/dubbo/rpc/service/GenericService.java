@@ -17,7 +17,6 @@
 package com.alibaba.dubbo.rpc.service;
 
 /**
- * Generic service interface
  * 表示一个泛化服务类型
  *
  * @export
@@ -27,11 +26,10 @@ public interface GenericService {
     /**
      * Generic invocation
      *
-     * @param method         Method name, e.g. findPerson. If there are overridden methods, parameter info is
-     *                       required, e.g. findPerson(java.lang.String)
-     * @param parameterTypes Parameter types
-     * @param args           Arguments
-     * @return invocation return value
+     * @param method         方法名称，例如findPerson。如果有覆盖的方法，则需要参数信息，例如findPerson（java.lang.String）
+     * @param parameterTypes 参数类型
+     * @param args           参数
+     * @return 方法调用返回值
      * @throws Throwable potential exception thrown from the invocation
      */
     Object $invoke(String method, String[] parameterTypes, Object[] args) throws GenericException;

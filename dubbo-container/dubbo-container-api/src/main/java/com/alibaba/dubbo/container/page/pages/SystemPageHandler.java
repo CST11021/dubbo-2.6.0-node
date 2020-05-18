@@ -86,8 +86,7 @@ public class SystemPageHandler implements PageHandler {
         row.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(new Date()));
         rows.add(row);
 
-        return new Page("System", "System", new String[]{
-                "Property", "Value"}, rows);
+        return new Page("System", "System", new String[]{"Property", "Value"}, rows);
     }
 
     private String formatUptime(long uptime) {

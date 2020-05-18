@@ -145,6 +145,7 @@ public class RegistryProtocol implements Protocol {
         // &methods=sayHello
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
+        // 将服务提供者的信息把保存到注册中心
         boolean register = registedProviderUrl.getParameter("register", true);
 
         // 向服务提供者与消费者注册表中注册服务提供者
@@ -157,6 +158,7 @@ public class RegistryProtocol implements Protocol {
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
 
+        //
 
         // Subscribe the override data
         // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
@@ -293,6 +295,10 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private URL getRegistryUrl(Invoker<?> originInvoker) {
+        // registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
+        // ?application=demo-provider
+        // &dubbo=2.0.0
+        // &export=dubbo://172.16.120.147:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=172.16.120.147&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=27660&side=provider&timeout=1000&timestamp=1589350902783&pid=27660&registry=zookeeper&timestamp=1589350902756
         URL registryUrl = originInvoker.getUrl();
         if (Constants.REGISTRY_PROTOCOL.equals(registryUrl.getProtocol())) {
             String protocol = registryUrl.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_DIRECTORY);
@@ -436,7 +442,7 @@ public class RegistryProtocol implements Protocol {
     }
     /**
      * 获取这个服务的{@link Invoker}对象
-     * @param cluster       路由策略
+     * @param cluster       集群容错策略
      * @param registry      注册中心
      * @param type          服务接口
      * @param url           服务对应的URL
@@ -444,23 +450,30 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
+        // 服务目录的作用：每一个服务提供者对应一个invoker，多个服务提供者就会对应多个invoker。
+        // 如果一个消费者对应多个提供者，dubbo会把多个invoker合并成一个invoker来处理，具体处理逻辑是：
+        // 根据服务名去注册中心获取多个服务地址，服务地址经过路由器过滤掉一部分地址，剩下的地址称为服务目录的invoker合并，真正调用的时候才选取一个再进行负载均衡和容错处理。
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
+
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
         URL subscribeUrl = new URL(Constants.CONSUMER_PROTOCOL, parameters.remove(Constants.REGISTER_IP_KEY), 0, type.getName(), parameters);
-        if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
-                && url.getParameter(Constants.REGISTER_KEY, true)) {
-            registry.register(subscribeUrl.addParameters(Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY,
-                    Constants.CHECK_KEY, String.valueOf(false)));
+        if (!Constants.ANY_VALUE.equals(url.getServiceInterface()) && url.getParameter(Constants.REGISTER_KEY, true)) {
+            registry.register(
+                    subscribeUrl.addParameters(
+                            Constants.CATEGORY_KEY,
+                            Constants.CONSUMERS_CATEGORY,
+                            Constants.CHECK_KEY,
+                            String.valueOf(false)
+                    )
+            );
         }
 
         // 程序走到这里会去调用相应协议实现的refer方法，比如：DubboProtocol#refer()方法
         directory.subscribe(subscribeUrl.addParameter(Constants.CATEGORY_KEY,
-                Constants.PROVIDERS_CATEGORY
-                        + "," + Constants.CONFIGURATORS_CATEGORY
-                        + "," + Constants.ROUTERS_CATEGORY));
+                Constants.PROVIDERS_CATEGORY + "," + Constants.CONFIGURATORS_CATEGORY + "," + Constants.ROUTERS_CATEGORY));
 
         // 将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
         Invoker invoker = cluster.join(directory);

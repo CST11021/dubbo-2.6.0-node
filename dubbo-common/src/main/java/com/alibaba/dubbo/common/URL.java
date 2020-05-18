@@ -1188,15 +1188,25 @@ public final class URL implements Serializable {
         return new InetSocketAddress(host, port);
     }
 
+    /**
+     * 获取服务key，例如：${group}/com.alibaba.dubbo.demo.DemoService:${version}
+     *
+     * @return
+     */
     public String getServiceKey() {
+        // 获取接口的全限定类名，例如：com.alibaba.dubbo.demo.DemoService
         String inf = getServiceInterface();
         if (inf == null) return null;
+
+        // 如果配置了group，则：${group}/com.alibaba.dubbo.demo.DemoService
         StringBuilder buf = new StringBuilder();
         String group = getParameter(Constants.GROUP_KEY);
         if (group != null && group.length() > 0) {
             buf.append(group).append("/");
         }
         buf.append(inf);
+
+        // 如果配置了version，则：${group}/com.alibaba.dubbo.demo.DemoService:${version}
         String version = getParameter(Constants.VERSION_KEY);
         if (version != null && version.length() > 0) {
             buf.append(":").append(version);
@@ -1217,6 +1227,10 @@ public final class URL implements Serializable {
         return getServiceInterface();
     }
 
+    /**
+     * 获取接口的全限定类名，例如：com.alibaba.dubbo.demo.DemoService
+     * @return
+     */
     public String getServiceInterface() {
         return getParameter(Constants.INTERFACE_KEY, path);
     }

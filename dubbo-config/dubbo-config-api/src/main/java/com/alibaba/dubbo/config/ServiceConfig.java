@@ -587,6 +587,19 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                             logger.info("Register dubbo service " + interfaceClass.getName() + " url " + url + " to registry " + registryURL);
                         }
                         // Invoker<?> 这个？表示参入 ref 指向的对象类型（即：实现服务接口的对象类型）
+                        // url:dubbo://172.16.120.147:20880/com.alibaba.dubbo.demo.DemoService
+                        // ?anyhost=true
+                        // &application=demo-provider
+                        // &bind.ip=172.16.120.147
+                        // &bind.port=20880
+                        // &dubbo=2.0.0
+                        // &generic=false
+                        // &interface=com.alibaba.dubbo.demo.DemoService
+                        // &methods=sayHello
+                        // &pid=27614
+                        // &side=provider
+                        // &timeout=1000
+                        // &timestamp=1589349188313
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 

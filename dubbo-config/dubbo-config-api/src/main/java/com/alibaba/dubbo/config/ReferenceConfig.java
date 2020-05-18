@@ -64,12 +64,17 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     private static final long serialVersionUID = -5864351140409987595L;
 
+    //
+
     /** 表示本次调用所使用的协议 */
     private static final Protocol refprotocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
     /** 表示本次调用使用的路由规则 */
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
     /** 表示本次要代理远程接口所使用代理工厂 */
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+
+
+
     /** 该URL对象包含的信息包括： 要调用的服务接口信息 + 注册中心信息 ，详见{@link ReferenceConfig#createProxy(Map)} */
     private final List<URL> urls = new ArrayList<URL>();
     /** 表示配置的远程服务接口的全限定类名 */
@@ -78,10 +83,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private Class<?> interfaceClass;
     /** client type */
     private String client;
-    /**
-     *  url for peer-to-peer invocation
-     *  用于直连服务的url
-     */
+    /** 用于直连服务的url, 当该值不为空时，表示该服务 */
     private String url;
     /** 表示<dubbo:method/>配置 */
     private List<MethodConfig> methods;
@@ -146,11 +148,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         initialized = true;
 
+
+
+
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
 
-        // get consumer's global configuration
         // 设置this.consumer
         checkDefault();
         appendProperties(this);
@@ -326,6 +330,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         //attributes are stored by system context.
         StaticContext.getSystemContext().putAll(attributes);
+
+
+
+
+
+
+
+
+        // ======= 传感代理对象=======
+
         ref = createProxy(map);
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
@@ -445,6 +459,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             // ①单个注册中心或服务提供者(服务直连，下同)
             if (urls.size() == 1) {
                 // 调用 RegistryProtocol 的 refer 构建 Invoker 实例
+                // url：registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
+                // ?application=demo-consumer
+                // &dubbo=2.0.0&pid=37450&refer=application=demo-consumer&check=false&dubbo=2.0.0
+                // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=37450
+                // &register.ip=192.168.1.101&side=consumer&stub=whz.stub.DemoServiceStub&timestamp=1589681090425
+                // &registry=zookeeper
+                // &timestamp=1589681090454
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             }
 
