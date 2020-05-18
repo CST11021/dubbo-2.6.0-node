@@ -48,7 +48,7 @@ public interface Router extends Comparable<Router> {
      * 了负载均衡的算法，调用失败后需要重新选择
      *
      * @param invokers          表示所有的服务提供者的Invoker对象
-     * @param url               消费者调用的URL信息，例如：consumer://192.168.85.1/com.foo.BarService
+     * @param url               路由规则
      * @param invocation        表示本次调用的方法入参信息
      * @return routed invokers  根据路由规则，返回该消费者所有可以调用的Invoker
      * @throws RpcException
