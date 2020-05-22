@@ -83,7 +83,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private Class<?> interfaceClass;
     /** client type */
     private String client;
-    /** 用于直连服务的url, 当该值不为空时，表示该服务 */
+    /** 用于直连服务的url, 当该值不为空时，表示该服务导入时，使用服务直连，配置例如：com.whz.sso.service.IUserSsoService=dubbo://192.168.14.219:20848 */
     private String url;
     /** 表示<dubbo:method/>配置 */
     private List<MethodConfig> methods;
@@ -181,6 +181,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         // --------------- 查找环境变量或者本地配置，检查是否配置了直连服务 ---------------
 
+        // resolve例如：com.whz.sso.service.IUserSsoService=dubbo://192.168.14.219:20848
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
         if (resolve == null || resolve.length() == 0) {
@@ -371,15 +372,28 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
      */
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
+
+
         URL tmpUrl = new URL("temp", "localhost", 0, map);
-        // 标识服务接口的代理对象是否指向本地的JVM，一般该属性为false
+
+
+
+
+
+        // ==== 标识服务接口的代理对象是否指向本地的JVM，一般该属性为false ====
+
+
+
         final boolean isJvmRefer;
         if (isInjvm() == null) {
-            // url 配置被指定，则不做本地引用
+            // url 配置被指定，则不做本地引用，系统变量和dubbo配置文件可以配置服务直连
             if (url != null && url.length() > 0) {
                 isJvmRefer = false;
-            } else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
-                // by default, reference local service if there is
+            }
+            // 判断url是否为本地调用，当url的scope=local，或者injvm=true，或者本地url有匹配的本地Exporter时，isInjvmRefer方法返回true
+
+            // scope属性对应配置如：<dubbo:reference id="helloService" interface="com.alibaba.dubbo.demo.HelloService" scope="true"/>
+            else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
                 isJvmRefer = true;
             } else {
                 isJvmRefer = false;
@@ -387,6 +401,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         } else {
             isJvmRefer = isInjvm().booleanValue();
         }
+
+
+
+
+
+        // ==== 创建invoke ====
+
+
+
+
 
         // 本地引用：使用了Injvm协议，是一个伪协议，它不开启端口，不发起远程调用，只在JVM内直接关联，但执行Dubbo的Filter链
         if (isJvmRefer) {
@@ -401,8 +425,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
 
 
-            // 1、url 不为空，表明用户可能想进行点对点调用
+            // 1、url 不为空，表明用户可能想进行点对点调用，配置例如：com.whz.sso.service.IUserSsoService=dubbo://192.168.14.219:20848
             if (url != null && url.length() > 0) {
+                // 使用分号分隔url
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
                     for (String u : us) {
@@ -410,7 +435,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         if (url.getPath() == null || url.getPath().length() == 0) {
                             url = url.setPath(interfaceName);
                         }
+
+                        // 如果协议是registry，则添加refer属性
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+                            // 将map转为：key1=value1&key2=value2&... 的格式
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                         } else {
                             urls.add(ClusterUtils.mergeUrl(url, map));
@@ -498,8 +526,20 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
         }
 
+
+
+
+
+
+
+        // ======== <reference>标签的check配置及服务的可用性检查 ========
+
+
+
+        // 对应该配置的check属性，<dubbo:reference id="helloService" interface="com.alibaba.dubbo.demo.HelloService" check="false"/>
         Boolean c = check;
         if (c == null && consumer != null) {
+            // <dubbo:reference/>标签没有配置的话，就取<consumer>标签的check配置
             c = consumer.isCheck();
         }
         if (c == null) {
@@ -514,6 +554,14 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (logger.isInfoEnabled()) {
             logger.info("Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
         }
+
+
+
+
+
+
+
+
 
         // 生成代理类
         return (T) proxyFactory.getProxy(invoker);

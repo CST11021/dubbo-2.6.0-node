@@ -27,9 +27,9 @@ import com.alibaba.dubbo.rpc.Invoker;
 public abstract class AbstractExporter<T> implements Exporter<T> {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
-
+    /** 要导出的Invoker */
     private final Invoker<T> invoker;
-
+    /** 标记该Exporter是否取消导出 */
     private volatile boolean unexported = false;
 
     public AbstractExporter(Invoker<T> invoker) {

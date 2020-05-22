@@ -38,6 +38,13 @@ public interface RegistryService {
      * 4. 当注册中心重启，网络抖动，不能丢失数据，包括断线自动删除数据。
      * 5. 允许具有相同URL但不同参数的URL共存，它们不能相互覆盖。
      *
+     *
+     * 调用场景：
+     * 1、服务导出时，会通过{@link com.alibaba.dubbo.registry.integration.RegistryProtocol#register(URL, URL)}方法，调用该方法向注册中心注册服务
+     *
+     *
+     *
+     *
      * @param url 注册信息，不允许为空，如：dubbo://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
      *
      */

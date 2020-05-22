@@ -429,17 +429,24 @@ public class UrlUtils {
         }
     }
 
+    /**
+     * 判断ServiceKey是否一样，当且仅当interface、group、version都一样时，返回true
+     *
+     * @param pattern
+     * @param value
+     * @return
+     */
     public static boolean isServiceKeyMatch(URL pattern, URL value) {
-        return pattern.getParameter(Constants.INTERFACE_KEY).equals(
-                value.getParameter(Constants.INTERFACE_KEY))
-                && isItemMatch(pattern.getParameter(Constants.GROUP_KEY),
-                value.getParameter(Constants.GROUP_KEY))
-                && isItemMatch(pattern.getParameter(Constants.VERSION_KEY),
-                value.getParameter(Constants.VERSION_KEY));
+        return pattern.getParameter(Constants.INTERFACE_KEY).equals(value.getParameter(Constants.INTERFACE_KEY))
+                && isItemMatch(pattern.getParameter(Constants.GROUP_KEY), value.getParameter(Constants.GROUP_KEY))
+                && isItemMatch(pattern.getParameter(Constants.VERSION_KEY), value.getParameter(Constants.VERSION_KEY));
     }
 
     /**
-     * Check if the given value matches the given pattern. The pattern supports wildcard "*".
+     * 检查给定的值是否匹配给定的模式。该模式支持通配符“ *”，以下情况该方法返回true：
+     * 1、pattern为*；
+     * 2、pattern和value都为null；
+     * 3、pattern和value字符串一样
      *
      * @param pattern pattern
      * @param value   value

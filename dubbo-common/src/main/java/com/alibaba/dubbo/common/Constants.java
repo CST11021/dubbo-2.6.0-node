@@ -66,7 +66,8 @@ public class Constants {
 
     public static final String DEFAULT_PROXY = "javassist";
 
-    public static final int DEFAULT_PAYLOAD = 8 * 1024 * 1024;                      // 8M
+    /** 8M */
+    public static final int DEFAULT_PAYLOAD = 8 * 1024 * 1024;
 
     public static final String DEFAULT_CLUSTER = "failover";
 
@@ -362,8 +363,8 @@ public class Constants {
 
     public static final String SEMICOLON_SEPARATOR = ";";
 
-    public static final Pattern SEMICOLON_SPLIT_PATTERN = Pattern
-            .compile("\\s*[;]+\\s*");
+    /** 分号分隔 */
+    public static final Pattern SEMICOLON_SPLIT_PATTERN = Pattern.compile("\\s*[;]+\\s*");
 
     public static final String CONNECT_QUEUE_CAPACITY = "connect.queue.capacity";
 
@@ -378,6 +379,7 @@ public class Constants {
     public static final String CHANNEL_SEND_READONLYEVENT_KEY = "channel.readonly.send";
 
 
+    // 协议类型
 
     public static final String COUNT_PROTOCOL = "count";
     public static final String TRACE_PROTOCOL = "trace";
@@ -387,7 +389,7 @@ public class Constants {
     public static final String CONSUMER_PROTOCOL = "consumer";
     public static final String ROUTE_PROTOCOL = "route";
     public static final String SCRIPT_PROTOCOL = "script";
-    // 表示路由规则的类型，支持条件路由规则和脚本路由规则，可扩展
+    /** 表示路由规则的类型，支持条件路由规则和脚本路由规则，可扩展 */
     public static final String CONDITION_PROTOCOL = "condition";
     public static final String MOCK_PROTOCOL = "mock";
 
@@ -472,9 +474,7 @@ public class Constants {
 
     public static final int DEFAULT_SESSION_TIMEOUT = 60 * 1000;
 
-    /**
-     * The key name for export URL in register center
-     */
+    /** 创建注册中心，注册服务时，会将导出到注册中心的dubbo服务的url保存在这个key变量里 */
     public static final String EXPORT_KEY = "export";
 
     /**
@@ -564,6 +564,7 @@ public class Constants {
      */
     public static final String INVOCATION_NEED_MOCK = "invocation.need.mock";
 
+    /** 本地的协议名 */
     public static final String LOCAL_PROTOCOL = "injvm";
 
     public static final String AUTO_ATTACH_INVOCATIONID_KEY = "invocationid.autoattach";
@@ -619,9 +620,5 @@ public class Constants {
     public static final String BIND_PORT_KEY = "bind.port";
 
     public static final String REGISTER_IP_KEY = "register.ip";
-
-    /*
-     * private Constants(){ }
-     */
 
 }

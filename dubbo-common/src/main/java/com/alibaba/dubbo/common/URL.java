@@ -77,8 +77,7 @@ public final class URL implements Serializable {
     private final String password;
     private final String host;
     private final int port;
-
-    /** 改值一般为实现类的全限定类名，例如：com.alibaba.dubbo.registry.RegistryService */
+    /** 当使用dubbo协议时，该值接口名，例如：com.alibaba.dubbo.registry.RegistryService */
     private final String path;
     private final Map<String, String> parameters;
 
@@ -91,6 +90,17 @@ public final class URL implements Serializable {
     private volatile transient String identity;
     private volatile transient String parameter;
     private volatile transient String string;
+
+
+
+
+
+
+
+
+
+
+
 
     protected URL() {
         this.protocol = null;
@@ -148,6 +158,18 @@ public final class URL implements Serializable {
         }
         this.parameters = Collections.unmodifiableMap(parameters);
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Parse url string
@@ -973,6 +995,12 @@ public final class URL implements Serializable {
         return new URL(protocol, username, password, host, port, path, map);
     }
 
+    /**
+     * 给url添加参数，入参多对key-value
+     *
+     * @param pairs
+     * @return
+     */
     public URL addParameters(String... pairs) {
         if (pairs == null || pairs.length == 0) {
             return this;
@@ -1129,10 +1157,28 @@ public final class URL implements Serializable {
         }
     }
 
+    /**
+     * 构建url：${protocol}://${username}:${password}@${host}:${port}/${group}/com.alibaba.dubbo.demo.DemoService:${version}? ...
+     *
+     * @param appendUser
+     * @param appendParameter
+     * @param parameters
+     * @return
+     */
     private String buildString(boolean appendUser, boolean appendParameter, String... parameters) {
         return buildString(appendUser, appendParameter, false, false, parameters);
     }
 
+    /**
+     * 构建url：${protocol}://${username}:${password}@${host}:${port}/${group}/com.alibaba.dubbo.demo.DemoService:${version}? ...
+     *
+     * @param appendUser            是否使用用户名/密码
+     * @param appendParameter       是否追加参数
+     * @param useIP                 是否使用IP
+     * @param useService            是否使用serviceKey，否则使用path
+     * @param parameters            参数设置
+     * @return
+     */
     private String buildString(boolean appendUser, boolean appendParameter, boolean useIP, boolean useService, String... parameters) {
         StringBuilder buf = new StringBuilder();
         if (protocol != null && protocol.length() > 0) {
@@ -1222,10 +1268,7 @@ public final class URL implements Serializable {
         return buildString(true, false, true, true);
     }
 
-    @Deprecated
-    public String getServiceName() {
-        return getServiceInterface();
-    }
+
 
     /**
      * 获取接口的全限定类名，例如：com.alibaba.dubbo.demo.DemoService
@@ -1239,95 +1282,9 @@ public final class URL implements Serializable {
         return addParameter(Constants.INTERFACE_KEY, service);
     }
 
-    /**
-     * @see #getParameter(String, int)
-     * @deprecated Replace to <code>getParameter(String, int)</code>
-     */
-    @Deprecated
-    public int getIntParameter(String key) {
-        return getParameter(key, 0);
-    }
 
-    /**
-     * @see #getParameter(String, int)
-     * @deprecated Replace to <code>getParameter(String, int)</code>
-     */
-    @Deprecated
-    public int getIntParameter(String key, int defaultValue) {
-        return getParameter(key, defaultValue);
-    }
 
-    /**
-     * @see #getPositiveParameter(String, int)
-     * @deprecated Replace to <code>getPositiveParameter(String, int)</code>
-     */
-    @Deprecated
-    public int getPositiveIntParameter(String key, int defaultValue) {
-        return getPositiveParameter(key, defaultValue);
-    }
 
-    /**
-     * @see #getParameter(String, boolean)
-     * @deprecated Replace to <code>getParameter(String, boolean)</code>
-     */
-    @Deprecated
-    public boolean getBooleanParameter(String key) {
-        return getParameter(key, false);
-    }
-
-    /**
-     * @see #getParameter(String, boolean)
-     * @deprecated Replace to <code>getParameter(String, boolean)</code>
-     */
-    @Deprecated
-    public boolean getBooleanParameter(String key, boolean defaultValue) {
-        return getParameter(key, defaultValue);
-    }
-
-    /**
-     * @see #getMethodParameter(String, String, int)
-     * @deprecated Replace to <code>getMethodParameter(String, String, int)</code>
-     */
-    @Deprecated
-    public int getMethodIntParameter(String method, String key) {
-        return getMethodParameter(method, key, 0);
-    }
-
-    /**
-     * @see #getMethodParameter(String, String, int)
-     * @deprecated Replace to <code>getMethodParameter(String, String, int)</code>
-     */
-    @Deprecated
-    public int getMethodIntParameter(String method, String key, int defaultValue) {
-        return getMethodParameter(method, key, defaultValue);
-    }
-
-    /**
-     * @see #getMethodPositiveParameter(String, String, int)
-     * @deprecated Replace to <code>getMethodPositiveParameter(String, String, int)</code>
-     */
-    @Deprecated
-    public int getMethodPositiveIntParameter(String method, String key, int defaultValue) {
-        return getMethodPositiveParameter(method, key, defaultValue);
-    }
-
-    /**
-     * @see #getMethodParameter(String, String, boolean)
-     * @deprecated Replace to <code>getMethodParameter(String, String, boolean)</code>
-     */
-    @Deprecated
-    public boolean getMethodBooleanParameter(String method, String key) {
-        return getMethodParameter(method, key, false);
-    }
-
-    /**
-     * @see #getMethodParameter(String, String, boolean)
-     * @deprecated Replace to <code>getMethodParameter(String, String, boolean)</code>
-     */
-    @Deprecated
-    public boolean getMethodBooleanParameter(String method, String key, boolean defaultValue) {
-        return getMethodParameter(method, key, defaultValue);
-    }
 
     @Override
     public int hashCode() {
@@ -1342,7 +1299,6 @@ public final class URL implements Serializable {
         result = prime * result + ((username == null) ? 0 : username.hashCode());
         return result;
     }
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -1386,5 +1342,98 @@ public final class URL implements Serializable {
             return false;
         return true;
     }
+
+
+
+
+
+    // ==== 被废弃的无用方法 ====
+
+    @Deprecated
+    public String getServiceName() {
+        return getServiceInterface();
+    }
+    /**
+     * @see #getParameter(String, int)
+     * @deprecated Replace to <code>getParameter(String, int)</code>
+     */
+    @Deprecated
+    public int getIntParameter(String key) {
+        return getParameter(key, 0);
+    }
+    /**
+     * @see #getParameter(String, int)
+     * @deprecated Replace to <code>getParameter(String, int)</code>
+     */
+    @Deprecated
+    public int getIntParameter(String key, int defaultValue) {
+        return getParameter(key, defaultValue);
+    }
+    /**
+     * @see #getPositiveParameter(String, int)
+     * @deprecated Replace to <code>getPositiveParameter(String, int)</code>
+     */
+    @Deprecated
+    public int getPositiveIntParameter(String key, int defaultValue) {
+        return getPositiveParameter(key, defaultValue);
+    }
+    /**
+     * @see #getParameter(String, boolean)
+     * @deprecated Replace to <code>getParameter(String, boolean)</code>
+     */
+    @Deprecated
+    public boolean getBooleanParameter(String key) {
+        return getParameter(key, false);
+    }
+    /**
+     * @see #getParameter(String, boolean)
+     * @deprecated Replace to <code>getParameter(String, boolean)</code>
+     */
+    @Deprecated
+    public boolean getBooleanParameter(String key, boolean defaultValue) {
+        return getParameter(key, defaultValue);
+    }
+    /**
+     * @see #getMethodParameter(String, String, int)
+     * @deprecated Replace to <code>getMethodParameter(String, String, int)</code>
+     */
+    @Deprecated
+    public int getMethodIntParameter(String method, String key) {
+        return getMethodParameter(method, key, 0);
+    }
+    /**
+     * @see #getMethodParameter(String, String, int)
+     * @deprecated Replace to <code>getMethodParameter(String, String, int)</code>
+     */
+    @Deprecated
+    public int getMethodIntParameter(String method, String key, int defaultValue) {
+        return getMethodParameter(method, key, defaultValue);
+    }
+    /**
+     * @see #getMethodPositiveParameter(String, String, int)
+     * @deprecated Replace to <code>getMethodPositiveParameter(String, String, int)</code>
+     */
+    @Deprecated
+    public int getMethodPositiveIntParameter(String method, String key, int defaultValue) {
+        return getMethodPositiveParameter(method, key, defaultValue);
+    }
+    /**
+     * @see #getMethodParameter(String, String, boolean)
+     * @deprecated Replace to <code>getMethodParameter(String, String, boolean)</code>
+     */
+    @Deprecated
+    public boolean getMethodBooleanParameter(String method, String key) {
+        return getMethodParameter(method, key, false);
+    }
+    /**
+     * @see #getMethodParameter(String, String, boolean)
+     * @deprecated Replace to <code>getMethodParameter(String, String, boolean)</code>
+     */
+    @Deprecated
+    public boolean getMethodBooleanParameter(String method, String key, boolean defaultValue) {
+        return getMethodParameter(method, key, defaultValue);
+    }
+
+
 
 }

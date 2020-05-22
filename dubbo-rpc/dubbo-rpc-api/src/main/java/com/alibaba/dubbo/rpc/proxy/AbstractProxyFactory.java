@@ -28,6 +28,13 @@ import com.alibaba.dubbo.rpc.service.EchoService;
  */
 public abstract class AbstractProxyFactory implements ProxyFactory {
 
+    /**
+     * 服务导入的时候，会调用该方法创建一个代理服务的接口实例。
+     * 该方法创建一个代理对象, T表示要调用的服务接口, Invoker封装了调用那台机器的那个服务，并且封装了入参是什么，出参是什么
+     *
+     * @param invoker
+     * @return proxy
+     */
     public <T> T getProxy(Invoker<T> invoker) throws RpcException {
         Class<?>[] interfaces = null;
         String config = invoker.getUrl().getParameter("interfaces");
@@ -47,6 +54,7 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
         if (interfaces == null) {
             interfaces = new Class<?>[]{invoker.getInterface(), EchoService.class};
         }
+
         // 这里传入的interfaces是一个数组：
         // [0]:Invoker#getInterface()
         // [1]:EchoService.class
@@ -54,6 +62,14 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
         return getProxy(invoker, interfaces);
     }
 
+    /**
+     * 给这个invoker对应的接口创建代理实例
+     *
+     * @param invoker
+     * @param types
+     * @param <T>
+     * @return
+     */
     public abstract <T> T getProxy(Invoker<T> invoker, Class<?>[] types);
 
 }

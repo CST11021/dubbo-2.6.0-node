@@ -122,8 +122,18 @@ public class RegistryProtocol implements Protocol {
      * @throws RpcException
      */
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
-        // export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求
+
+
+
+
+        // ======= export invoker：主要是打开socket侦听服务，并接收客户端发来的各种请求 ======
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
+
+
+
+        // ==== 创建注册中心 ====
+
+
 
         // 获取注册中心 URL，以 zookeeper 注册中心为例，得到的示例 URL 如下：
         // zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?
@@ -131,9 +141,14 @@ public class RegistryProtocol implements Protocol {
         // &dubbo=2.0.2
         // &export=dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider
         URL registryUrl = getRegistryUrl(originInvoker);
-
         // 根据 URL 加载 Registry 实现类，比如 ZookeeperRegistry
         final Registry registry = getRegistry(originInvoker);
+
+
+
+
+        // ======== 注册服务 =======
+
 
         // 获取已注册的服务提供者 URL，比如：
         // dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
@@ -155,8 +170,14 @@ public class RegistryProtocol implements Protocol {
         if (register) {
             // 使用registryUrl创建一个注册中心，并向注册中心注册服务
             register(registryUrl, registedProviderUrl);
+            // 本地注册表标记为已经注册
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
+
+
+
+        // ==== 订阅服务 ====
+
 
         //
 
@@ -175,10 +196,10 @@ public class RegistryProtocol implements Protocol {
         // &interface=com.alibaba.dubbo.demo.DemoService
         // &methods=sayHello
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(registedProviderUrl);
+        // 创建一个监听器
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
+        // 本地保存url对应的监听器
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
-
-
         // 订阅 overrideSubscribeUrl 这个服务
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
@@ -189,16 +210,21 @@ public class RegistryProtocol implements Protocol {
             }
 
             public void unexport() {
+                // 关闭本地服务
                 try {
                     exporter.unexport();
                 } catch (Throwable t) {
                     logger.warn(t.getMessage(), t);
                 }
+
+                // 注册中心注销该服务
                 try {
                     registry.unregister(registedProviderUrl);
                 } catch (Throwable t) {
                     logger.warn(t.getMessage(), t);
                 }
+
+                // 取消暴露时，移除监听
                 try {
                     overrideListeners.remove(overrideSubscribeUrl);
                     registry.unsubscribe(overrideSubscribeUrl, overrideSubscribeListener);
@@ -374,10 +400,38 @@ public class RegistryProtocol implements Protocol {
         URL providerUrl = URL.valueOf(export);
         return providerUrl;
     }
+
+
+    /**
+     * 将协议改为provider，并添加 &category=configurators&check=false 参数
+     *
+     * registedProviderUrl，比如入参：dubbo://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
+     *     ?anyhost=true
+     *     &application=demo-provider
+     *     &dubbo=2.0.2
+     *     &generic=false
+     *     &interface=com.alibaba.dubbo.demo.DemoService
+     *     &methods=sayHello
+     *
+     * 出参：provider//172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
+     *     ?anyhost=true
+     *     &application=demo-provider
+     *     &dubbo=2.0.2
+     *     &generic=false
+     *     &interface=com.alibaba.dubbo.demo.DemoService
+     *     &methods=sayHello
+     *     &category=configurators
+     *     &check=false
+     *
+     * @param registedProviderUrl
+     * @return
+     */
     private URL getSubscribedOverrideUrl(URL registedProviderUrl) {
         return registedProviderUrl.setProtocol(Constants.PROVIDER_PROTOCOL)
-                .addParameters(Constants.CATEGORY_KEY, Constants.CONFIGURATORS_CATEGORY,
-                        Constants.CHECK_KEY, String.valueOf(false));
+                .addParameters(
+                        Constants.CATEGORY_KEY, Constants.CONFIGURATORS_CATEGORY,
+                        Constants.CHECK_KEY, String.valueOf(false)
+                );
     }
     /**
      * Reexport the invoker of the modified url
@@ -396,11 +450,23 @@ public class RegistryProtocol implements Protocol {
             exporter.setExporter(protocol.export(invokerDelegete));
         }
     }
-    /** 向注册中心暴露服务 */
+
+    /**
+     * 向注册中心暴露服务
+     *
+     * @param registryUrl               用于创建注册中心的url
+     * @param registedProviderUrl       向注册中注册服务的url
+     */
     public void register(URL registryUrl, URL registedProviderUrl) {
-        // 根据配置的注册中心信息registryUrl，创建一个注册中心，registryUrl例如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.85.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.85.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D5892%26side%3Dprovider%26timestamp%3D1526286422659&pid=5892&timestamp=1526286422635
+        // 根据配置的注册中心信息registryUrl，创建一个注册中心，registryUrl例如：
+        // multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService
+        // ?application=demo-provider&dubbo=2.0.0
+        // &export=dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.85.1&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider&timestamp=1526286422659&pid=5892&timestamp=1526286422635
         Registry registry = registryFactory.getRegistry(registryUrl);
-        // 根据服务提供者的信息向注册中心暴露服务，registedProviderUrl例如：dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=5892&side=provider&timestamp=1526286422659
+        // 根据服务提供者的信息向注册中心暴露服务，registedProviderUrl例如：
+        // dubbo://192.168.85.1:20880/com.alibaba.dubbo.demo.DemoService?
+        // anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService
+        // &methods=sayHello&pid=5892&side=provider&timestamp=1526286422659
         registry.register(registedProviderUrl);
     }
 
@@ -412,6 +478,7 @@ public class RegistryProtocol implements Protocol {
 
 
     /**
+     * 从注册中心引入服务
      *
      * @param type              服务的类型
      * @param url               远程服务的URL地址，该URL也包含了注册中心的配置信息
@@ -421,6 +488,7 @@ public class RegistryProtocol implements Protocol {
      */
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 注册中心的协议，例如：url.setProtocol("zookeeper")
         url = url.setProtocol(url.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_REGISTRY)).removeParameter(Constants.REGISTRY_KEY);
 
         // 获取注册中心
@@ -433,15 +501,18 @@ public class RegistryProtocol implements Protocol {
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));
         String group = qs.get(Constants.GROUP_KEY);
         if (group != null && group.length() > 0) {
-            if ((Constants.COMMA_SPLIT_PATTERN.split(group)).length > 1
-                    || "*".equals(group)) {
+            if ((Constants.COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
+        // url:zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
+        // ?application=demo-consumer&dubbo=2.0.0&pid=2171&refer=application=demo-consumer&check=false&dubbo=2.0.0
+        // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=2171&register.ip=192.168.1.101&side=consumer&stub=whz.stub.DemoServiceStub&timestamp=1589988301764&timestamp=1589988301780
         return doRefer(cluster, registry, type, url);
     }
     /**
      * 获取这个服务的{@link Invoker}对象
+     *
      * @param cluster       集群容错策略
      * @param registry      注册中心
      * @param type          服务接口
@@ -450,6 +521,9 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
+
+        // ===== 创建服务目录 =====
+
         // 服务目录的作用：每一个服务提供者对应一个invoker，多个服务提供者就会对应多个invoker。
         // 如果一个消费者对应多个提供者，dubbo会把多个invoker合并成一个invoker来处理，具体处理逻辑是：
         // 根据服务名去注册中心获取多个服务地址，服务地址经过路由器过滤掉一部分地址，剩下的地址称为服务目录的invoker合并，真正调用的时候才选取一个再进行负载均衡和容错处理。
@@ -457,26 +531,61 @@ public class RegistryProtocol implements Protocol {
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
 
+
+
+
+        // ===== 向注册中心注册消费者的服务引用 =====
+
+
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
+        // consumer协议、注册中心IP，接口名
         URL subscribeUrl = new URL(Constants.CONSUMER_PROTOCOL, parameters.remove(Constants.REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (!Constants.ANY_VALUE.equals(url.getServiceInterface()) && url.getParameter(Constants.REGISTER_KEY, true)) {
+            // 向注册中心注册消费者要订阅的服务等相关信息，subscribeUrl示例如下：
+            // consumer://192.168.1.101/com.alibaba.dubbo.demo.DemoService
+            // ?application=demo-consumer
+            // &check=false
+            // &dubbo=2.0.0
+            // &interface=com.alibaba.dubbo.demo.DemoService
+            // &methods=sayHello
+            // &pid=2186
+            // &side=consumer
+            // &stub=whz.stub.DemoServiceStub
+            // &timestamp=1589988961558
+
+            // 服务消费者启动时，向 /dubbo/com.foo.BarService/consumers 目录下写入自己的 URL 地址
             registry.register(
+                    // 添加 category=consumers%check=false 参数
                     subscribeUrl.addParameters(
-                            Constants.CATEGORY_KEY,
-                            Constants.CONSUMERS_CATEGORY,
-                            Constants.CHECK_KEY,
-                            String.valueOf(false)
+                            Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY,
+                            Constants.CHECK_KEY, String.valueOf(false)
                     )
             );
         }
 
+
+
+        // ==== 订阅服务导入的url ====
+
+
+        // 服务目录会订阅zk上的可用服务，并动态更新服务目录
         // 程序走到这里会去调用相应协议实现的refer方法，比如：DubboProtocol#refer()方法
+        // 添加单个参数：category=providers,configurators,routers
+        // 服务消费者启动时，订阅 /dubbo/com.foo.BarService/providers 目录下的提供者 URL 地址
         directory.subscribe(subscribeUrl.addParameter(Constants.CATEGORY_KEY,
                 Constants.PROVIDERS_CATEGORY + "," + Constants.CONFIGURATORS_CATEGORY + "," + Constants.ROUTERS_CATEGORY));
 
-        // 将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制
+
+
+        // ====== 将 Directory 中的多个 Invoker 伪装成一个 Invoker, 对上层透明，包含集群的容错机制 ======
         Invoker invoker = cluster.join(directory);
+
+
+
+
+        // ==== 本地标记该url为已注册 ====
+
         ProviderConsumerRegTable.registerConsuemr(invoker, url, subscribeUrl, directory);
         return invoker;
     }

@@ -42,6 +42,7 @@ public class Log4jContainer implements Container {
 
     @SuppressWarnings("unchecked")
     public void start() {
+        // 获取
         String file = ConfigUtils.getProperty(LOG4J_FILE);
         if (file != null && file.length() > 0) {
             String level = ConfigUtils.getProperty(LOG4J_LEVEL);
@@ -58,6 +59,7 @@ public class Log4jContainer implements Container {
             properties.setProperty("log4j.appender.application.layout.ConversionPattern", "%d [%t] %-5p %C{6} (%F:%L) - %m%n");
             PropertyConfigurator.configure(properties);
         }
+
         String subdirectory = ConfigUtils.getProperty(LOG4J_SUBDIRECTORY);
         if (subdirectory != null && subdirectory.length() > 0) {
             Enumeration<org.apache.log4j.Logger> ls = LogManager.getCurrentLoggers();
@@ -93,6 +95,10 @@ public class Log4jContainer implements Container {
     }
 
     public void stop() {
+    }
+
+    public static void main(String[] args) {
+        new Log4jContainer().start();
     }
 
 }

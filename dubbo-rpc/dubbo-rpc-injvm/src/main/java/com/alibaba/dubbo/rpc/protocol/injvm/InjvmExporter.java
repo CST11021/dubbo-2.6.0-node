@@ -27,10 +27,9 @@ import java.util.Map;
  */
 class InjvmExporter<T> extends AbstractExporter<T> {
 
-    /** 表示暴露到本地的服务接口key，例如：com.alibaba.dubbo.demo.DemoService */
+    /** 表示暴露到本地的servicekey，例如：com.alibaba.dubbo.demo.DemoService */
     private final String key;
-
-    /** 保存已经暴露了的服务，key：对应{@link #key}，value：已经暴露的服务会封装为一个{@link Exporter} 对象*/
+    /** Map<serviceKey, Exporter> 该引用指向{@link InjvmProtocol#exporterMap}, 保存了所有本地的导出服务 */
     private final Map<String, Exporter<?>> exporterMap;
 
     InjvmExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {

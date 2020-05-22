@@ -36,18 +36,30 @@ import java.util.regex.Pattern;
 public class ConfigUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigUtils.class);
-    private static Pattern VARIABLE_PATTERN = Pattern.compile(
-            "\\$\\s*\\{?\\s*([\\._0-9a-zA-Z]+)\\s*\\}?");
+    private static Pattern VARIABLE_PATTERN = Pattern.compile("\\$\\s*\\{?\\s*([\\._0-9a-zA-Z]+)\\s*\\}?");
+    /** 用于缓存 dubbo.properties 的文件配置项 */
     private static volatile Properties PROPERTIES;
     private static int PID = -1;
 
     private ConfigUtils() {
     }
 
+    /**
+     * 检查该值是不为空，当value为false、0、null或N/A时，返回true
+     *
+     * @param value
+     * @return
+     */
     public static boolean isNotEmpty(String value) {
         return !isEmpty(value);
     }
 
+    /**
+     * 检查该值是否为空，当value为false、0、null或N/A时，返回true
+     *
+     * @param value
+     * @return
+     */
     public static boolean isEmpty(String value) {
         return value == null || value.length() == 0
                 || "false".equalsIgnoreCase(value)
@@ -56,18 +68,23 @@ public class ConfigUtils {
                 || "N/A".equalsIgnoreCase(value);
     }
 
+    /**
+     * 当value为true或default时，返回true
+     *
+     * @param value
+     * @return
+     */
     public static boolean isDefault(String value) {
         return "true".equalsIgnoreCase(value)
                 || "default".equalsIgnoreCase(value);
     }
 
     /**
-     * Insert default extension into extension list.
-     * <p>
-     * Extension list support<ul>
-     * <li>Special value <code><strong>default</strong></code>, means the location for default extensions.
-     * <li>Special symbol<code><strong>-</strong></code>, means remove. <code>-foo1</code> will remove default extension 'foo'; <code>-default</code> will remove all default extensions.
-     * </ul>
+     * 将默认扩展名插入扩展名列表。
+     *
+     * 扩展列表支持
+     * 特殊值：default, 表示默认扩展名的位置。
+     * 特殊符号：-，意味着移除. 例如1：-foo1，将删除默认扩展名'foo'; 例如2：-default，将删除所有默认扩展名。
      *
      * @param type Extension type
      * @param cfg  Extension name list
@@ -139,6 +156,72 @@ public class ConfigUtils {
         return sb.toString();
     }
 
+    /**
+     * 加载 dubbo.properties 文件配置项
+     *
+     *
+     * Java提供了System类的静态方法getenv()和getProperty()用于返回系统相关的变量与属性，getenv方法返回的变量大多与系统相关，getProperty方法返回的变量大多与java程序有关，例如：
+     *
+     * System.getenv()
+     *
+     * USERPROFILE        ：用户目录
+     * USERDNSDOMAIN      ：用户域
+     * PATHEXT            ：可执行后缀
+     * JAVA_HOME          ：Java安装目录
+     * TEMP               ：用户临时文件目录
+     * SystemDrive        ：系统盘符
+     * ProgramFiles       ：默认程序目录
+     * USERDOMAIN         ：帐户的域的名称
+     * ALLUSERSPROFILE    ：用户公共目录
+     * SESSIONNAME        ：Session名称
+     * TMP                ：临时目录
+     * Path               ：path环境变量
+     * CLASSPATH          ：classpath环境变量
+     * PROCESSOR_ARCHITECTURE ：处理器体系结构
+     * OS                     ：操作系统类型
+     * PROCESSOR_LEVEL    ：处理级别
+     * COMPUTERNAME       ：计算机名
+     * Windir             ：系统安装目录
+     * SystemRoot         ：系统启动目录
+     * USERNAME           ：用户名
+     * ComSpec            ：命令行解释器可执行程序的准确路径
+     * APPDATA            ：应用程序数据目录
+     *
+     *
+     *
+     * System.getProperty()
+     *
+     * java.version Java ：运行时环境版本
+     * java.vendor Java ：运行时环境供应商
+     * java.vendor.url ：Java供应商的 URL
+     * java.home &nbsp;&nbsp;：Java安装目录
+     * java.vm.specification.version： Java虚拟机规范版本
+     * java.vm.specification.vendor ：Java虚拟机规范供应商
+     * java.vm.specification.name &nbsp; ：Java虚拟机规范名称
+     * java.vm.version ：Java虚拟机实现版本
+     * java.vm.vendor ：Java虚拟机实现供应商
+     * java.vm.name&nbsp; ：Java虚拟机实现名称
+     * java.specification.version：Java运行时环境规范版本
+     * java.specification.vendor：Java运行时环境规范供应商
+     * java.specification.name ：Java运行时环境规范名称
+     * java.class.version ：Java类格式版本号
+     * java.class.path ：Java类路径
+     * java.library.path  ：加载库时搜索的路径列表
+     * java.io.tmpdir  ：默认的临时文件路径
+     * java.compiler  ：要使用的 JIT编译器的名称
+     * java.ext.dirs ：一个或多个扩展目录的路径
+     * os.name ：操作系统的名称
+     * os.arch  ：操作系统的架构
+     * os.version  ：操作系统的版本
+     * file.separator ：文件分隔符
+     * path.separator ：路径分隔符
+     * line.separator ：行分隔符
+     * user.name ：用户的账户名称
+     * user.home ：用户的主目录
+     * user.dir：用户的当前工作目录
+     *
+     * @return
+     */
     public static Properties getProperties() {
         if (PROPERTIES == null) {
             synchronized (ConfigUtils.class) {

@@ -40,6 +40,23 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     public static final int TYPE_PRIMITIVE = 6;
     public static final int TYPE_BEAN = 7;
 
+    private static final String ENUM_PROPERTY_NAME = "name";
+    private static final String CLASS_PROPERTY_NAME = "name";
+    private static final String PRIMITIVE_PROPERTY_VALUE = "value";
+    /**
+     * Used to define a type is valid.
+     *
+     * @see #isValidType(int)
+     */
+    private static final int TYPE_MAX = TYPE_BEAN;
+    /**
+     * Used to define a type is valid.
+     *
+     * @see #isValidType(int)
+     */
+    private static final int TYPE_MIN = TYPE_CLASS;
+
+
     /**
      * 表示对象类，对应如下常量的值
      * @see #TYPE_CLASS
@@ -51,33 +68,14 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
      * @see #TYPE_BEAN
      */
     private int type;
-
-    private static final String ENUM_PROPERTY_NAME = "name";
-
-    private static final String CLASS_PROPERTY_NAME = "name";
-
-    private static final String PRIMITIVE_PROPERTY_VALUE = "value";
-
-    /**
-     * Used to define a type is valid.
-     *
-     * @see #isValidType(int)
-     */
-    private static final int TYPE_MAX = TYPE_BEAN;
-
-    /**
-     * Used to define a type is valid.
-     *
-     * @see #isValidType(int)
-     */
-    private static final int TYPE_MIN = TYPE_CLASS;
-
-
     private String className;
 
-
-
     private Map<Object, Object> properties = new LinkedHashMap<Object, Object>();
+
+
+
+
+
 
 
     public JavaBeanDescriptor() {
@@ -94,6 +92,11 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         this.type = type;
     }
 
+
+
+
+
+
     /**
      * 实现迭代器接口
      * @return
@@ -106,27 +109,21 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     public boolean isClassType() {
         return TYPE_CLASS == type;
     }
-
     public boolean isEnumType() {
         return TYPE_ENUM == type;
     }
-
     public boolean isCollectionType() {
         return TYPE_COLLECTION == type;
     }
-
     public boolean isMapType() {
         return TYPE_MAP == type;
     }
-
     public boolean isArrayType() {
         return TYPE_ARRAY == type;
     }
-
     public boolean isPrimitiveType() {
         return TYPE_PRIMITIVE == type;
     }
-
     public boolean isBeanType() {
         return TYPE_BEAN == type;
     }
@@ -134,15 +131,12 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     public int getType() {
         return type;
     }
-
     public void setType(int type) {
         this.type = type;
     }
-
     public String getClassName() {
         return className;
     }
-
     public void setClassName(String className) {
         this.className = className;
     }
@@ -161,7 +155,6 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         }
         throw new IllegalStateException("The instance is not a enum wrapper");
     }
-
     public String getEnumPropertyName() {
         if (isEnumType()) {
             Object result = getProperty(ENUM_PROPERTY_NAME).toString();
@@ -210,8 +203,6 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         notNull(propertyName, "Property name is null");
         return properties.containsKey(propertyName);
     }
-
-
 
     public int propertySize() {
         return properties.size();

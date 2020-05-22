@@ -31,9 +31,9 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
 
     private static final long serialVersionUID = -2786526984373031126L;
 
-    // ======== Reference config default values, will take effect if reference's attribute is not set  ========
+    // ======== 引用配置默认值，如果未设置引用的属性，则将生效  ========
 
-    // check if service provider exists
+    /** 对应<dubbo:reference id="helloService" interface="com.alibaba.dubbo.demo.HelloService" check="false"/>的check配置 */
     protected Boolean check;
 
     // whether to eagle-init
@@ -64,10 +64,16 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
     // group
     protected String group;
 
+
+
+
+
+
+
+
     public Boolean isCheck() {
         return check;
     }
-
     public void setCheck(Boolean check) {
         this.check = check;
     }
@@ -184,16 +190,13 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
     public String getVersion() {
         return version;
     }
-
     public void setVersion(String version) {
         checkKey("version", version);
         this.version = version;
     }
-
     public String getGroup() {
         return group;
     }
-
     public void setGroup(String group) {
         checkKey("group", group);
         this.group = group;

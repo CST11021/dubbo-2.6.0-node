@@ -41,14 +41,20 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
 
     private static final ReentrantLock LOCK = new ReentrantLock();
 
-    /** 保存所有的注册中心：Map<RegistryAddress, Registry> */
+    /** 保存所有的注册中心：Map<key, Registry> ，key例如：zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService */
     private static final Map<String, Registry> REGISTRIES = new ConcurrentHashMap<String, Registry>();
 
-
+    /**
+     * 根据url创建一个注册中心实例
+     *
+     * @param url 注册中心地址，不允许为空
+     * @return
+     */
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
                 .addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName())
                 .removeParameters(Constants.EXPORT_KEY, Constants.REFER_KEY);
+        // key例如：zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
         String key = url.toServiceString();
 
         // Lock the registry access process to ensure a single instance of the registry
@@ -72,6 +78,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
 
     /**
      * 子类扩展该方法创建一个注册中心
+     *
      * @param url
      * @return
      */

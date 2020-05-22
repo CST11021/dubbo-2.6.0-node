@@ -34,6 +34,7 @@ import java.util.Map;
  */
 public class InjvmProtocol extends AbstractProtocol implements Protocol {
 
+    /** 本地服务的协议名称：injvm */
     public static final String NAME = Constants.LOCAL_PROTOCOL;
 
     public static final int DEFAULT_PORT = 0;
@@ -43,7 +44,6 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
     public InjvmProtocol() {
         INSTANCE = this;
     }
-
     public static InjvmProtocol getInjvmProtocol() {
         if (INSTANCE == null) {
             ExtensionLoader.getExtensionLoader(Protocol.class).getExtension(InjvmProtocol.NAME); // load
@@ -51,14 +51,50 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
         return INSTANCE;
     }
 
+
+    /**
+     * 导出服务：创建一个InjvmExporter实例
+     *
+     * @param invoker           服务的执行体
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
+    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
+    }
+
+    /**
+     * 服务应用，创建一个InjvmInvoker实例
+     *
+     * @param serviceType
+     * @param url               远程服务的URL地址
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
+    public <T> Invoker<T> refer(Class<T> serviceType, URL url) throws RpcException {
+        return new InjvmInvoker<T>(serviceType, url, url.getServiceKey(), exporterMap);
+    }
+
+    /**
+     * 返回该url对应的Exporter
+     *
+     * @param map
+     * @param key
+     * @return
+     */
     static Exporter<?> getExporter(Map<String, Exporter<?>> map, URL key) {
         Exporter<?> result = null;
 
+        // 当服serviceKey包含*时，返回该serviceKey对应的Exporter
         if (!key.getServiceKey().contains("*")) {
             result = map.get(key.getServiceKey());
         } else {
+            // 返回该url匹配的Exporter
             if (map != null && !map.isEmpty()) {
                 for (Exporter<?> exporter : map.values()) {
+                    // 判断ServiceKey是否一样，当且仅当interface、group、version都一样时，返回true
                     if (UrlUtils.isServiceKeyMatch(key, exporter.getInvoker().getUrl())) {
                         result = exporter;
                         break;
@@ -69,8 +105,9 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
 
         if (result == null) {
             return null;
-        } else if (ProtocolUtils.isGeneric(
-                result.getInvoker().getUrl().getParameter(Constants.GENERIC_KEY))) {
+        }
+        // 如果该url是泛化调用，则返回null
+        else if (ProtocolUtils.isGeneric(result.getInvoker().getUrl().getParameter(Constants.GENERIC_KEY))) {
             return null;
         } else {
             return result;
@@ -81,16 +118,9 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
         return DEFAULT_PORT;
     }
 
-    public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
-    }
-
-    public <T> Invoker<T> refer(Class<T> serviceType, URL url) throws RpcException {
-        return new InjvmInvoker<T>(serviceType, url, url.getServiceKey(), exporterMap);
-    }
 
     /**
-     * 判断url是否为本地调用
+     * 判断url是否为本地调用，当url的scope=local，或者injvm=true，或者本地url有匹配的本地Exporter时，该方法返回true
      *
      * @param url
      * @return
@@ -111,7 +141,7 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
             // 泛型调用不是本地引用
             isJvmRefer = false;
         } else if (getExporter(exporterMap, url) != null) {
-            // by default, go through local reference if there's the service exposed locally
+            // 默认情况下，如果本地有公开的服务，通过本地引用
             isJvmRefer = true;
         } else {
             isJvmRefer = false;

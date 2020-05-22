@@ -75,10 +75,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
     private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
+
+
     /** Map<协议名，协议对应的端口> */
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
     /** 延迟暴露服务时，会使用该线程池服务进行服务暴露 */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
+
+
+
+
     /** 保存导出的服务 */
     private final List<URL> urls = new ArrayList<URL>();
     /**
@@ -92,7 +98,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private Class<?> interfaceClass;
     /** 表示服务接口的实现类，对应<dubbo:service>中的ref配置 */
     private T ref;
-    /** service name, e.g: com.alibaba.dubbo.demo.DemoService */
+    /** 服务名称，例如： com.alibaba.dubbo.demo.DemoService */
     private String path;
    /**
     * 导出服务的方法配置，例如
@@ -600,6 +606,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // &side=provider
                         // &timeout=1000
                         // &timestamp=1589349188313
+
+                        // registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()) 会将上面的url放到export参数中，在向注册中注册服务时，则创建一个该url的节点
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 

@@ -44,24 +44,25 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    /** 服务接口类型 */
     private final Class<T> type;
-
+    /** invoke相关配置 */
     private final URL url;
 
     private final Map<String, String> attachment;
-
+    /** 标记该Invoker是否有效，Invoker销毁后，将该变量设置为false */
     private volatile boolean available = true;
-
+    /** 用于标记该Invoker是否销毁 */
     private AtomicBoolean destroyed = new AtomicBoolean(false);
+
+
 
     public AbstractInvoker(Class<T> type, URL url) {
         this(type, url, (Map<String, String>) null);
     }
-
     public AbstractInvoker(Class<T> type, URL url, String[] keys) {
         this(type, url, convertAttachment(url, keys));
     }
-
     public AbstractInvoker(Class<T> type, URL url, Map<String, String> attachment) {
         if (type == null)
             throw new IllegalArgumentException("service type == null");
@@ -72,10 +73,19 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
         this.attachment = attachment == null ? null : Collections.unmodifiableMap(attachment);
     }
 
+
+    /**
+     * 提取url中的属性，转为对应的Map
+     *
+     * @param url
+     * @param keys
+     * @return
+     */
     private static Map<String, String> convertAttachment(URL url, String[] keys) {
         if (keys == null || keys.length == 0) {
             return null;
         }
+
         Map<String, String> attachment = new HashMap<String, String>();
         for (String key : keys) {
             String value = url.getParameter(key);
@@ -89,7 +99,6 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
     public Class<T> getInterface() {
         return type;
     }
-
     public URL getUrl() {
         return url;
     }
@@ -97,7 +106,6 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
     public boolean isAvailable() {
         return available;
     }
-
     protected void setAvailable(boolean available) {
         this.available = available;
     }
@@ -113,16 +121,22 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
         return destroyed.get();
     }
 
-    public String toString() {
-        return getInterface() + " -> " + (getUrl() == null ? "" : getUrl().toString());
-    }
 
+    /**
+     * 根据Invocation信息调用服务方法
+     *
+     * @param inv
+     * @return
+     * @throws RpcException
+     */
     public Result invoke(Invocation inv) throws RpcException {
         if (destroyed.get()) {
             throw new RpcException("Rpc invoker for service " + this + " on consumer " + NetUtils.getLocalHost()
                     + " use dubbo version " + Version.getVersion()
                     + " is DESTROYED, can not be invoked any more!");
         }
+
+
         RpcInvocation invocation = (RpcInvocation) inv;
         invocation.setInvoker(this);
         if (attachment != null && attachment.size() > 0) {
@@ -162,5 +176,12 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
     }
 
     protected abstract Result doInvoke(Invocation invocation) throws Throwable;
+
+
+
+
+    public String toString() {
+        return getInterface() + " -> " + (getUrl() == null ? "" : getUrl().toString());
+    }
 
 }

@@ -56,7 +56,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
     protected Integer delay;
     /** 表示是否已经暴露服务 */
     protected Boolean export;
-    // weight
+    /** 服务权重 */
     protected Integer weight;
     /** 文档中心 */
     protected String document;
@@ -64,17 +64,17 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
     protected Boolean dynamic;
     /** 是否使用令牌 */
     protected String token;
-    // access log
+    /** 默认：false，设为true，将向logger中输出访问日志，也可填写访问日志文件路径，直接把访问日志输出到指定文件 */
     protected String accesslog;
     /** 一个服务可以支持多协议导出 */
     protected List<ProtocolConfig> protocols;
-    // max allowed execute times
+    /** 默认：0，服务提供者每服务每方法最大可并行执行请求数 */
     private Integer executes;
     // whether to register
     private Boolean register;
     // warm up period
     private Integer warmup;
-    // serialization
+    /** dubbo协议缺省为hessian2，rmi协议缺省为java，http协议缺省为json，协议序列化方式，当协议支持多种序列化方式时使用，比如：dubbo协议的dubbo,hessian2,java,compactedjava，以及http协议的json,xml等 */
     private String serialization;
 
 
