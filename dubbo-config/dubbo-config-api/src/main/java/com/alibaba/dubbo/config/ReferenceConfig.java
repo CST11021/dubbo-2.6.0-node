@@ -390,8 +390,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             if (url != null && url.length() > 0) {
                 isJvmRefer = false;
             }
+            // 默认检查是否是同一个JVM内部引用
             // 判断url是否为本地调用，当url的scope=local，或者injvm=true，或者本地url有匹配的本地Exporter时，isInjvmRefer方法返回true
-
             // scope属性对应配置如：<dubbo:reference id="helloService" interface="com.alibaba.dubbo.demo.HelloService" scope="true"/>
             else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
                 isJvmRefer = true;
@@ -438,6 +438,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
                         // 如果协议是registry，则添加refer属性
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+                            // 注册中心地址后添加refer存储服务消费元数据信息
                             // 将map转为：key1=value1&key2=value2&... 的格式
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                         } else {

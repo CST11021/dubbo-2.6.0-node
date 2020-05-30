@@ -383,6 +383,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // 通过反射将对象的字段信息添加到 map 中
         appendParameters(map, application);
         appendParameters(map, module);
+        // 默认在属性前面增加default.前缀，当框架获取URL中的参数时，如果不存在则会自动尝试获取default.前缀对应的值
         appendParameters(map, provider, Constants.DEFAULT_KEY);
         appendParameters(map, protocolConfig);
         appendParameters(map, this);
@@ -619,11 +620,19 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
                 } else {
 
+                    // ===========================
+                    // 处理无注册中的场景，直接暴露服务
+                    // ===========================
+
                     Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
                     Exporter<?> exporter = protocol.export(wrapperInvoker);
                     exporters.add(exporter);
+
+
+
+
                 }
             }
         }

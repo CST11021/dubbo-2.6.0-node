@@ -169,6 +169,13 @@ public class ZookeeperRegistry extends FailbackRegistry {
             throw new RpcException("Failed to unregister " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * 订阅服务
+     *
+     * @param url
+     * @param listener
+     */
     protected void doSubscribe(final URL url, final NotifyListener listener) {
         try {
 

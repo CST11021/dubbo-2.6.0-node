@@ -355,6 +355,7 @@ public class UrlUtils {
 
     /**
      * 判断客户端的请求和服务端暴露的服务是为同一个服务
+     *
      * @param consumerUrl   客户端请求的URL
      * @param providerUrl   服务提供者暴露的服务
      * @return              是否为同一个服务
@@ -367,6 +368,7 @@ public class UrlUtils {
         if (!(Constants.ANY_VALUE.equals(consumerInterface) || StringUtils.isEquals(consumerInterface, providerInterface)))
             return false;
 
+        // 判断两个url的category是否匹配
         if (!isMatchCategory(providerUrl.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY),
                 consumerUrl.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY))) {
             return false;
@@ -376,6 +378,10 @@ public class UrlUtils {
                 && !Constants.ANY_VALUE.equals(consumerUrl.getParameter(Constants.ENABLED_KEY))) {
             return false;
         }
+
+        // =============
+        // 检查两个url的group、version和classifier是否一致
+        // =============
 
         String consumerGroup = consumerUrl.getParameter(Constants.GROUP_KEY);
         String consumerVersion = consumerUrl.getParameter(Constants.VERSION_KEY);

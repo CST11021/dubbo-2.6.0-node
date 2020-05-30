@@ -33,6 +33,9 @@ import java.util.List;
  * 使用装饰器模式来包装Protocol对象，所有的协议实现都会用该包装器来包装：该包装器优先于{@link ProtocolListenerWrapper}执行
  *
  * 该包装类的作用是：在对服务进行导出或引入时，对Invoker进行包装，并添加过滤器
+ * 服务暴露：
+ *
+ * ②
  */
 public class ProtocolFilterWrapper implements Protocol {
 
@@ -59,7 +62,7 @@ public class ProtocolFilterWrapper implements Protocol {
             return protocol.export(invoker);
         }
 
-        // 服务暴露前会调用一系列的过滤器
+        // 服务暴露前会调用一系列的过滤器：①在触发Dubbo协议暴露前先对服务Invoker做了一层拦截器构建，在加载所有拦截器时，会过滤只对provider生效的数据。
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
@@ -84,6 +87,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
         // 服务导出，过滤链如：EchoFilter -> ClassLoaderFilter -> GenericFilter -> ContextFilter -> TraceFilter -> TimeoutFilter -> MonitorFilter -> ExceptionFilter
         // 服务引入，过滤链如：ConsumerContextFilter -> FutureFilter -> MonitorFilter
+        // 会把真实的Invoker（服务对象ref）放到到拦截器的末尾
         if (filters.size() > 0) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);

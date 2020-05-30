@@ -101,6 +101,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     private Protocol protocol;
     /** 对应<dubbo:registry address="multicast://224.5.6.7:1234"/>配置 */
     private Registry registry;
+    /** 当所有可用的服务被禁用时，会通过监听方法将该值设置ture，{@link #refreshInvoker(List)} */
     private volatile boolean forbidden = false;
     /** 例如：multicast://224.5.6.7:1234/com.alibaba.dubbo.registry.RegistryService
      * ?application=demo-consumer
@@ -200,6 +201,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      */
     public List<Invoker<T>> doList(Invocation invocation) {
         // 服务提供者关闭或禁用了服务，此时抛出 No provider 异常
+        // 检查服务是否被禁用，如果配置中心禁用了某个服务，则该服务无法被调用。如果服务被禁用则会抛出异常
         if (forbidden) {
             throw new RpcException(RpcException.FORBIDDEN_EXCEPTION,
                     "No provider available from registry " + getUrl().getAddress() + " for service " + getConsumerUrl().getServiceKey() + " on consumer " +  NetUtils.getLocalHost()
@@ -288,7 +290,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      */
     public synchronized void notify(List<URL> urls) {
 
-        // 定义三个集合，分别用于存放服务提供者 url，路由 url，配置器 url
+        // ====== 定义三个集合，分别用于存放服务提供者 url，路由 url，配置器 url =====
         List<URL> invokerUrls = new ArrayList<URL>();
         List<URL> routerUrls = new ArrayList<URL>();
         List<URL> configuratorUrls = new ArrayList<URL>();
@@ -311,13 +313,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             }
         }
 
-        // configurators
+        // 1、configurators
         if (configuratorUrls != null && configuratorUrls.size() > 0) {
             // 将 url 转成 Configurator
             this.configurators = toConfigurators(configuratorUrls);
         }
 
-        // routers
+        // 2、routers
         if (routerUrls != null && routerUrls.size() > 0) {
             // 将 url 转成 Router
             List<Router> routers = toRouters(routerUrls);
@@ -325,9 +327,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 setRouters(routers);
             }
         }
-        // local reference
+
+        // 本地配置
         List<Configurator> localConfigurators = this.configurators;
-        // merge override parameters
+        // 合并或替代变更的配置参数
         this.overrideDirectoryUrl = directoryUrl;
         if (localConfigurators != null && localConfigurators.size() > 0) {
             for (Configurator configurator : localConfigurators) {
@@ -340,14 +343,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         refreshInvoker(invokerUrls);
     }
     /**
-     * Convert override urls to map for use when re-refer.
-     * Send all rules every time, the urls will be reassembled and calculated
+     * 将替代网址转换为映射，以便在重新引用时使用。 每次发送所有规则，网址将重新组合并计算
      *
      * @param urls Contract:
-     *             </br>1.override://0.0.0.0/...( or override://ip:port...?anyhost=true)&para1=value1... means global rules (all of the providers take effect)
-     *             </br>2.override://ip:port...?anyhost=false Special rules (only for a certain provider)
-     *             </br>3.override:// rule is not supported... ,needs to be calculated by registry itself.
-     *             </br>4.override://0.0.0.0/ without parameters means clearing the override
+     *             </br>1.override://0.0.0.0/...( or override://ip:port...?anyhost=true)&para1=value1... 表示全局规则（所有提供者均生效）
+     *             </br>2.override://ip:port...?anyhost=false 特殊规则（仅适用于特定providers）
+     *             </br>3.override:// 不支持规则...，需要由注册表本身进行计算。
+     *             </br>4.override://0.0.0.0/ 没有参数意味着覆盖
      * @return
      */
     public static List<Configurator> toConfigurators(List<URL> urls) {
@@ -361,6 +363,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 configurators.clear();
                 break;
             }
+
             Map<String, String> override = new HashMap<String, String>(url.getParameters());
             //The anyhost parameter of override may be added automatically, it can't change the judgement of changing url
             override.remove(Constants.ANYHOST_KEY);
@@ -413,7 +416,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      */
     // TODO: 2017/8/31 FIXME The thread pool should be used to refresh the address, otherwise the task may be accumulated.
     private void refreshInvoker(List<URL> invokerUrls) {
-        // invokerUrls 仅有一个元素，且 url 协议头为 empty，此时表示禁用所有服务
+        // ======= invokerUrls 仅有一个元素，且 url 协议头为 empty，此时表示禁用所有服务 =======
         if (invokerUrls != null && invokerUrls.size() == 1 && invokerUrls.get(0) != null && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) {
             // 设置 forbidden 为 true
             this.forbidden = true;
@@ -421,6 +424,9 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             // 销毁所有 Invoker
             destroyAllInvokers();
         }
+
+
+
         else {
             this.forbidden = false;
             Map<String, Invoker<T>> oldUrlInvokerMap = this.urlInvokerMap;

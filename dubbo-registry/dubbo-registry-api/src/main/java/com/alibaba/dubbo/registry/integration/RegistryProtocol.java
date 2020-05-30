@@ -53,11 +53,10 @@ public class RegistryProtocol implements Protocol {
     private final static Logger logger = LoggerFactory.getLogger(RegistryProtocol.class);
     /** 表示注册中心协议本身 */
     private static RegistryProtocol INSTANCE;
-    /** 保存不同服务对应的回调监听，注册器向注册中心订阅URL，同时将NotifyListener暴露为回调服务，当注册中心的URL数据发生变化时回调。 */
+    /** 用于监听 /dubbo/com.alibaba.dubbo.demo.DemoService/configurators 的子节点变更，服务导出时，会添加该服务对应的监听器 */
     private final Map<URL, NotifyListener> overrideListeners = new ConcurrentHashMap<URL, NotifyListener>();
     /**
-     * 为了解决RMI重复暴露端口冲突的问题，已经暴露的服务不再暴露。
-        缓存已经暴露的服务，key：{@link URL#toFullString()} ，value：{@link Exporter}
+     * 为了解决RMI重复导出，导致端口冲突的问题，将已暴露的服务缓存起来，防止重复导出，key：{@link URL#toFullString()} ，value：{@link Exporter}
         通过协议暴露后会返回一个Exporter对象，然后包装为一个ExporterChangeableWrapper对象缓存到这里，详见：{@link #doLocalExport(Invoker)}方法
      */
     private final Map<String, ExporterChangeableWrapper<?>> bounds = new ConcurrentHashMap<String, ExporterChangeableWrapper<?>>();
@@ -160,13 +159,13 @@ public class RegistryProtocol implements Protocol {
         // &methods=sayHello
         final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
 
-        // 将服务提供者的信息把保存到注册中心
+        // 是否将服务提供者的信息把保存到注册中心
         boolean register = registedProviderUrl.getParameter("register", true);
 
         // 向服务提供者与消费者注册表中注册服务提供者
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);
 
-        // 根据 register 的值决定是否注册服务
+        // 根据 register 的值决定是否注册服务到zk
         if (register) {
             // 使用registryUrl创建一个注册中心，并向注册中心注册服务
             register(registryUrl, registedProviderUrl);
@@ -185,7 +184,7 @@ public class RegistryProtocol implements Protocol {
         // FIXME： When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call the same service.
         // FIXME：Because the subscribed is cached key with the name of the service, it causes the subscription information to cover.
         // FIXME： 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
-        // 获取订阅 URL，比如：
+        // 获取订阅 URL，将协议改为provider，并添加 &category=configurators&check=false 参数，比如：
         // provider://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
         // ?category=configurators
         // &check=false
@@ -200,7 +199,7 @@ public class RegistryProtocol implements Protocol {
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         // 本地保存url对应的监听器
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
-        // 订阅 overrideSubscribeUrl 这个服务
+        // 监听：/dubbo/com.alibaba.dubbo.demo.DemoService/configurators 的子节点变更：
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
         // 保证每次export都返回一个新的exporter实例
@@ -208,7 +207,6 @@ public class RegistryProtocol implements Protocol {
             public Invoker<T> getInvoker() {
                 return exporter.getInvoker();
             }
-
             public void unexport() {
                 // 关闭本地服务
                 try {
@@ -235,9 +233,7 @@ public class RegistryProtocol implements Protocol {
         };
     }
     /**
-     * 暴露服务，并将暴露的服务缓存到本地
-     * Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端发来的各
-     * 种请求，通讯细节由dubbo框架自己实现
+     * 暴露服务，并将暴露的服务缓存到本地，Dubbo协议的Invoker转为Exporter发生在DubboProtocol类的export方法，它主要是打开socket侦听服务，并接收客户端的请求
      *
      * @param originInvoker
      * @param <T>
@@ -304,18 +300,19 @@ public class RegistryProtocol implements Protocol {
         return exporter;
     }
     /**
-     * Get the key cached in bounds by invoker
+     * 获取调用程序在范围内缓存的key
      *
      * @param originInvoker
      * @return
      */
     private String getCacheKey(final Invoker<?> originInvoker) {
+        // 获取服务提供者的配置信息，其配置信息封装为URL对象返回
         URL providerUrl = getProviderUrl(originInvoker);
         String key = providerUrl.removeParameters("dynamic", "enabled").toFullString();
         return key;
     }
     /**
-     * 返回注册中心相关的配置信息
+     * 返回注册中心相关的配置信息：获取originInvoker的url并设置协议为registry协议
      *
      * @param originInvoker
      * @return
@@ -358,7 +355,9 @@ public class RegistryProtocol implements Protocol {
                 .removeParameter(Constants.BIND_PORT_KEY);
         return registedProviderUrl;
     }
-    //Filter the parameters that do not need to be output in url(Starting with .)
+    /**
+     * 过滤不需要在url中输出的参数（以"."开头）
+     */
     private static String[] getFilteredKeys(URL url) {
         Map<String, String> params = url.getParameters();
         if (params != null && !params.isEmpty()) {
@@ -434,7 +433,8 @@ public class RegistryProtocol implements Protocol {
                 );
     }
     /**
-     * Reexport the invoker of the modified url
+     * 当/dubbo/com.alibaba.dubbo.demo.DemoService/configurators的子节点变更时，会将配置的规则应用到服务url中并生产新的url，再通过
+     * 该方法重新导出
      *
      * @param originInvoker
      * @param newInvokerUrl
@@ -488,16 +488,26 @@ public class RegistryProtocol implements Protocol {
      */
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+
+        // ===== 将url转为创建注册中心的url，然后创建注册中心实例 =====
+
         // 注册中心的协议，例如：url.setProtocol("zookeeper")
         url = url.setProtocol(url.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_REGISTRY)).removeParameter(Constants.REGISTRY_KEY);
-
         // 获取注册中心
         Registry registry = registryFactory.getRegistry(url);
+
+
+
+
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
-        // group="a,b" or group="*"
+
+
+
+        // ======= group="a,b" or group="*" 情况的服务导出 =======
+
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));
         String group = qs.get(Constants.GROUP_KEY);
         if (group != null && group.length() > 0) {
@@ -505,6 +515,9 @@ public class RegistryProtocol implements Protocol {
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
+
+
+
         // url:zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
         // ?application=demo-consumer&dubbo=2.0.0&pid=2171&refer=application=demo-consumer&check=false&dubbo=2.0.0
         // &interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=2171&register.ip=192.168.1.101&side=consumer&stub=whz.stub.DemoServiceStub&timestamp=1589988301764&timestamp=1589988301780
@@ -686,10 +699,12 @@ public class RegistryProtocol implements Protocol {
     }
 
     /**
-     * Reexport: the exporter destroy problem in protocol
-     * 1.Ensure that the exporter returned by registryprotocol can be normal destroyed
-     * 2.No need to re-register to the registry after notify
-     * 3.The invoker passed by the export method , would better to be the invoker of exporter
+     * 用于监听：/dubbo/com.alibaba.dubbo.demo.DemoService/configurators 的子节点变更：
+     * 其中动态配置时放在configurators节点目录下。服务消费端会监听 configurators 目录变更，如果变更则会调用
+     * RegistryDirectory#notify(List<URL> urls)方法。监听configurators目录变更触发的void notify(List<URL> urls)方法时，
+     * urls的是类似override://...，表示将覆盖调用该服务的某些配置(dubbo中对所有的调用配置都是通过URL的形式来展示的)，
+     * 将这些URL上面的参数信息替换到调用服务端的URL上面取，并且重新构造该服务的Invoke对象，从而达到更新参数的目的。
+     *
      *
      * 注册器{@link Registry}会向注册中心订阅服务，当注册中心的服务信息发生变化时，会使用该接口进行回调
      *
@@ -697,7 +712,17 @@ public class RegistryProtocol implements Protocol {
      */
     private class OverrideListener implements NotifyListener {
 
-        /** 表示向注册中心订阅服务 */
+        /** 表示向注册中心订阅服务，例如：
+         * provider://172.17.48.52:20880/com.alibaba.dubbo.demo.DemoService
+         *         ?category=configurators
+         *         &check=false
+         *         &anyhost=true
+         *         &application=demo-provider
+         *         &dubbo=2.0.2
+         *         &generic=false
+         *         &interface=com.alibaba.dubbo.demo.DemoService
+         *         &methods=sayHello
+         */
         private final URL subscribeUrl;
         /** 服务提供者的Invoker对象 */
         private final Invoker originInvoker;
@@ -708,13 +733,14 @@ public class RegistryProtocol implements Protocol {
         }
 
         /**
-         * 一个服务可能存在多个服务提供者，只要有一个服务发生变化，就会触发该方法通知服务订阅者，入参是一个List，是因为只要有一
-         * 个服务发生变化，就会进行全量通知
+         * 入参对应/dubbo/com.alibaba.dubbo.demo.DemoService/configurators的所有子节点：例如，你在dubbo-admin的服务治理中将一个服务禁用，
+         * 则这里入参就会对应一条url是：/dubbo/com.alibaba.dubbo.demo.DemoService/configurators/override://172.16.120.103:20880/com.alibaba.dubbo.demo.DemoService?category=configurators&disabled=true&dynamic=false&enabled=true
          *
-         * @param urls The list of registered information , is always not empty, The meaning is the same as the return
-         *              value of {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)}.
+         * @param urls 已注册信息的列表，始终不为空，含义与 {@link com.alibaba.dubbo.registry.RegistryService#lookup(URL)} 的返回值相同
          */
         public synchronized void notify(List<URL> urls) {
+
+            // ===== 找出匹配当前服务的配置url =====
             logger.debug("original override urls: " + urls);
             List<URL> matchedUrls = getMatchedUrls(urls, subscribeUrl);
             logger.debug("subscribe url: " + subscribeUrl + ", override urls: " + matchedUrls);
@@ -722,6 +748,7 @@ public class RegistryProtocol implements Protocol {
                 return;
             }
 
+            // 将url配置转为Configurator对象
             List<Configurator> configurators = RegistryDirectory.toConfigurators(matchedUrls);
 
             final Invoker<?> invoker;
@@ -738,9 +765,9 @@ public class RegistryProtocol implements Protocol {
                 logger.warn(new IllegalStateException("error state, exporter should not be null"));
                 return;
             }
-            //The current, may have been merged many times
+            // 目前，可能已经合并了很多次
             URL currentUrl = exporter.getInvoker().getUrl();
-            //Merged with this configuration
+            // 将服务治理的规则配置，以参数的形式，追加到url中
             URL newUrl = getConfigedInvokerUrl(configurators, originUrl);
             if (!currentUrl.equals(newUrl)) {
                 RegistryProtocol.this.doChangeLocalExport(originInvoker, newUrl);
@@ -751,20 +778,26 @@ public class RegistryProtocol implements Protocol {
             List<URL> result = new ArrayList<URL>();
             for (URL url : configuratorUrls) {
                 URL overrideUrl = url;
-                // Compatible with the old version
-                if (url.getParameter(Constants.CATEGORY_KEY) == null
-                        && Constants.OVERRIDE_PROTOCOL.equals(url.getProtocol())) {
+                // 与旧版本兼容：如果category=null 并且是 override协议
+                if (url.getParameter(Constants.CATEGORY_KEY) == null && Constants.OVERRIDE_PROTOCOL.equals(url.getProtocol())) {
                     overrideUrl = url.addParameter(Constants.CATEGORY_KEY, Constants.CONFIGURATORS_CATEGORY);
                 }
 
-                // Check whether url is to be applied to the current service
+                // 检查是否将URL应用于当前服务
                 if (UrlUtils.isMatch(currentSubscribe, overrideUrl)) {
                     result.add(url);
                 }
             }
             return result;
         }
-        /** Merge the urls of configurators */
+
+        /**
+         * 将服务治理的规则配置，以参数的形式，追加到url中
+         *
+         * @param configurators     服务治理新加的规则配置，比如：设置超时、禁用服务等
+         * @param url               原始的服务元数据
+         * @return
+         */
         private URL getConfigedInvokerUrl(List<Configurator> configurators, URL url) {
             for (Configurator configurator : configurators) {
                 url = configurator.configure(url);
