@@ -56,4 +56,14 @@ limitations under the License.
     <dubbo:service interface="com.alibaba.dubbo.demo.DemoService" ref="demoService" timeout="1000" accesslog="true"/>
     <dubbo:service interface="com.alibaba.dubbo.demo.HelloService" ref="helloService"/>
 
+
+    <bean id="callbackService" class="com.alibaba.dubbo.demo.provider.CallbackServiceImpl" />
+    <dubbo:service interface="com.alibaba.dubbo.demo.CallbackService" ref="callbackService" connections="1" callbacks="1000">
+        <dubbo:method name="addListener">
+            <dubbo:argument index="1" callback="true" />
+            <!--也可以通过指定类型的方式-->
+            <!--<dubbo:argument type="com.demo.CallbackListener" callback="true" />-->
+        </dubbo:method>
+    </dubbo:service>
+
 </beans>

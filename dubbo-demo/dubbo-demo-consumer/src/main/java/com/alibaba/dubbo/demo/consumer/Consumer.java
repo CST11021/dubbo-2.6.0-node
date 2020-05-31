@@ -17,21 +17,31 @@
 package com.alibaba.dubbo.demo.consumer;
 
 import com.alibaba.dubbo.common.bytecode.Wrapper;
+import com.alibaba.dubbo.demo.CallbackListener;
+import com.alibaba.dubbo.demo.CallbackService;
 import com.alibaba.dubbo.demo.DemoService;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.io.IOException;
+
 public class Consumer {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
-        Wrapper wrapper = Wrapper.getWrapper(DemoService.class);
-
-
-        //Prevent to get IPV6 address,this way only work in debug mode
-        //But you can pass use -Djava.net.preferIPv4Stack=true,then it work well whether in debug mode or not
         System.setProperty("java.net.preferIPv4Stack", "true");
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-consumer.xml"});
         context.start();
+
+        CallbackService callbackService = (CallbackService) context.getBean("callbackService");
+
+        callbackService.addListener("foo.bar", new CallbackListener() {
+            @Override
+            public void changed(String msg) {
+                System.out.println("callback1:" + msg);
+            }
+        });
+
+
         DemoService demoService = (DemoService) context.getBean("demoService");
 
         while (true) {
