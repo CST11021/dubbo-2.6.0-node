@@ -1,0 +1,1 @@
+traceFilter=com.alibaba.dubbo.demo.consumer.filter.ConsumerTraceFilter

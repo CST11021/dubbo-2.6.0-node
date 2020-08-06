@@ -16,7 +16,6 @@
  */
 package com.alibaba.dubbo.demo.consumer;
 
-import com.alibaba.dubbo.common.bytecode.Wrapper;
 import com.alibaba.dubbo.demo.CallbackListener;
 import com.alibaba.dubbo.demo.CallbackService;
 import com.alibaba.dubbo.demo.DemoService;

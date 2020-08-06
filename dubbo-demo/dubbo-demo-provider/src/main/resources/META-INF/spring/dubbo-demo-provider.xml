@@ -21,6 +21,9 @@ limitations under the License.
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
        http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
 
+    <!--过滤器配置-->
+    <dubbo:provider filter="traceFilter" />
+
     <!-- provider's application name, used for tracing dependency relationship -->
     <!--应用配置，用于配置当前应用信息，不管该应用是提供者还是消费者，主要用来给注册中心计算应用间依赖关系-->
     <dubbo:application name="demo-provider"/>

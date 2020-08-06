@@ -191,7 +191,11 @@ public class RedisRegistry extends FailbackRegistry {
         }
     }
 
-    // The monitoring center is responsible for deleting outdated dirty data
+    /**
+     * 监控中心负责删除过时的脏数据
+     *
+     * @param jedis
+     */
     private void clean(Jedis jedis) {
         Set<String> keys = jedis.keys(root + Constants.ANY_VALUE);
         if (keys != null && keys.size() > 0) {
