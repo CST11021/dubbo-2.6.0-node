@@ -44,9 +44,10 @@ public class HeaderExchangeClient implements ExchangeClient {
 
     private static final Logger logger = LoggerFactory.getLogger(HeaderExchangeClient.class);
 
-    private static final ScheduledThreadPoolExecutor scheduled = new ScheduledThreadPoolExecutor(2,
-            new NamedThreadFactory("dubbo-remoting-client-heartbeat", true));
+    private static final ScheduledThreadPoolExecutor scheduled = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("dubbo-remoting-client-heartbeat", true));
+
     private final Client client;
+
     private final ExchangeChannel channel;
     // heartbeat timer
     private ScheduledFuture<?> heartbeatTimer;
@@ -58,6 +59,7 @@ public class HeaderExchangeClient implements ExchangeClient {
         if (client == null) {
             throw new IllegalArgumentException("client == null");
         }
+
         this.client = client;
         this.channel = new HeaderExchangeChannel(client);
         String dubbo = client.getUrl().getParameter(Constants.DUBBO_VERSION_KEY);
