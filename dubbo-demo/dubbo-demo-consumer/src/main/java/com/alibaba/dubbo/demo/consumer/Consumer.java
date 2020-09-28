@@ -31,14 +31,14 @@ public class Consumer {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-consumer.xml"});
         context.start();
 
-        CallbackService callbackService = (CallbackService) context.getBean("callbackService");
-
-        callbackService.addListener("foo.bar", new CallbackListener() {
-            @Override
-            public void changed(String msg) {
-                System.out.println("callback1:" + msg);
-            }
-        });
+        // CallbackService callbackService = (CallbackService) context.getBean("callbackService");
+        //
+        // callbackService.addListener("foo.bar", new CallbackListener() {
+        //     @Override
+        //     public void changed(String msg) {
+        //         System.out.println("callback1:" + msg);
+        //     }
+        // });
 
 
         DemoService demoService = (DemoService) context.getBean("demoService");

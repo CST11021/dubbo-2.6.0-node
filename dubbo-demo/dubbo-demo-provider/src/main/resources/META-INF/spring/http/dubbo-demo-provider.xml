@@ -10,7 +10,7 @@
     <dubbo:registry address="zookeeper://127.0.0.1:2181" />
 
     <!--用于配置暴露服务的协议-->
-    <dubbo:protocol name="http" port="80" server="servlet"/>
+    <dubbo:protocol name="http" port="8080" server="tomcat"/>
 
     <bean id="demoService" class="com.alibaba.dubbo.demo.provider.DemoServiceImpl"/>
 

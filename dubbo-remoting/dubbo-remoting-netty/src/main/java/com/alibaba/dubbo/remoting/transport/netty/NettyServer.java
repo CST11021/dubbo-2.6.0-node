@@ -51,7 +51,8 @@ public class NettyServer extends AbstractServer implements Server {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
 
-    private Map<String, Channel> channels; // <ip:port, channel>
+    // <ip:port, channel>
+    private Map<String, Channel> channels;
     private ServerBootstrap bootstrap;
     private org.jboss.netty.channel.Channel channel;
 

@@ -55,16 +55,19 @@ public class MinaServer extends AbstractServer {
 
     @Override
     protected void doOpen() throws Throwable {
-        // set thread pool.
-        acceptor = new SocketAcceptor(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
-                Executors.newCachedThreadPool(new NamedThreadFactory("MinaServerWorker",
-                        true)));
+        // 设置线程池
+        acceptor = new SocketAcceptor(
+                getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
+                Executors.newCachedThreadPool(new NamedThreadFactory("MinaServerWorker", true))
+        );
         // config
         SocketAcceptorConfig cfg = (SocketAcceptorConfig) acceptor.getDefaultConfig();
         cfg.setThreadModel(ThreadModel.MANUAL);
-        // set codec.
+
+        // 设置编解码处理器
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MinaCodecAdapter(getCodec(), getUrl(), this)));
 
+        // 绑定端口并监听客户端请求
         acceptor.bind(getBindAddress(), new MinaHandler(getUrl(), this));
     }
 

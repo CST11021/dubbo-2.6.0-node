@@ -23,7 +23,7 @@ import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 
 /**
- * MinaHandler
+ * MinaHandler：用于处理客户端请求
  */
 public class MinaHandler extends IoHandlerAdapter {
 
@@ -52,6 +52,12 @@ public class MinaHandler extends IoHandlerAdapter {
         }
     }
 
+    /**
+     * 当连接关闭时调用
+     *
+     * @param session
+     * @throws Exception
+     */
     @Override
     public void sessionClosed(IoSession session) throws Exception {
         MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);
@@ -62,16 +68,31 @@ public class MinaHandler extends IoHandlerAdapter {
         }
     }
 
+    /**
+     * 当接收了一个客户端请求时调用该方法
+     *
+     * @param session
+     * @param message
+     * @throws Exception
+     */
     @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
         MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);
         try {
+            // 处理请求
             handler.received(channel, message);
         } finally {
             MinaChannel.removeChannelIfDisconnectd(session);
         }
     }
 
+    /**
+     * 当一个消息被(IoSession#write)发送出去后调用，即服务端发起响应后的回调
+     *
+     * @param session
+     * @param message
+     * @throws Exception
+     */
     @Override
     public void messageSent(IoSession session, Object message) throws Exception {
         MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);
@@ -82,6 +103,13 @@ public class MinaHandler extends IoHandlerAdapter {
         }
     }
 
+    /**
+     * 服务端请求处理异常时，调用该方法
+     *
+     * @param session
+     * @param cause
+     * @throws Exception
+     */
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
         MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);

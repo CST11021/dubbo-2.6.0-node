@@ -160,36 +160,32 @@ public final class URL implements Serializable {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     /**
-     * Parse url string
+     * 解析url中的protocol, username, password, host, port, path, parameters 然后返回一个URL对象
      *
-     * @param url URL string
-     * @return URL instance
-     * @see URL
+     * @param url
+     * @return new URL(protocol, username, password, host, port, path, parameters);
      */
     public static URL valueOf(String url) {
         if (url == null || (url = url.trim()).length() == 0) {
             throw new IllegalArgumentException("url == null");
         }
+        // 表示url使用的协议
         String protocol = null;
         String username = null;
         String password = null;
         String host = null;
         int port = 0;
+        // 用于定位服务的，例如：com.alibaba.dubbo.registry.RegistryService
         String path = null;
+
+        // 用于存放url中的参数
         Map<String, String> parameters = null;
-        int i = url.indexOf("?"); // seperator between body and parameters 
+
+
+
+        // 1、解析url中的参数
+        int i = url.indexOf("?");
         if (i >= 0) {
             String[] parts = url.substring(i + 1).split("\\&");
             parameters = new HashMap<String, String>();
@@ -206,6 +202,8 @@ public final class URL implements Serializable {
             }
             url = url.substring(0, i);
         }
+
+        // 2、解析协议，例如：zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
         i = url.indexOf("://");
         if (i >= 0) {
             if (i == 0) throw new IllegalStateException("url missing protocol: \"" + url + "\"");
@@ -221,11 +219,16 @@ public final class URL implements Serializable {
             }
         }
 
+
+        // 3、解析服务名
         i = url.indexOf("/");
         if (i >= 0) {
+            // path的值，例如：com.alibaba.dubbo.registry.RegistryService
             path = url.substring(i + 1);
             url = url.substring(0, i);
         }
+
+        // 4、获取用户名和密码
         i = url.indexOf("@");
         if (i >= 0) {
             username = url.substring(0, i);
@@ -352,10 +355,20 @@ public final class URL implements Serializable {
         return new URL(protocol, username, password, host, port, path, getParameters());
     }
 
+    /**
+     * 返回ip和端口，如果有备选的地址一并返回，多个地址之前用","分隔
+     *
+     * @return
+     */
     public String getBackupAddress() {
         return getBackupAddress(0);
     }
 
+    /**
+     * 返回ip和端口，如果有备选的地址一并返回，多个地址之前用","分隔
+     *
+     * @return
+     */
     public String getBackupAddress(int defaultPort) {
         StringBuilder address = new StringBuilder(appendDefaultPort(getAddress(), defaultPort));
         String[] backups = getParameter(Constants.BACKUP_KEY, new String[0]);
@@ -380,9 +393,15 @@ public final class URL implements Serializable {
         return urls;
     }
 
+    /**
+     * 返回：${ip}:${port}
+     *
+     * @param address
+     * @param defaultPort
+     * @return
+     */
     private String appendDefaultPort(String address, int defaultPort) {
-        if (address != null && address.length() > 0
-                && defaultPort > 0) {
+        if (address != null && address.length() > 0 && defaultPort > 0) {
             int i = address.indexOf(':');
             if (i < 0) {
                 return address + ":" + defaultPort;

@@ -57,7 +57,8 @@ public class MinaClient extends AbstractClient {
 
     private SocketConnector connector;
 
-    private volatile IoSession session; // volatile, please copy reference to use
+    // volatile, please copy reference to use
+    private volatile IoSession session;
 
     public MinaClient(final URL url, final ChannelHandler handler) throws RemotingException {
         super(url, wrapChannelHandler(url, handler));

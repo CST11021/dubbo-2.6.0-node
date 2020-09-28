@@ -14,26 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.remoting.transport.mina;
+package com.whz.dubbo.remoting.mina;
 
+import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.exchange.ExchangeChannel;
 import com.alibaba.dubbo.remoting.exchange.ExchangeServer;
+import com.alibaba.dubbo.remoting.exchange.Exchangers;
 import com.alibaba.dubbo.remoting.exchange.ResponseFuture;
 import com.alibaba.dubbo.remoting.exchange.support.Replier;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.junit.Test;
 
 /**
- * ClientToServer
- *
- *
+ * MinaServerClientTest
  */
-public abstract class ClientToServerTest extends TestCase {
+public class MinaClientToServerTest extends TestCase {
 
-    protected static final String LOCALHOST = "127.0.0.1";
+    private int port = 9123;
 
     protected ExchangeServer server;
 
@@ -41,53 +40,43 @@ public abstract class ClientToServerTest extends TestCase {
 
     protected WorldHandler handler = new WorldHandler();
 
-    protected abstract ExchangeServer newServer(int port, Replier<?> receiver) throws RemotingException;
-
-    protected abstract ExchangeChannel newClient(int port) throws RemotingException;
-
-    @Override
     protected void setUp() throws Exception {
         super.setUp();
-        int port = (int) (1000 * Math.random() + 10000);
-        server = newServer(port, handler);
-        client = newClient(port);
+        server = Exchangers.bind(URL.valueOf("exchange://localhost:" + port + "?server=mina"), handler);
+        client = Exchangers.connect(URL.valueOf("exchange://localhost:" + port + "?client=mina"));
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
         try {
-            if (server != null)
+            if (server != null) {
                 server.close();
+            }
         } finally {
-            if (client != null)
+            if (client != null) {
                 client.close();
+            }
         }
     }
 
     @Test
     public void testFuture() throws Exception {
-        ResponseFuture future = client.request(new World("world"));
-        Hello result = (Hello) future.get();
-        Assert.assertEquals("hello,world", result.getName());
+
+        ResponseFuture future = client.request("world");
+        System.out.println(future.get());
     }
 
-//    @Test
-//    public void testCallback() throws Exception {
-//        final Object waitter = new Object();
-//        client.invoke(new World("world"), new InvokeCallback<Hello>() {
-//            public void callback(Hello result) {
-//                Assert.assertEquals("hello,world", result.getName());
-//                synchronized (waitter) {
-//                    waitter.notifyAll();
-//                }
-//            }
-//            public void onException(Throwable exception) {
-//            }
-//        });
-//        synchronized (waitter) {
-//            waitter.wait();
-//        }
-//    }
+    public class WorldHandler implements Replier<Object> {
+
+        public Class<Object> interest() {
+            return Object.class;
+        }
+
+        public Object reply(ExchangeChannel channel, Object msg) throws RemotingException {
+            return "hello " + msg;
+        }
+
+    }
 
 }

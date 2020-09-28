@@ -35,13 +35,14 @@ public interface Endpoint {
     /** 用于描述目标机器 */
     URL getUrl();
 
+    /** 获取通道处理器 */
     ChannelHandler getChannelHandler();
 
-    /** 表示本地地址 */
+    /** 表示当该节点的地址 */
     InetSocketAddress getLocalAddress();
 
     /**
-     * 发送消息
+     * 向通道发送一个消息，可能是客户端向服务端发起请求，也可能是服务端响应客户端请求
      *
      * @param message
      * @throws RemotingException

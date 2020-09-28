@@ -55,14 +55,16 @@ public class JettyHttpServer extends AbstractHttpServer {
         // 请求分发：设置端口对应的请求处理器
         DispatcherServlet.addHttpHandler(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()), handler);
 
+        // 1、创建业务线程池
         int threads = url.getParameter(Constants.THREADS_KEY, Constants.DEFAULT_THREADS);
         QueuedThreadPool threadPool = new QueuedThreadPool();
         threadPool.setDaemon(true);
         threadPool.setMaxThreads(threads);
         threadPool.setMinThreads(threads);
 
-        SelectChannelConnector connector = new SelectChannelConnector();
 
+        // 2、创建connector
+        SelectChannelConnector connector = new SelectChannelConnector();
         String bindIp = url.getParameter(Constants.BIND_IP_KEY, url.getHost());
         if (!url.isAnyHost() && NetUtils.isValidLocalHost(bindIp)) {
             connector.setHost(bindIp);
@@ -77,9 +79,7 @@ public class JettyHttpServer extends AbstractHttpServer {
         ServletHolder servletHolder = servletHandler.addServletWithMapping(DispatcherServlet.class, "/*");
         servletHolder.setInitOrder(2);
 
-        // dubbo's original impl can't support the use of ServletContext
-//        server.addHandler(servletHandler);
-        // TODO Context.SESSIONS is the best option here?
+
         Context context = new Context(server, "/", Context.SESSIONS);
         context.setServletHandler(servletHandler);
         ServletManager.getInstance().addServletContext(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()), context.getServletContext());
