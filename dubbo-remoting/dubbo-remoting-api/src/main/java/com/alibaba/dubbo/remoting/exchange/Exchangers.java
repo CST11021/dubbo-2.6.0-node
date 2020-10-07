@@ -40,7 +40,7 @@ public class Exchangers {
     }
 
     // -------------------------------------------------
-    // 服务端调用bind方法，创建一个服务监听，等待客户端连接
+    // 服务端调用bind方法，创建一个服务监听，等待客户端连接，注意：bind方法一定要有Replier，而connect不一定需要Replier
     // -------------------------------------------------
 
     public static ExchangeServer bind(String url, Replier<?> replier) throws RemotingException {
@@ -88,6 +88,15 @@ public class Exchangers {
     public static ExchangeClient connect(URL url, Replier<?> replier) throws RemotingException {
         return connect(url, new ChannelHandlerAdapter(), replier);
     }
+    /**
+     *
+     *
+     * @param url
+     * @param handler   通道事件监听
+     * @param replier   消息处理器：当从通道接收到消息时，通过replier对消息作出处理
+     * @return
+     * @throws RemotingException
+     */
     public static ExchangeClient connect(String url, ChannelHandler handler, Replier<?> replier) throws RemotingException {
         return connect(URL.valueOf(url), handler, replier);
     }

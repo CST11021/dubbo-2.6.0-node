@@ -207,6 +207,7 @@ public class Constants {
 
     public static final String CORE_THREADS_KEY = "corethreads";
 
+    /** 表示dubbo服务端处理客户端请求的线程池内的线程数量 */
     public static final String THREADS_KEY = "threads";
 
     public static final String QUEUES_KEY = "queues";

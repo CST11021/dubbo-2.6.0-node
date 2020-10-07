@@ -27,8 +27,10 @@ import com.alibaba.dubbo.remoting.Codec;
 import com.alibaba.dubbo.remoting.Codec2;
 import com.alibaba.dubbo.remoting.transport.codec.CodecAdapter;
 
-/** AbstractEndpoint 扩展自AbstractPeer，添加了编解码功能和超时信息，该类有两个抽象子类，用于扩展：
- * {@link AbstractClient} 和 {@link AbstractServer}*/
+/**
+ * AbstractEndpoint 扩展自AbstractPeer，添加了编解码功能和超时信息，该类有两个抽象子类，用于扩展：
+ * {@link AbstractClient} 和 {@link AbstractServer}
+ */
 public abstract class AbstractEndpoint extends AbstractPeer implements Resetable {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEndpoint.class);
@@ -50,9 +52,10 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
     /** 从url中提取timeout、connectTimeout和codec信息 */
     public void reset(URL url) {
         if (isClosed()) {
-            throw new IllegalStateException("Failed to reset parameters "
-                    + url + ", cause: Channel closed. channel: " + getLocalAddress());
+            throw new IllegalStateException("Failed to reset parameters " + url + ", cause: Channel closed. channel: " + getLocalAddress());
         }
+
+        // 获取通信的超时时间
         try {
             if (url.hasParameter(Constants.TIMEOUT_KEY)) {
                 int t = url.getParameter(Constants.TIMEOUT_KEY, 0);
@@ -64,6 +67,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
             logger.error(t.getMessage(), t);
         }
 
+        // 获取连接的超时时间
         try {
             if (url.hasParameter(Constants.CONNECT_TIMEOUT_KEY)) {
                 int t = url.getParameter(Constants.CONNECT_TIMEOUT_KEY, 0);
@@ -75,6 +79,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
             logger.error(t.getMessage(), t);
         }
 
+        // 获取编解码实现
         try {
             if (url.hasParameter(Constants.CODEC_KEY)) {
                 this.codec = getChannelCodec(url);

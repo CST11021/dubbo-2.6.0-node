@@ -72,8 +72,7 @@ public class MinaClient extends AbstractClient {
             connector = c;
         } else {
             // set thread pool.
-            connector = new SocketConnector(Constants.DEFAULT_IO_THREADS,
-                    Executors.newCachedThreadPool(new NamedThreadFactory("MinaClientWorker", true)));
+            connector = new SocketConnector(Constants.DEFAULT_IO_THREADS, Executors.newCachedThreadPool(new NamedThreadFactory("MinaClientWorker", true)));
             // config
             SocketConnectorConfig cfg = (SocketConnectorConfig) connector.getDefaultConfig();
             cfg.setThreadModel(ThreadModel.MANUAL);

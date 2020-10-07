@@ -102,6 +102,7 @@ public class ServerPeer extends ServerDelegate implements Peer {
         } catch (Throwable t) {
             last = t;
         }
+
         for (Client client : clients.values()) {
             try {
                 client.send(message, sent);
@@ -109,6 +110,7 @@ public class ServerPeer extends ServerDelegate implements Peer {
                 last = t;
             }
         }
+
         if (last != null) {
             if (last instanceof RemotingException) {
                 throw (RemotingException) last;

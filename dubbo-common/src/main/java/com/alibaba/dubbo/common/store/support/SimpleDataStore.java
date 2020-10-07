@@ -26,9 +26,15 @@ import java.util.concurrent.ConcurrentMap;
 
 public class SimpleDataStore implements DataStore {
 
-    // <component name or id, <data-name, data-value>>
+    /** <component name or id, <data-name, data-value>> */
     private ConcurrentMap<String, ConcurrentMap<String, Object>> data = new ConcurrentHashMap<String, ConcurrentMap<String, Object>>();
 
+    /**
+     * 根据组件名，获取组件下的缓存数据
+     *
+     * @param componentName
+     * @return
+     */
     public Map<String, Object> get(String componentName) {
         ConcurrentMap<String, Object> value = data.get(componentName);
         if (value == null) return new HashMap<String, Object>();
@@ -36,6 +42,13 @@ public class SimpleDataStore implements DataStore {
         return new HashMap<String, Object>(value);
     }
 
+    /**
+     * 根据组件名和缓存key，获取缓存数据
+     *
+     * @param componentName
+     * @param key
+     * @return
+     */
     public Object get(String componentName, String key) {
         if (!data.containsKey(componentName)) {
             return null;
@@ -43,6 +56,13 @@ public class SimpleDataStore implements DataStore {
         return data.get(componentName).get(key);
     }
 
+    /**
+     * 添加缓存
+     *
+     * @param componentName
+     * @param key
+     * @param value
+     */
     public void put(String componentName, String key, Object value) {
         Map<String, Object> componentData = data.get(componentName);
         if (null == componentData) {
@@ -52,6 +72,12 @@ public class SimpleDataStore implements DataStore {
         componentData.put(key, value);
     }
 
+    /**
+     * 移除缓存
+     *
+     * @param componentName
+     * @param key
+     */
     public void remove(String componentName, String key) {
         if (!data.containsKey(componentName)) {
             return;

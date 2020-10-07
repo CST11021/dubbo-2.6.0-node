@@ -47,12 +47,18 @@ public class MinaServer extends AbstractServer {
 
     private static final Logger logger = LoggerFactory.getLogger(MinaServer.class);
 
+    /** Mina的服务 */
     private SocketAcceptor acceptor;
 
     public MinaServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
+    /**
+     * 启动一个Mina服务，开始监听客户端请求
+     *
+     * @throws Throwable
+     */
     @Override
     protected void doOpen() throws Throwable {
         // 设置线程池
@@ -60,17 +66,23 @@ public class MinaServer extends AbstractServer {
                 getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
                 Executors.newCachedThreadPool(new NamedThreadFactory("MinaServerWorker", true))
         );
-        // config
+
+        // 设置服务端配置
         SocketAcceptorConfig cfg = (SocketAcceptorConfig) acceptor.getDefaultConfig();
         cfg.setThreadModel(ThreadModel.MANUAL);
 
-        // 设置编解码处理器
+        // 设置Mina的编解码处理器
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MinaCodecAdapter(getCodec(), getUrl(), this)));
 
         // 绑定端口并监听客户端请求
         acceptor.bind(getBindAddress(), new MinaHandler(getUrl(), this));
     }
 
+    /**
+     * 关闭Mina服务
+     *
+     * @throws Throwable
+     */
     @Override
     protected void doClose() throws Throwable {
         try {
@@ -82,6 +94,11 @@ public class MinaServer extends AbstractServer {
         }
     }
 
+    /**
+     * 获取有所有的Channel
+     *
+     * @return
+     */
     public Collection<Channel> getChannels() {
         Set<IoSession> sessions = acceptor.getManagedSessions(getBindAddress());
         Collection<Channel> channels = new HashSet<Channel>();
@@ -93,6 +110,12 @@ public class MinaServer extends AbstractServer {
         return channels;
     }
 
+    /**
+     * 获取连接到指定客户端的通道
+     *
+     * @param remoteAddress
+     * @return
+     */
     public Channel getChannel(InetSocketAddress remoteAddress) {
         Set<IoSession> sessions = acceptor.getManagedSessions(getBindAddress());
         for (IoSession session : sessions) {
@@ -103,6 +126,11 @@ public class MinaServer extends AbstractServer {
         return null;
     }
 
+    /**
+     * 判断绑定的IP/端口是否被Server管理
+     *
+     * @return
+     */
     public boolean isBound() {
         return acceptor.isManaged(getBindAddress());
     }

@@ -42,6 +42,12 @@ public class MinaHandler extends IoHandlerAdapter {
         this.handler = handler;
     }
 
+    /**
+     * 当session打开时（即服务端和客户端建立连接时）触发ChannelHandler.connected方法，
+     *
+     * @param session
+     * @throws Exception
+     */
     @Override
     public void sessionOpened(IoSession session) throws Exception {
         MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);
@@ -53,7 +59,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 当连接关闭时调用
+     * 当session关闭时（即服务端和客户端的连接断开时）调用
      *
      * @param session
      * @throws Exception

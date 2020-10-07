@@ -48,10 +48,10 @@ public class HeaderExchangeServer implements ExchangeServer {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1,
-            new NamedThreadFactory(
-                    "dubbo-remoting-server-heartbeat",
-                    true));
+    private final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(
+            1, new NamedThreadFactory("dubbo-remoting-server-heartbeat", true));
+
+    /** 具体的服务实现，通过URL中的server配置，例如：exchange://localhost:" + port + "?server=mina */
     private final Server server;
     // heartbeat timer
     private ScheduledFuture<?> heatbeatTimer;
@@ -66,11 +66,35 @@ public class HeaderExchangeServer implements ExchangeServer {
         }
         this.server = server;
         this.heartbeat = server.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);
+        // 心跳超时时间默认为心跳时间的3倍
         this.heartbeatTimeout = server.getUrl().getParameter(Constants.HEARTBEAT_TIMEOUT_KEY, heartbeat * 3);
+        // 如果心跳超时时间小于心跳时间的两倍则抛异常
         if (heartbeatTimeout < heartbeat * 2) {
             throw new IllegalStateException("heartbeatTimeout < heartbeatInterval * 2");
         }
+        // dubbo心跳时间heartbeat默认是60s，超过heartbeat时间没有收到消息，就发送心跳消息(provider，consumer一样)，
+        // 如果连着3次(heartbeatTimeout为heartbeat*3)没有收到心跳响应，provider会关闭channel，而consumer会进行重连;
+        // 不论是provider还是consumer的心跳检测都是通过启动定时任务的方式实现；
         startHeatbeatTimer();
+    }
+
+    /**
+     * 向客户端发送一个消息
+     *
+     * @param message
+     * @throws RemotingException
+     */
+    public void send(Object message) throws RemotingException {
+        if (closed.get()) {
+            throw new RemotingException(this.getLocalAddress(), null, "Failed to send message " + message + ", cause: The server " + getLocalAddress() + " is closed!");
+        }
+        server.send(message);
+    }
+    public void send(Object message, boolean sent) throws RemotingException {
+        if (closed.get()) {
+            throw new RemotingException(this.getLocalAddress(), null, "Failed to send message " + message + ", cause: The server " + getLocalAddress() + " is closed!");
+        }
+        server.send(message, sent);
     }
 
     public Server getServer() {
@@ -218,28 +242,20 @@ public class HeaderExchangeServer implements ExchangeServer {
         reset(getUrl().addParameters(parameters.getParameters()));
     }
 
-    public void send(Object message) throws RemotingException {
-        if (closed.get()) {
-            throw new RemotingException(this.getLocalAddress(), null, "Failed to send message " + message + ", cause: The server " + getLocalAddress() + " is closed!");
-        }
-        server.send(message);
-    }
 
-    public void send(Object message, boolean sent) throws RemotingException {
-        if (closed.get()) {
-            throw new RemotingException(this.getLocalAddress(), null, "Failed to send message " + message + ", cause: The server " + getLocalAddress() + " is closed!");
-        }
-        server.send(message, sent);
-    }
 
     private void startHeatbeatTimer() {
+        // 停止原有定时任务
         stopHeartbeatTimer();
+
+        // 发起新的定时任务
         if (heartbeat > 0) {
             heatbeatTimer = scheduled.scheduleWithFixedDelay(
+
+                    // 定时执行的任务
                     new HeartBeatTask(new HeartBeatTask.ChannelProvider() {
                         public Collection<Channel> getChannels() {
-                            return Collections.unmodifiableCollection(
-                                    HeaderExchangeServer.this.getChannels());
+                            return Collections.unmodifiableCollection(HeaderExchangeServer.this.getChannels());
                         }
                     }, heartbeat, heartbeatTimeout),
                     heartbeat, heartbeat, TimeUnit.MILLISECONDS);

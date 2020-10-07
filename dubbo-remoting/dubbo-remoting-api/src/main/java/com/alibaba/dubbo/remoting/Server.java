@@ -34,14 +34,14 @@ public interface Server extends Endpoint, Resetable {
     boolean isBound();
 
     /**
-     * get channels.
+     * 获取服务端所有的Channel
      *
      * @return channels
      */
     Collection<Channel> getChannels();
 
     /**
-     * 与远程机器建立连接，返回一个用于收发消息的通道对象
+     * 获取与指定客户端地址建立连接的通道
      *
      * @param remoteAddress
      * @return channel

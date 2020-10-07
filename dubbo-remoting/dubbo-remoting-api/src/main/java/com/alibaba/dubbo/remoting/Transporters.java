@@ -41,6 +41,16 @@ public class Transporters {
     public static Server bind(String url, ChannelHandler... handler) throws RemotingException {
         return bind(URL.valueOf(url), handler);
     }
+
+    /**
+     * 首先是检验url与handler，如果是多个handler的话就是用ChannelHandlerDispatcher 这个handler分发器（这个handler就是做某件事的时候
+     * 就会循环那一堆handler做某件事）封装。最后调用getTransporter 获得具体Transporter 实现，然后调用bind方法。
+     *
+     * @param url
+     * @param handlers
+     * @return
+     * @throws RemotingException
+     */
     public static Server bind(URL url, ChannelHandler... handlers) throws RemotingException {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
@@ -60,6 +70,16 @@ public class Transporters {
     public static Client connect(String url, ChannelHandler... handler) throws RemotingException {
         return connect(URL.valueOf(url), handler);
     }
+
+    /**
+     * 在connect方法中可以看到检查url，它是允许handler为空的，如果空的话就创建一个ChannelHandlerAdapter（这里面其实就是一堆空方法，
+     * 这种就是发出去 不准备接收响应那种），如果是多个handler的话也是使用ChannelHandlerDispatcher 包装下，最后是getTransporter获得具体Transporter然后进行connect连接。
+     *
+     * @param url
+     * @param handlers
+     * @return
+     * @throws RemotingException
+     */
     public static Client connect(URL url, ChannelHandler... handlers) throws RemotingException {
         if (url == null) {
             throw new IllegalArgumentException("url == null");

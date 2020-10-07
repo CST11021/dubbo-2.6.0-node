@@ -25,14 +25,37 @@ import java.util.Map;
 public interface DataStore {
 
     /**
-     * return a snapshot value of componentName
+     * 根据组件名，获取组件下的缓存数据
+     *
+     * @param componentName
+     * @return
      */
     Map<String, Object> get(String componentName);
 
+    /**
+     * 根据组件名和缓存key，获取缓存数据
+     *
+     * @param componentName
+     * @param key
+     * @return
+     */
     Object get(String componentName, String key);
 
+    /**
+     * 添加缓存
+     *
+     * @param componentName
+     * @param key
+     * @param value
+     */
     void put(String componentName, String key, Object value);
 
+    /**
+     * 移除缓存
+     *
+     * @param componentName
+     * @param key
+     */
     void remove(String componentName, String key);
 
 }

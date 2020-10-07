@@ -72,16 +72,47 @@ final class MinaChannel extends AbstractChannel {
         }
     }
 
+    /**
+     * 获取服务提供者的地址
+     *
+     * @return
+     */
     public InetSocketAddress getLocalAddress() {
         return (InetSocketAddress) session.getLocalAddress();
     }
 
+    /**
+     * 获取客户端的地址
+     *
+     * @return
+     */
     public InetSocketAddress getRemoteAddress() {
         return (InetSocketAddress) session.getRemoteAddress();
     }
 
+    /**
+     * 判断会话是否处于连接状态（即客户端和服务端是否处于连接状态）
+     *
+     * @return
+     */
     public boolean isConnected() {
         return session.isConnected();
+    }
+
+    public boolean hasAttribute(String key) {
+        return session.containsAttribute(key);
+    }
+
+    public Object getAttribute(String key) {
+        return session.getAttribute(key);
+    }
+
+    public void setAttribute(String key, Object value) {
+        session.setAttribute(key, value);
+    }
+
+    public void removeAttribute(String key) {
+        session.removeAttribute(key);
     }
 
     public void send(Object message, boolean sent) throws RemotingException {
@@ -124,22 +155,6 @@ final class MinaChannel extends AbstractChannel {
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }
-    }
-
-    public boolean hasAttribute(String key) {
-        return session.containsAttribute(key);
-    }
-
-    public Object getAttribute(String key) {
-        return session.getAttribute(key);
-    }
-
-    public void setAttribute(String key, Object value) {
-        session.setAttribute(key, value);
-    }
-
-    public void removeAttribute(String key) {
-        session.removeAttribute(key);
     }
 
     @Override

@@ -49,10 +49,11 @@ public interface Endpoint {
      */
     void send(Object message) throws RemotingException;
     /**
-     * send message.
+     * 向所有的通道发送消息
      *
      * @param message
      * @param sent    already sent to socket?
+     * @throws RemotingException
      */
     void send(Object message, boolean sent) throws RemotingException;
 

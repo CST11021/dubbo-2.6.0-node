@@ -46,8 +46,10 @@ public class HeaderExchangeClient implements ExchangeClient {
 
     private static final ScheduledThreadPoolExecutor scheduled = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("dubbo-remoting-client-heartbeat", true));
 
+    /** 客户端对象 */
     private final Client client;
 
+    /** 用于通信的通道 */
     private final ExchangeChannel channel;
     // heartbeat timer
     private ScheduledFuture<?> heartbeatTimer;
@@ -105,6 +107,12 @@ public class HeaderExchangeClient implements ExchangeClient {
         return channel.getExchangeHandler();
     }
 
+    /**
+     * 想通道发送信息（即向服务端发送请求）
+     *
+     * @param message
+     * @throws RemotingException
+     */
     public void send(Object message) throws RemotingException {
         channel.send(message);
     }

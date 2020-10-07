@@ -34,7 +34,7 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 
 /**
- * MinaCodecAdapter.
+ * MinaCodecAdapter：Mina的编解码适配器
  */
 final class MinaCodecAdapter implements ProtocolCodecFactory {
 

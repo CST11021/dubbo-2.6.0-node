@@ -27,14 +27,14 @@ import java.util.Collection;
 public interface ExchangeServer extends Server {
 
     /**
-     * get channels.
+     * 获取服务端的所有通道
      *
      * @return channels
      */
     Collection<ExchangeChannel> getExchangeChannels();
 
     /**
-     * get channel.
+     * 根据客户端地址获取建立连接的通道
      *
      * @param remoteAddress
      * @return channel

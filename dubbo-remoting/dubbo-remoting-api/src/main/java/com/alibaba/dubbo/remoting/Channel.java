@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 /**
  * Channel. (API/SPI, Prototype, ThreadSafe)
  *
+ * dubbo中表示连接客户端和服务端的通道
  *
  *
  * @see com.alibaba.dubbo.remoting.Client
@@ -30,19 +31,21 @@ import java.net.InetSocketAddress;
 public interface Channel extends Endpoint {
 
     /**
-     * 获取通道连接的远程地址
+     * 获取通道连接的远程地址（可能是dubbo服务的消费方地址，也可能是服务端地址）
      *
      * @return remote address.
      */
     InetSocketAddress getRemoteAddress();
 
     /**
-     * 判断是否已经建立连接
+     * 判断该通道是否处于连接状态（即客户端和服务端是否处于连接状态）
      *
      * @return connected
      */
     boolean isConnected();
 
+
+   // 属性相关接口
 
     boolean hasAttribute(String key);
     Object getAttribute(String key);

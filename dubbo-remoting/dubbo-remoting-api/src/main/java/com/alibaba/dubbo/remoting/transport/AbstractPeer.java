@@ -26,7 +26,7 @@ import com.alibaba.dubbo.remoting.RemotingException;
 /** AbstractPeer：用于描述通道对应的ChannelHandler和通道连接状态 */
 public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
-    /** 收发消息都是基于通道，表示通道消息处理 */
+    /** 收发消息都是基于通道，该组件用于触发通道相关的事件 */
     private final ChannelHandler handler;
     /** 表示机器节点的URL */
     private volatile URL url;
@@ -108,12 +108,23 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
     // 连接或断开
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param ch channel.
+     */
     public void connected(Channel ch) throws RemotingException {
         if (closed) {
             return;
         }
         handler.connected(ch);
     }
+
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param ch channel.
+     */
     public void disconnected(Channel ch) throws RemotingException {
         handler.disconnected(ch);
     }
@@ -130,6 +141,14 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         }
         handler.sent(ch, msg);
     }
+
+    /**
+     * 当监听到通道有消息发送过来时会调用该方法
+     *
+     * @param ch
+     * @param msg
+     * @throws RemotingException
+     */
     public void received(Channel ch, Object msg) throws RemotingException {
         if (closed) {
             return;
@@ -138,7 +157,13 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
     }
 
 
-
+    /**
+     * 异常时调用该方法
+     *
+     * @param ch
+     * @param ex
+     * @throws RemotingException
+     */
     public void caught(Channel ch, Throwable ex) throws RemotingException {
         handler.caught(ch, ex);
     }

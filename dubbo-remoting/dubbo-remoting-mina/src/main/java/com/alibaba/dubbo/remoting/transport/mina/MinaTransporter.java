@@ -23,14 +23,35 @@ import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.Server;
 import com.alibaba.dubbo.remoting.Transporter;
 
+/**
+ * 说明：
+ * 服务器端要用 bind() 函数将套接字与特定的IP地址和端口绑定起来，只有这样，流经该IP地址和端口的数据才能交给套接字处理；
+ * 而客户端要用 connect() 函数建立连接。
+ */
 public class MinaTransporter implements Transporter {
 
     public static final String NAME = "mina";
 
+    /**
+     * 绑定服务端口，并启动一个Mina服务
+     *
+     * @param url       server url
+     * @param handler   用于处理请求的Handler
+     * @return
+     * @throws RemotingException
+     */
     public Server bind(URL url, ChannelHandler handler) throws RemotingException {
         return new MinaServer(url, handler);
     }
 
+    /**
+     * 与服务端建立连接并返回一个客户端对象
+     *
+     * @param url     server url
+     * @param handler
+     * @return
+     * @throws RemotingException
+     */
     public Client connect(URL url, ChannelHandler handler) throws RemotingException {
         return new MinaClient(url, handler);
     }
