@@ -52,6 +52,11 @@ public class ChannelDelegate implements Channel {
         return channel.getUrl();
     }
 
+    /**
+     * 获取通道连接的远程地址（一般来说这里可能是dubbo服务的消费方地址，也可能是服务端地址，但是Client继承了Channel，而Server并没有继承Channel，所以这里只能是描述服务端的地址）
+     *
+     * @return remote address.
+     */
     public InetSocketAddress getRemoteAddress() {
         return channel.getRemoteAddress();
     }

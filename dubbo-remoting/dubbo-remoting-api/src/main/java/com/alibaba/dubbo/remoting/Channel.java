@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
 public interface Channel extends Endpoint {
 
     /**
-     * 获取通道连接的远程地址（可能是dubbo服务的消费方地址，也可能是服务端地址）
+     * 获取通道连接的远程地址（一般来说这里可能是dubbo服务的消费方地址，也可能是服务端地址）
      *
      * @return remote address.
      */

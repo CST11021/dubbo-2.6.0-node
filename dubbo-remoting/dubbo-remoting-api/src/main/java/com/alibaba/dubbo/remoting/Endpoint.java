@@ -32,10 +32,10 @@ import java.net.InetSocketAddress;
  */
 public interface Endpoint {
 
-    /** 用于描述目标机器 */
+    /** 用于描述目标机器，比如：IP/端口 */
     URL getUrl();
 
-    /** 获取通道处理器 */
+    /** 获取通道事件监听处理器 */
     ChannelHandler getChannelHandler();
 
     /** 表示当该节点的地址 */

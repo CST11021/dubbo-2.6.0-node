@@ -3,7 +3,9 @@ package com.whz.dubbo.remoting.mina;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
+import com.alibaba.dubbo.remoting.Client;
 import com.alibaba.dubbo.remoting.RemotingException;
+import com.alibaba.dubbo.remoting.transport.ChannelHandlerAdapter;
 import com.alibaba.dubbo.remoting.transport.mina.MinaClient;
 import com.alibaba.dubbo.remoting.transport.mina.MinaServer;
 import org.junit.After;
@@ -138,6 +140,10 @@ public class MinaServerTest {
         minaServer.send("test123");
 
         Thread.sleep(5000);
+
+        Client client = new MinaClient(url, new ChannelHandlerAdapter());
+        ((MinaClient) client).disconnect();
+
     }
 
 }

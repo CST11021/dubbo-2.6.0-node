@@ -49,12 +49,12 @@ public class HeaderExchangeClient implements ExchangeClient {
     /** 客户端对象 */
     private final Client client;
 
-    /** 用于通信的通道 */
+    /** 用于通信的通道，ExchangeChannel主要用于实现request/response语义 */
     private final ExchangeChannel channel;
-    // heartbeat timer
+    /** 心跳计时器 */
     private ScheduledFuture<?> heartbeatTimer;
     private int heartbeat;
-    // heartbeat timeout (ms), default value is 0 , won't execute a heartbeat.
+    /** 心跳超时时间（毫秒），默认值为0，将不执行心跳 */
     private int heartbeatTimeout;
 
     public HeaderExchangeClient(Client client, boolean needHeartbeat) {

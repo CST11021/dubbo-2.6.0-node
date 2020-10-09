@@ -30,7 +30,7 @@ import java.util.Collection;
  */
 public interface Server extends Endpoint, Resetable {
 
-    /** 判断是否已经建立了用于收发消息的通道 */
+    /** 判断是否已经建立了用于收发消息的服务 */
     boolean isBound();
 
     /**

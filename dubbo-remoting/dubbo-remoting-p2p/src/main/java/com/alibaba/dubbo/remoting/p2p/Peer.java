@@ -21,13 +21,16 @@ import com.alibaba.dubbo.remoting.Server;
 
 /**
  * Peer. (SPI, Prototype, ThreadSafe)
- * <p>
+ *
+ * Peer的英文意思是“同等地位的人”，这里Peer的主要作用是将多个服务提供封装为一个服务对外提供，该接口仅提供了一个leave方法，使每个服务都具有从服务组下线的能力
+ *
  * <a href="http://en.wikipedia.org/wiki/Peer-to-peer">Peer-to-peer</a>
+ *
  */
 public interface Peer extends Server {
 
     /**
-     * leave.
+     *
      *
      * @throws RemotingException
      */

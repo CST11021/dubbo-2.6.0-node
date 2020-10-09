@@ -32,19 +32,10 @@ public interface ExchangeChannel extends Channel {
      * @throws RemotingException
      */
     ResponseFuture request(Object request) throws RemotingException;
-
-    /**
-     * send request.
-     *
-     * @param request
-     * @param timeout
-     * @return response future
-     * @throws RemotingException
-     */
     ResponseFuture request(Object request, int timeout) throws RemotingException;
 
     /**
-     * 获取消息处理器
+     * 通道事件监听处理器
      *
      * @return message handler
      */
