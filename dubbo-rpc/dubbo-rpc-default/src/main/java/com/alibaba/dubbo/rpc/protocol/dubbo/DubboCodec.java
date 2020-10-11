@@ -146,8 +146,7 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
         }
     }
 
-    private ObjectInput deserialize(Serialization serialization, URL url, InputStream is)
-            throws IOException {
+    private ObjectInput deserialize(Serialization serialization, URL url, InputStream is) throws IOException {
         return serialization.deserialize(url, is);
     }
 

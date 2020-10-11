@@ -24,6 +24,9 @@ import com.alibaba.dubbo.remoting.Dispatcher;
 import com.alibaba.dubbo.remoting.exchange.support.header.HeartbeatHandler;
 import com.alibaba.dubbo.remoting.transport.MultiMessageHandler;
 
+/**
+ * 用于根据SPI机制获取一个ChannelHandler实例
+ */
 public class ChannelHandlers {
 
     private static ChannelHandlers INSTANCE = new ChannelHandlers();
@@ -43,8 +46,16 @@ public class ChannelHandlers {
         INSTANCE = instance;
     }
 
+    /**
+     * 根据SPI机制获取一个ChannelHandler实例
+     *
+     * @param handler
+     * @param url
+     * @return
+     */
     protected ChannelHandler wrapInternal(ChannelHandler handler, URL url) {
         return new MultiMessageHandler(new HeartbeatHandler(
-                ExtensionLoader.getExtensionLoader(Dispatcher.class).getAdaptiveExtension().dispatch(handler, url)));
+                ExtensionLoader.getExtensionLoader(Dispatcher.class).getAdaptiveExtension().dispatch(handler, url))
+        );
     }
 }

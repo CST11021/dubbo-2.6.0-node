@@ -20,10 +20,7 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
-import com.alibaba.dubbo.remoting.exchange.ExchangeChannel;
-import com.alibaba.dubbo.remoting.exchange.ExchangeServer;
-import com.alibaba.dubbo.remoting.exchange.Exchangers;
-import com.alibaba.dubbo.remoting.exchange.ResponseFuture;
+import com.alibaba.dubbo.remoting.exchange.*;
 import com.alibaba.dubbo.remoting.exchange.support.Replier;
 import junit.framework.TestCase;
 import org.junit.Test;
@@ -31,13 +28,13 @@ import org.junit.Test;
 /**
  * MinaServerClientTest
  */
-public class MinaClientToServerTest extends TestCase {
+public class ExchangeTest extends TestCase {
 
     private int port = 9123;
 
     protected ExchangeServer server;
 
-    protected ExchangeChannel client;
+    protected ExchangeClient client;
 
     /** 用于处理客户端的请求 */
     protected RequestReplier replier = new RequestReplier();
@@ -70,8 +67,8 @@ public class MinaClientToServerTest extends TestCase {
     @Test
     public void testFuture() throws Exception {
 
-        // ResponseFuture future = client.request("world");
-        // System.out.println(future.get());
+        ResponseFuture future = client.request("world");
+        System.out.println(future.get());
 
         // 向客户端发送消息
         server.send("hello，我是server");

@@ -33,7 +33,7 @@ import com.alibaba.dubbo.remoting.transport.dispatcher.all.AllDispatcher;
  （3）ChannelHandler：所有事件都直接由channelhandler处理，不采用线程池。
  （4）MessageOnlyChannelHandler：只有接受消息采用线程池。
  （5）ConnectionOrderedChannelHandler：单线程，排队处理。
- 在上述的Handler的初始化过程中，会根据url的参数threadpool来创建线程份，目前支持的线程池类有三种，默认FixedThreadPool。
+ 在上述的Handler的初始化过程中，会根据url的参数threadpool来创建线程池，目前支持的线程池类有三种，默认FixedThreadPool。
 
  FixedThreadPool:此线程池启动时即创建固定大小的线程数，不做任何伸缩。
  CachedThreadPool：此线程池可伸缩，线程空闲一分钟后回收，新请求重新创建线程。

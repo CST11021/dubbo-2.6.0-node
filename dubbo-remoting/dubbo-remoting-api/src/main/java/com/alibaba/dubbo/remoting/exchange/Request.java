@@ -25,28 +25,35 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Request {
 
+    /** 表示一个消息体：心跳检测时，发起的请求会将请求设置为事件的类型，并将mData设置为HEARTBEAT_EVENT */
     public static final String HEARTBEAT_EVENT = null;
 
+    /** 表示一个消息体：当通道关闭时，会向通道发送一个READONLY_EVENT消息，即触发只读事件 */
     public static final String READONLY_EVENT = "R";
 
     private static final AtomicLong INVOKE_ID = new AtomicLong(0);
 
     private final long mId;
 
+    /** 消息体的版本 */
     private String mVersion;
 
+    /** 表示是否具备双向的Request/Response语义，一般在dubbo的信息交换层都是true，在信息传输层，这里的false */
     private boolean mTwoWay = true;
 
+    /** 表示该请求是是否事件类型的请求，正常的接口调用不是事件请求，而像心跳检测请求和通道关闭时粗发的通道只读请求，属于事件类型的请求 */
     private boolean mEvent = false;
 
     private boolean mBroken = false;
 
+    /** 表示发送消息体 */
     private Object mData;
+
+
 
     public Request() {
         mId = newId();
     }
-
     public Request(long id) {
         mId = id;
     }
@@ -75,7 +82,6 @@ public class Request {
     public String getVersion() {
         return mVersion;
     }
-
     public void setVersion(String version) {
         mVersion = version;
     }
@@ -83,7 +89,6 @@ public class Request {
     public boolean isTwoWay() {
         return mTwoWay;
     }
-
     public void setTwoWay(boolean twoWay) {
         mTwoWay = twoWay;
     }
@@ -91,7 +96,6 @@ public class Request {
     public boolean isEvent() {
         return mEvent;
     }
-
     public void setEvent(String event) {
         mEvent = true;
         mData = event;
@@ -100,7 +104,6 @@ public class Request {
     public boolean isBroken() {
         return mBroken;
     }
-
     public void setBroken(boolean mBroken) {
         this.mBroken = mBroken;
     }
@@ -108,7 +111,6 @@ public class Request {
     public Object getData() {
         return mData;
     }
-
     public void setData(Object msg) {
         mData = msg;
     }

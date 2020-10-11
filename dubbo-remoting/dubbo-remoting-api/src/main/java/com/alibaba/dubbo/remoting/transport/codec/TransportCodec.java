@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * TransportCodec
+ * TransportCodec：数据传输层的编解码器
  */
 public class TransportCodec extends AbstractCodec {
 

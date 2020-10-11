@@ -27,6 +27,9 @@ import com.alibaba.dubbo.remoting.transport.dispatcher.WrappedChannelHandler;
 
 import java.util.concurrent.ExecutorService;
 
+/**
+ * 只有接受消息采用线程池
+ */
 public class MessageOnlyChannelHandler extends WrappedChannelHandler {
 
     public MessageOnlyChannelHandler(ChannelHandler handler, URL url) {
@@ -38,6 +41,7 @@ public class MessageOnlyChannelHandler extends WrappedChannelHandler {
         if (cexecutor == null || cexecutor.isShutdown()) {
             cexecutor = SHARED_EXECUTOR;
         }
+
         try {
             cexecutor.execute(new ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));
         } catch (Throwable t) {

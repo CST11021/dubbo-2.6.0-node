@@ -36,10 +36,16 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 单线程，排队处理通道事件
+ */
 public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
 
-    protected final ThreadPoolExecutor connectionExecutor;
+    /** 客户端与服务端的连接预警数量 */
     private final int queuewarninglimit;
+
+    protected final ThreadPoolExecutor connectionExecutor;
+
 
     public ConnectionOrderedChannelHandler(ChannelHandler handler, URL url) {
         super(handler, url);
@@ -53,15 +59,26 @@ public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
         queuewarninglimit = url.getParameter(Constants.CONNECT_QUEUE_WARNING_SIZE, Constants.DEFAULT_CONNECT_QUEUE_WARNING_SIZE);
     }
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void connected(Channel channel) throws RemotingException {
         try {
             checkQueueLength();
+
             connectionExecutor.execute(new ChannelEventRunnable(channel, handler, ChannelState.CONNECTED));
         } catch (Throwable t) {
             throw new ExecutionException("connect event", channel, getClass() + " error when process connected event .", t);
         }
     }
 
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void disconnected(Channel channel) throws RemotingException {
         try {
             checkQueueLength();
@@ -71,6 +88,12 @@ public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
         }
     }
 
+    /**
+     * 当接收到客户端请求的调用该方法
+     *
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
+     */
     public void received(Channel channel, Object message) throws RemotingException {
         ExecutorService cexecutor = executor;
         if (cexecutor == null || cexecutor.isShutdown()) {
@@ -95,6 +118,12 @@ public class ConnectionOrderedChannelHandler extends WrappedChannelHandler {
         }
     }
 
+    /**
+     * 通信异常时调用该方法
+     *
+     * @param channel   channel.
+     * @param exception exception.
+     */
     public void caught(Channel channel, Throwable exception) throws RemotingException {
         ExecutorService cexecutor = executor;
         if (cexecutor == null || cexecutor.isShutdown()) {

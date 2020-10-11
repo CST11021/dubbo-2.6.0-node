@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * ChannelListenerDispatcher
+ * ChannelListenerDispatcher：封装ChannelHandler集合，将多个ChannelHandler作为一个ChannelHandler使用
  */
 public class ChannelHandlerDispatcher implements ChannelHandler {
 
@@ -36,11 +36,9 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
 
     public ChannelHandlerDispatcher() {
     }
-
     public ChannelHandlerDispatcher(ChannelHandler... handlers) {
         this(handlers == null ? null : Arrays.asList(handlers));
     }
-
     public ChannelHandlerDispatcher(Collection<ChannelHandler> handlers) {
         if (handlers != null && handlers.size() > 0) {
             this.channelHandlers.addAll(handlers);
@@ -61,6 +59,11 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
         return this;
     }
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void connected(Channel channel) {
         for (ChannelHandler listener : channelHandlers) {
             try {
@@ -71,6 +74,11 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
         }
     }
 
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void disconnected(Channel channel) {
         for (ChannelHandler listener : channelHandlers) {
             try {
@@ -81,6 +89,12 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
         }
     }
 
+    /**
+     * 向客户端（消费者）发送一个消息时，调用该方法
+     *
+     * @param channel 用于发送消息的通道
+     * @param message 要发送的消息
+     */
     public void sent(Channel channel, Object message) {
         for (ChannelHandler listener : channelHandlers) {
             try {
@@ -91,6 +105,12 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
         }
     }
 
+    /**
+     * 当接收到客户端请求的调用该方法
+     *
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
+     */
     public void received(Channel channel, Object message) {
         for (ChannelHandler listener : channelHandlers) {
             try {
@@ -101,6 +121,12 @@ public class ChannelHandlerDispatcher implements ChannelHandler {
         }
     }
 
+    /**
+     * 通信异常时调用该方法
+     *
+     * @param channel   channel.
+     * @param exception exception.
+     */
     public void caught(Channel channel, Throwable exception) {
         for (ChannelHandler listener : channelHandlers) {
             try {

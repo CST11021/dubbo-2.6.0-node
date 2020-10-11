@@ -41,6 +41,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
 
     private static final String CHANNEL_KEY = HeaderExchangeChannel.class.getName() + ".CHANNEL";
 
+    /** 用于通信的通道，具备基础的客户端通信能力（单向通信，不具备Request/response语义） */
     private final Channel channel;
 
     private volatile boolean closed = false;
@@ -56,6 +57,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         if (ch == null) {
             return null;
         }
+
         HeaderExchangeChannel ret = (HeaderExchangeChannel) ch.getAttribute(CHANNEL_KEY);
         if (ret == null) {
             ret = new HeaderExchangeChannel(ch);
@@ -72,17 +74,32 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         }
     }
 
+
+    // send方法中将发送message统一封装为Request后，再发送，但send依然只是单向通信
+    // request方法才具备Request/response语义
+
+    /**
+     * 向通道发送一个消息，可能是客户端向服务端发起请求，也可能是服务端响应客户端请求
+     *
+     * @param message
+     * @throws RemotingException
+     */
     public void send(Object message) throws RemotingException {
         send(message, getUrl().getParameter(Constants.SENT_KEY, false));
     }
-
+    /**
+     * 向所有的通道发送消息
+     *
+     * @param message
+     * @param sent    already sent to socket?
+     * @throws RemotingException
+     */
     public void send(Object message, boolean sent) throws RemotingException {
         if (closed) {
             throw new RemotingException(this.getLocalAddress(), null, "Failed to send message " + message + ", cause: The channel " + this + " is closed!");
         }
-        if (message instanceof Request
-                || message instanceof Response
-                || message instanceof String) {
+
+        if (message instanceof Request || message instanceof Response || message instanceof String) {
             channel.send(message, sent);
         } else {
             Request request = new Request();
@@ -93,14 +110,21 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         }
     }
 
+    /**
+     * 发送请求，并返回一个响应信息
+     *
+     * @param request
+     * @return response future
+     * @throws RemotingException
+     */
     public ResponseFuture request(Object request) throws RemotingException {
         return request(request, channel.getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT));
     }
-
     public ResponseFuture request(Object request, int timeout) throws RemotingException {
         if (closed) {
             throw new RemotingException(this.getLocalAddress(), null, "Failed to send request " + request + ", cause: The channel " + this + " is closed!");
         }
+
         // create request.
         Request req = new Request();
         req.setVersion("2.0.0");
@@ -116,10 +140,22 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         return future;
     }
 
+
+
+    // 以下实现都是委托式的实现
+
+    /**
+     * 判断通道是否关闭
+     *
+     * @return
+     */
     public boolean isClosed() {
         return closed;
     }
 
+    /**
+     * 关闭通道
+     */
     public void close() {
         try {
             channel.close();
@@ -128,7 +164,11 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         }
     }
 
-    // graceful close
+    /**
+     * 平滑关闭通道
+     *
+     * @param timeout
+     */
     public void close(int timeout) {
         if (closed) {
             return;
@@ -148,31 +188,62 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         close();
     }
 
+    /** 开始关闭通道 */
     @Override
     public void startClose() {
         channel.startClose();
     }
 
+    /**
+     * 获取创建通道的所在节点的地址
+     *
+     * @return
+     */
     public InetSocketAddress getLocalAddress() {
         return channel.getLocalAddress();
     }
 
+    /**
+     * 获取通道连接的远程地址
+     *
+     * @return
+     */
     public InetSocketAddress getRemoteAddress() {
         return channel.getRemoteAddress();
     }
 
+    /**
+     * 获取创建通道的URL信息（通道所在节点的ip/端口）
+     *
+     * @return
+     */
     public URL getUrl() {
         return channel.getUrl();
     }
 
+    /**
+     * 通道是否已经建立连接
+     *
+     * @return
+     */
     public boolean isConnected() {
         return channel.isConnected();
     }
 
+    /**
+     * 获取通道事件处理器
+     *
+     * @return
+     */
     public ChannelHandler getChannelHandler() {
         return channel.getChannelHandler();
     }
 
+    /**
+     * Exchange通道事件处理器
+     *
+     * @return
+     */
     public ExchangeHandler getExchangeHandler() {
         return (ExchangeHandler) channel.getChannelHandler();
     }
@@ -180,18 +251,17 @@ final class HeaderExchangeChannel implements ExchangeChannel {
     public Object getAttribute(String key) {
         return channel.getAttribute(key);
     }
-
     public void setAttribute(String key, Object value) {
         channel.setAttribute(key, value);
     }
-
     public void removeAttribute(String key) {
         channel.removeAttribute(key);
     }
-
     public boolean hasAttribute(String key) {
         return channel.hasAttribute(key);
     }
+
+
 
     @Override
     public int hashCode() {

@@ -57,7 +57,13 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     /** 600 seconds */
     private int idleTimeout = 600;
 
-
+    /**
+     * 初始化服务
+     *
+     * @param url
+     * @param handler
+     * @throws RemotingException
+     */
     public AbstractServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
         localAddress = getUrl().toInetSocketAddress();
@@ -88,21 +94,21 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     }
 
     /**
-     * 启动一个服务，开始监听客户端请求
+     * 启动一个服务，开始监听客户端请求，实现逻辑交给各个通信框架自己实现
      *
      * @throws Throwable
      */
     protected abstract void doOpen() throws Throwable;
 
     /**
-     * 关闭服务
+     * 关闭服务，实现逻辑交给各个通信框架自己实现
      *
      * @throws Throwable
      */
     protected abstract void doClose() throws Throwable;
 
     /**
-     * 主要是从url获取配置的线程池数量，并设置线程池
+     * 主要是从url获取配置的线程池数量，并设置dubbo通信的业务线程池
      *
      * @param url
      */

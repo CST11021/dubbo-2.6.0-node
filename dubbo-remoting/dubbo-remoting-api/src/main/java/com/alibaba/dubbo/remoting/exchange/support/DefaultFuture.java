@@ -43,8 +43,9 @@ public class DefaultFuture implements ResponseFuture {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFuture.class);
 
+    /** 所有等待response的Channel都会缓存到这里，当响应数据返回后，Channel从该Map中移除 */
     private static final Map<Long, Channel> CHANNELS = new ConcurrentHashMap<Long, Channel>();
-
+    /** 缓存所有等待response的Future，当响应数据返回后，futrue从该Map中移除 */
     private static final Map<Long, DefaultFuture> FUTURES = new ConcurrentHashMap<Long, DefaultFuture>();
 
     static {
@@ -55,14 +56,20 @@ public class DefaultFuture implements ResponseFuture {
 
     // invoke id.
     private final long id;
+    /** 等会响应的channel */
     private final Channel channel;
+    /** 请求对象 */
     private final Request request;
+    /** 等会响应的超时时间 */
     private final int timeout;
+
     private final Lock lock = new ReentrantLock();
     private final Condition done = lock.newCondition();
     private final long start = System.currentTimeMillis();
     private volatile long sent;
+    /** 返回的响应对象 */
     private volatile Response response;
+    /** 响应数据返回后的回调接口，用于异步接口调用 */
     private volatile ResponseCallback callback;
 
     public DefaultFuture(Channel channel, Request request, int timeout) {
@@ -90,6 +97,12 @@ public class DefaultFuture implements ResponseFuture {
         }
     }
 
+    /**
+     * ChannelHandler#received会调用该方法，设置#response
+     *
+     * @param channel
+     * @param response
+     */
     public static void received(Channel channel, Response response) {
         try {
             DefaultFuture future = FUTURES.remove(response.getId());
@@ -107,14 +120,29 @@ public class DefaultFuture implements ResponseFuture {
         }
     }
 
+    /**
+     * 获取响应数据
+     *
+     * @return
+     * @throws RemotingException
+     */
     public Object get() throws RemotingException {
         return get(timeout);
     }
 
+    /**
+     * 在指定的时间内获取响应数据，否则抛TimeoutException异常
+     *
+     * @param timeout
+     * @return
+     * @throws RemotingException
+     */
     public Object get(int timeout) throws RemotingException {
         if (timeout <= 0) {
+            // 默认超时时间1秒
             timeout = Constants.DEFAULT_TIMEOUT;
         }
+
         if (!isDone()) {
             long start = System.currentTimeMillis();
             lock.lock();
@@ -130,10 +158,12 @@ public class DefaultFuture implements ResponseFuture {
             } finally {
                 lock.unlock();
             }
+
             if (!isDone()) {
                 throw new TimeoutException(sent > 0, channel, getTimeoutMessage(false));
             }
         }
+        // 获取response数据
         return returnFromResponse();
     }
 
@@ -204,17 +234,28 @@ public class DefaultFuture implements ResponseFuture {
         }
     }
 
+    /**
+     * 获取response数据
+     *
+     * @return
+     * @throws RemotingException
+     */
     private Object returnFromResponse() throws RemotingException {
         Response res = response;
         if (res == null) {
             throw new IllegalStateException("response cannot be null");
         }
+
         if (res.getStatus() == Response.OK) {
             return res.getResult();
         }
+
+        // 服务端或者客户端超时，则抛出TimeoutException异常
         if (res.getStatus() == Response.CLIENT_TIMEOUT || res.getStatus() == Response.SERVER_TIMEOUT) {
             throw new TimeoutException(res.getStatus() == Response.SERVER_TIMEOUT, channel, res.getErrorMessage());
         }
+
+        // 其他类型的状态抛出RemotingException异常
         throw new RemotingException(channel, res.getErrorMessage());
     }
 

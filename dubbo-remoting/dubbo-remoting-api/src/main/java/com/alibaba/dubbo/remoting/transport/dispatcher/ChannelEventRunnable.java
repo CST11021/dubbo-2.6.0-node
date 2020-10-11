@@ -21,11 +21,18 @@ import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 
+/**
+ * 用于将通道发生的事件移交给ChannelHandler进行处理
+ */
 public class ChannelEventRunnable implements Runnable {
+
     private static final Logger logger = LoggerFactory.getLogger(ChannelEventRunnable.class);
 
+    /** 通道监听处理器 */
     private final ChannelHandler handler;
+    /** 被监听的通道 */
     private final Channel channel;
+    /** 通道状态 */
     private final ChannelState state;
     private final Throwable exception;
     private final Object message;
@@ -33,15 +40,12 @@ public class ChannelEventRunnable implements Runnable {
     public ChannelEventRunnable(Channel channel, ChannelHandler handler, ChannelState state) {
         this(channel, handler, state, null);
     }
-
     public ChannelEventRunnable(Channel channel, ChannelHandler handler, ChannelState state, Object message) {
         this(channel, handler, state, message, null);
     }
-
     public ChannelEventRunnable(Channel channel, ChannelHandler handler, ChannelState state, Throwable t) {
         this(channel, handler, state, null, t);
     }
-
     public ChannelEventRunnable(Channel channel, ChannelHandler handler, ChannelState state, Object message, Throwable exception) {
         this.channel = channel;
         this.handler = handler;
@@ -96,35 +100,23 @@ public class ChannelEventRunnable implements Runnable {
     }
 
     /**
-     * ChannelState
-     *
-     *
+     * ChannelState：通道状态
      */
     public enum ChannelState {
 
-        /**
-         * CONNECTED
-         */
+        /** 客户端与服务端建立了连接 */
         CONNECTED,
 
-        /**
-         * DISCONNECTED
-         */
+        /** 客户端与服务端断开了连接 */
         DISCONNECTED,
 
-        /**
-         * SENT
-         */
+        /** 当有终端（可能是客户端，也可能是服务端）向通道发送消息时 */
         SENT,
 
-        /**
-         * RECEIVED
-         */
+        /** 当通道接收到消息时 */
         RECEIVED,
 
-        /**
-         * CAUGHT
-         */
+        /** 通信异常 */
         CAUGHT
     }
 

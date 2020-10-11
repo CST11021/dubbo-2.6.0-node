@@ -40,9 +40,11 @@ import java.util.concurrent.locks.ReentrantLock;
 @SuppressWarnings("deprecation")
 final class LazyConnectExchangeClient implements ExchangeClient {
 
+    private final static Logger logger = LoggerFactory.getLogger(LazyConnectExchangeClient.class);
+
     // when this warning rises from invocation, program probably have bug.
     static final String REQUEST_WITH_WARNING_KEY = "lazyclient_request_with_warning";
-    private final static Logger logger = LoggerFactory.getLogger(LazyConnectExchangeClient.class);
+
     protected final boolean requestWithWarning;
     private final URL url;
     private final ExchangeHandler requestHandler;
@@ -217,8 +219,7 @@ final class LazyConnectExchangeClient implements ExchangeClient {
 
     private void checkClient() {
         if (client == null) {
-            throw new IllegalStateException(
-                    "LazyConnectExchangeClient state error. the client has not be init .url:" + url);
+            throw new IllegalStateException("LazyConnectExchangeClient state error. the client has not be init .url:" + url);
         }
     }
 }

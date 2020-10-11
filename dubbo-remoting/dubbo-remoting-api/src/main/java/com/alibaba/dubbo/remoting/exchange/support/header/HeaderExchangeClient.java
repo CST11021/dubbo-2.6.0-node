@@ -38,7 +38,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * DefaultMessageClient
+ * HeaderExchangeClient：dubbo中默认的ExchangeClient实现
+ * 1、Request/Response内部实现委托给了ExchangeChannel；
+ * 2、HeaderExchangeClient在ExchangeChannel基础上增加了心跳检测机制；
  */
 public class HeaderExchangeClient implements ExchangeClient {
 
@@ -48,9 +50,9 @@ public class HeaderExchangeClient implements ExchangeClient {
 
     /** 客户端对象 */
     private final Client client;
-
-    /** 用于通信的通道，ExchangeChannel主要用于实现request/response语义 */
+    /** 用于通信的通道，ExchangeChannel主要用于实现request/response语义，这里在构造器中被实例化为HeaderExchangeChannel对象 */
     private final ExchangeChannel channel;
+
     /** 心跳计时器 */
     private ScheduledFuture<?> heartbeatTimer;
     private int heartbeat;
@@ -75,30 +77,56 @@ public class HeaderExchangeClient implements ExchangeClient {
         }
     }
 
+    /**
+     * 向服务端发起请求（即向ExchangeChannel发送请求，并从通道获取一个Response对象）
+     *
+     * @param request
+     * @return 服务端返回的响应数据
+     * @throws RemotingException
+     */
     public ResponseFuture request(Object request) throws RemotingException {
         return channel.request(request);
+    }
+    public ResponseFuture request(Object request, int timeout) throws RemotingException {
+        return channel.request(request, timeout);
     }
 
     public URL getUrl() {
         return channel.getUrl();
     }
 
+    /**
+     * 获取服务端的地址
+     *
+     * @return
+     */
     public InetSocketAddress getRemoteAddress() {
         return channel.getRemoteAddress();
     }
 
-    public ResponseFuture request(Object request, int timeout) throws RemotingException {
-        return channel.request(request, timeout);
-    }
-
+    /**
+     * 获取通道事件监听处理器
+     *
+     * @return
+     */
     public ChannelHandler getChannelHandler() {
         return channel.getChannelHandler();
     }
 
+    /**
+     * 判断该通道是否处于连接状态（即客户端和服务端是否处于连接状态）
+     *
+     * @return connected
+     */
     public boolean isConnected() {
         return channel.isConnected();
     }
 
+    /**
+     * 获取客户端的本地地址
+     *
+     * @return
+     */
     public InetSocketAddress getLocalAddress() {
         return channel.getLocalAddress();
     }
@@ -108,7 +136,7 @@ public class HeaderExchangeClient implements ExchangeClient {
     }
 
     /**
-     * 想通道发送信息（即向服务端发送请求）
+     * 向通道发送信息，即向服务端发送请求，这里是单向通信
      *
      * @param message
      * @throws RemotingException
@@ -116,7 +144,6 @@ public class HeaderExchangeClient implements ExchangeClient {
     public void send(Object message) throws RemotingException {
         channel.send(message);
     }
-
     public void send(Object message, boolean sent) throws RemotingException {
         channel.send(message, sent);
     }
@@ -158,19 +185,19 @@ public class HeaderExchangeClient implements ExchangeClient {
     public Object getAttribute(String key) {
         return channel.getAttribute(key);
     }
-
     public void setAttribute(String key, Object value) {
         channel.setAttribute(key, value);
     }
-
     public void removeAttribute(String key) {
         channel.removeAttribute(key);
     }
-
     public boolean hasAttribute(String key) {
         return channel.hasAttribute(key);
     }
 
+    /**
+     * 启动客户端的心跳检测定时任务
+     */
     private void startHeatbeatTimer() {
         stopHeartbeatTimer();
         if (heartbeat > 0) {
@@ -184,6 +211,9 @@ public class HeaderExchangeClient implements ExchangeClient {
         }
     }
 
+    /**
+     * 停止心跳检测定时任务
+     */
     private void stopHeartbeatTimer() {
         if (heartbeatTimer != null && !heartbeatTimer.isCancelled()) {
             try {
@@ -198,6 +228,9 @@ public class HeaderExchangeClient implements ExchangeClient {
         heartbeatTimer = null;
     }
 
+    /**
+     * 关闭客户端
+     */
     private void doClose() {
         stopHeartbeatTimer();
     }

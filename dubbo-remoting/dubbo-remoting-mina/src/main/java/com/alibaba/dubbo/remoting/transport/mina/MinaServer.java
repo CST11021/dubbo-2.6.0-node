@@ -95,7 +95,7 @@ public class MinaServer extends AbstractServer {
     }
 
     /**
-     * 获取有所有的Channel
+     * 获取所有的Channel
      *
      * @return
      */
@@ -127,7 +127,7 @@ public class MinaServer extends AbstractServer {
     }
 
     /**
-     * 判断绑定的IP/端口是否被Server管理
+     * 判断服务是否已经开启服务（即绑定到指定IP/端口）
      *
      * @return
      */
