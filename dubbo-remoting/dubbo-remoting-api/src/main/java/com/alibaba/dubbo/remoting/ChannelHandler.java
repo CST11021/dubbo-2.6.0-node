@@ -43,7 +43,7 @@ public interface ChannelHandler {
     void disconnected(Channel channel) throws RemotingException;
 
     /**
-     * 向客户端（消费者）发送一个消息时，调用该方法
+     * 向Channel发送一个消息时，调用该方法
      *
      * @param channel 用于发送消息的通道
      * @param message 要发送的消息
@@ -51,7 +51,7 @@ public interface ChannelHandler {
     void sent(Channel channel, Object message) throws RemotingException;
 
     /**
-     * 当接收到客户端请求的调用该方法
+     * 当接收到请求时调用该方法
      *
      * @param channel 用于接收消息的通道.
      * @param message 要接收的消息.

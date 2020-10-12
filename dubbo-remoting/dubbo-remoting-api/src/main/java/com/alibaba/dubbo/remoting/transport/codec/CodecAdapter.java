@@ -29,6 +29,7 @@ import java.io.IOException;
 
 public class CodecAdapter implements Codec2 {
 
+    /** 编解码器 */
     private Codec codec;
 
     public CodecAdapter(Codec codec) {
@@ -36,12 +37,30 @@ public class CodecAdapter implements Codec2 {
         this.codec = codec;
     }
 
+    /**
+     * 将message进行编码并写入buffer
+     *
+     * @param channel
+     * @param buffer
+     * @param message
+     * @throws IOException
+     */
     public void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException {
         UnsafeByteArrayOutputStream os = new UnsafeByteArrayOutputStream(1024);
+        // 将message进行编码，并写入输出流os中
         codec.encode(channel, os, message);
+        // 将os输出流程中的字节写入buffer
         buffer.writeBytes(os.toByteArray());
     }
 
+    /**
+     * 将buffer中的数据进行解码并返回
+     *
+     * @param channel
+     * @param buffer
+     * @return
+     * @throws IOException
+     */
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
         byte[] bytes = new byte[buffer.readableBytes()];
         int savedReaderIndex = buffer.readerIndex();
@@ -52,6 +71,11 @@ public class CodecAdapter implements Codec2 {
         return result == Codec.NEED_MORE_INPUT ? DecodeResult.NEED_MORE_INPUT : result;
     }
 
+    /**
+     * 获取编解码器
+     *
+     * @return
+     */
     public Codec getCodec() {
         return codec;
     }

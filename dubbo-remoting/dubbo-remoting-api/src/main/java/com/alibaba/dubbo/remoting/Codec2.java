@@ -30,9 +30,25 @@ import java.io.IOException;
 @SPI
 public interface Codec2 {
 
+    /**
+     * 将message进行编码并写入buffer
+     *
+     * @param channel
+     * @param buffer
+     * @param message
+     * @throws IOException
+     */
     @Adaptive({Constants.CODEC_KEY})
     void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException;
 
+    /**
+     * 将buffer中的数据进行解码并返回
+     *
+     * @param channel
+     * @param buffer
+     * @return
+     * @throws IOException
+     */
     @Adaptive({Constants.CODEC_KEY})
     Object decode(Channel channel, ChannelBuffer buffer) throws IOException;
 

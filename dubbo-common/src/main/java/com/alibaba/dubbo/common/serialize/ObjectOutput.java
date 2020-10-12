@@ -19,12 +19,12 @@ package com.alibaba.dubbo.common.serialize;
 import java.io.IOException;
 
 /**
- * Object output.
+ * 用于将对象序列化
  */
 public interface ObjectOutput extends DataOutput {
 
     /**
-     * write object.
+     * 将obj对象进行序列化，可能是序列化到文件或者网络IO中
      *
      * @param obj object.
      */

@@ -125,6 +125,12 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 向Channel发送一个消息时，调用该方法
+     *
+     * @param channel 用于发送消息的通道
+     * @param message 要发送的消息
+     */
     public void sent(Channel channel, Object message) throws RemotingException {
         Throwable exception = null;
         try {
@@ -138,18 +144,19 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         } catch (Throwable t) {
             exception = t;
         }
+
         if (message instanceof Request) {
             Request request = (Request) message;
             DefaultFuture.sent(channel, request);
         }
+
         if (exception != null) {
             if (exception instanceof RuntimeException) {
                 throw (RuntimeException) exception;
             } else if (exception instanceof RemotingException) {
                 throw (RemotingException) exception;
             } else {
-                throw new RemotingException(channel.getLocalAddress(), channel.getRemoteAddress(),
-                        exception.getMessage(), exception);
+                throw new RemotingException(channel.getLocalAddress(), channel.getRemoteAddress(), exception.getMessage(), exception);
             }
         }
     }

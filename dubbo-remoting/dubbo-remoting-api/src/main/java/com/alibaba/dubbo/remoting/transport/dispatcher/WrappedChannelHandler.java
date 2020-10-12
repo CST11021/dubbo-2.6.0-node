@@ -41,6 +41,7 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
 
     protected static final ExecutorService SHARED_EXECUTOR = Executors.newCachedThreadPool(new NamedThreadFactory("DubboSharedHandler", true));
 
+    /** 该线程池用于处理通道事件回调逻辑 */
     protected final ExecutorService executor;
 
     protected final ChannelHandler handler;
@@ -89,7 +90,7 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
     }
 
     /**
-     * 向客户端（消费者）发送一个消息时，调用该方法
+     * 向Channel发送一个消息时，调用该方法
      *
      * @param channel 用于发送消息的通道
      * @param message 要发送的消息
@@ -99,7 +100,7 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
     }
 
     /**
-     * 当接收到客户端请求的调用该方法
+     * 当接收到请求时调用该方法
      *
      * @param channel 用于接收消息的通道.
      * @param message 要接收的消息.

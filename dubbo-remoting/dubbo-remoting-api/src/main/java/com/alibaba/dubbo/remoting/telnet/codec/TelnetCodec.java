@@ -136,7 +136,16 @@ public class TelnetCodec extends TransportCodec {
         return true;
     }
 
+    /**
+     * 将message进行编码并写入buffer
+     *
+     * @param channel
+     * @param buffer
+     * @param message
+     * @throws IOException
+     */
     public void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException {
+        // telnet的时候，message一般都是String
         if (message instanceof String) {
             if (isClientSide(channel)) {
                 message = message + "\r\n";
@@ -148,6 +157,14 @@ public class TelnetCodec extends TransportCodec {
         }
     }
 
+    /**
+     * 将buffer中的数据进行解码并反序列化后返回
+     *
+     * @param channel
+     * @param buffer
+     * @return
+     * @throws IOException
+     */
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
         int readable = buffer.readableBytes();
         byte[] message = new byte[readable];
@@ -155,19 +172,34 @@ public class TelnetCodec extends TransportCodec {
         return decode(channel, buffer, readable, message);
     }
 
+    /**
+     * 将buffer中的数据进行解码并反序列化后返回
+     *
+     * @param channel
+     * @param buffer
+     * @param readable  buffer中的字节大小
+     * @param message
+     * @return
+     * @throws IOException
+     */
     @SuppressWarnings("unchecked")
     protected Object decode(Channel channel, ChannelBuffer buffer, int readable, byte[] message) throws IOException {
+        // 判断当前channel是否是客户端这边，如果是客户端这边的直接将message转为字符串
         if (isClientSide(channel)) {
             return toString(message, getCharset(channel));
         }
+
+        // 检查当前的子节点大小是否在dubbo配置的payload范围内，如果传输的数据超过了配置的payload大小，则报错
         checkPayload(channel, readable);
         if (message == null || message.length == 0) {
             return DecodeResult.NEED_MORE_INPUT;
         }
 
-        if (message[message.length - 1] == '\b') { // Windows backspace echo
+        // Windows backspace echo
+        if (message[message.length - 1] == '\b') {
             try {
-                boolean doublechar = message.length >= 3 && message[message.length - 3] < 0; // double byte char
+                // double byte char
+                boolean doublechar = message.length >= 3 && message[message.length - 3] < 0;
                 channel.send(new String(doublechar ? new byte[]{32, 32, 8, 8} : new byte[]{32, 8}, getCharset(channel).name()));
             } catch (RemotingException e) {
                 throw new IOException(StringUtils.toString(e));

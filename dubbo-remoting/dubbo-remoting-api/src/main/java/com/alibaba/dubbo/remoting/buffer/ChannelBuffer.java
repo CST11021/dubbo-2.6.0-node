@@ -203,7 +203,7 @@ import java.nio.ByteBuffer;
  */
 public interface ChannelBuffer extends Comparable<ChannelBuffer> {
 
-    /** Returns the number of bytes (octets) this buffer can contain. */
+    /** 返回此缓冲区可以包含的字节数（八位字节） */
     int capacity();
 
     /** 重置读写的起始位置 {@link #setIndex(int, int) setIndex(0, 0)} */
@@ -712,12 +712,9 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
      */
     void writeByte(int value);
     /**
-     * Transfers the specified source array's data to this buffer starting at
-     * the current {@code writerIndex} and increases the {@code writerIndex} by
-     * the number of the transferred bytes (= {@code src.length}).
+     * Transfers the specified source array's data to this buffer starting at the current {@code writerIndex} and increases the {@code writerIndex} by the number of the transferred bytes (= {@code src.length}).
      *
-     * @throws IndexOutOfBoundsException if {@code src.length} is greater than
-     *                                   {@code this.writableBytes}
+     * @throws IndexOutOfBoundsException if {@code src.length} is greater than {@code this.writableBytes}
      */
     void writeBytes(byte[] src);
     /**

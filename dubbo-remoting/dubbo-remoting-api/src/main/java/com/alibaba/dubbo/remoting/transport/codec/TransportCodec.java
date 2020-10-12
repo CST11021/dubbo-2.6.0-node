@@ -35,6 +35,14 @@ import java.io.OutputStream;
  */
 public class TransportCodec extends AbstractCodec {
 
+    /**
+     * 将message进行编码并写入buffer
+     *
+     * @param channel
+     * @param buffer
+     * @param message
+     * @throws IOException
+     */
     public void encode(Channel channel, ChannelBuffer buffer, Object message) throws IOException {
         // 1、构建ChannelBufferOutputStream，是的buffer具有jdk OutputStream的api操作功能，因为序列化工具都是基于jdkAPI的
         OutputStream output = new ChannelBufferOutputStream(buffer);
@@ -48,6 +56,14 @@ public class TransportCodec extends AbstractCodec {
         }
     }
 
+    /**
+     * 将buffer中的数据进行解码并反序列化后返回
+     *
+     * @param channel
+     * @param buffer
+     * @return
+     * @throws IOException
+     */
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
         // 1、构建ChannelBufferInputStream是的序列化工具能够通过jdk的api读取channelBuffer数据的功能
         InputStream input = new ChannelBufferInputStream(buffer);
@@ -61,18 +77,49 @@ public class TransportCodec extends AbstractCodec {
         return object;
     }
 
+    /**
+     * 将obj对象进行序列化到指定的output中，例如：文件或者网络IO
+     *
+     * @param channel
+     * @param output
+     * @param message
+     * @throws IOException
+     */
     protected void encodeData(Channel channel, ObjectOutput output, Object message) throws IOException {
         encodeData(output, message);
     }
 
+    /**
+     * 将obj对象进行序列化到指定的output中，例如：文件或者网络IO
+     *
+     * @param output
+     * @param message
+     * @throws IOException
+     */
+    protected void encodeData(ObjectOutput output, Object message) throws IOException {
+        // 将obj对象进行序列化，可能是序列化到文件或者网络IO中
+        output.writeObject(message);
+    }
+
+    /**
+     * 将input进行解码并反序列化后返回
+     *
+     * @param channel
+     * @param input
+     * @return
+     * @throws IOException
+     */
     protected Object decodeData(Channel channel, ObjectInput input) throws IOException {
         return decodeData(input);
     }
 
-    protected void encodeData(ObjectOutput output, Object message) throws IOException {
-        output.writeObject(message);
-    }
-
+    /**
+     * 将input进行解码并反序列化后返回
+     *
+     * @param input
+     * @return
+     * @throws IOException
+     */
     protected Object decodeData(ObjectInput input) throws IOException {
         try {
             return input.readObject();

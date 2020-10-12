@@ -156,6 +156,7 @@ public class Constants {
 
     public static final String MONITOR_KEY = "monitor";
 
+    // 标记channel是server端还是client端
     public static final String SIDE_KEY = "side";
 
     public static final String PROVIDER_SIDE = "provider";

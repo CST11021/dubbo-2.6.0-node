@@ -115,6 +115,13 @@ final class MinaChannel extends AbstractChannel {
         session.removeAttribute(key);
     }
 
+    /**
+     * 向通道发送消息
+     *
+     * @param message
+     * @param sent
+     * @throws RemotingException
+     */
     public void send(Object message, boolean sent) throws RemotingException {
         super.send(message, sent);
 
@@ -131,8 +138,7 @@ final class MinaChannel extends AbstractChannel {
         }
 
         if (!success) {
-            throw new RemotingException(this, "Failed to send message " + message + " to " + getRemoteAddress()
-                    + "in timeout(" + timeout + "ms) limit");
+            throw new RemotingException(this, "Failed to send message " + message + " to " + getRemoteAddress() + "in timeout(" + timeout + "ms) limit");
         }
     }
 
