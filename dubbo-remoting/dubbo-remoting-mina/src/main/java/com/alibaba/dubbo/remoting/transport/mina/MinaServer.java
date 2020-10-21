@@ -74,7 +74,7 @@ public class MinaServer extends AbstractServer {
         // 设置Mina的编解码处理器
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MinaCodecAdapter(getCodec(), getUrl(), this)));
 
-        // 绑定端口并监听客户端请求
+        // 启动Mina服务：绑定端口并监听客户端请求
         acceptor.bind(getBindAddress(), new MinaHandler(getUrl(), this));
     }
 

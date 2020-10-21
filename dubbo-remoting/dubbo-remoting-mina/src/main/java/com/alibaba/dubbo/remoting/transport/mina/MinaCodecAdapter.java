@@ -34,14 +34,16 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 
 /**
- * MinaCodecAdapter：Mina的编解码适配器
+ * MinaCodecAdapter：Mina的编解码适配器，因为使用的Mina框架所以对外要提供Mina定义的ProtocolCodecFactory接口，而内部逻辑委托给了Dubbo的Codec2去实现
  */
 final class MinaCodecAdapter implements ProtocolCodecFactory {
 
+    /** ProtocolEncoder：Mina框架中的编码（序列化）器 */
     private final ProtocolEncoder encoder = new InternalEncoder();
-
+    /** ProtocolDecoder：Mina框架中的解码（反序列化）器 */
     private final ProtocolDecoder decoder = new InternalDecoder();
 
+    /** 构造器中进行实例化：dubbo的上游是通过SPI机制进行实例化的 */
     private final Codec2 codec;
 
     private final URL url;
@@ -72,14 +74,20 @@ final class MinaCodecAdapter implements ProtocolCodecFactory {
         }
 
         public void encode(IoSession session, Object msg, ProtocolEncoderOutput out) throws Exception {
+            // 创建一块缓存
             ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(1024);
+            // 创建一个Channel，设置到IoSession的属性中并返回
             MinaChannel channel = MinaChannel.getOrAddChannel(session, url, handler);
             try {
+                // 将message进行编码并写入buffer
                 codec.encode(channel, buffer, msg);
             } finally {
                 MinaChannel.removeChannelIfDisconnectd(session);
             }
+
+            // 将buffer数据写入out
             out.write(ByteBuffer.wrap(buffer.toByteBuffer()));
+            // 通过Mina框架，将数据发送出去
             out.flush();
         }
     }

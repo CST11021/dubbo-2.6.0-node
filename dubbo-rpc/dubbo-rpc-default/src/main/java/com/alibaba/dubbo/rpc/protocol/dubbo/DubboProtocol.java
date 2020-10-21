@@ -76,7 +76,7 @@ public class DubboProtocol extends AbstractProtocol {
      *
      */
     private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>();
-    /** <host:port,Exchanger> */
+    /** <服务提供者的host:port, 连接> */
     private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>();
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap = new ConcurrentHashMap<String, LazyConnectExchangeClient>();
 
@@ -360,10 +360,12 @@ public class DubboProtocol extends AbstractProtocol {
      * @return
      */
     private ExchangeClient[] getClients(URL url) {
-        // whether to share connection
+        // 是否共享连接：
+        // 共享连接：即多个服务之间的调用共享一个长连接；
+        // 非共享连接：即每个服务都有自己的连接
         boolean service_share_connect = false;
         int connections = url.getParameter(Constants.CONNECTIONS_KEY, 0);
-        // if not configured, connection is shared, otherwise, one connection for one service
+        // 如果未配置，则共享连接，否则一个服务一个连接
         if (connections == 0) {
             service_share_connect = true;
             connections = 1;
@@ -393,6 +395,7 @@ public class DubboProtocol extends AbstractProtocol {
                 referenceClientMap.remove(key);
             }
         }
+
         synchronized (key.intern()) {
             ExchangeClient exchangeClient = initClient(url);
             client = new ReferenceCountExchangeClient(exchangeClient, ghostClientMap);

@@ -26,7 +26,7 @@ import com.alibaba.dubbo.remoting.exchange.Request;
 import java.util.Collection;
 
 /**
- * 心跳检测任务
+ * 用于心跳检测的定时任务
  */
 final class HeartBeatTask implements Runnable {
 
@@ -35,8 +35,10 @@ final class HeartBeatTask implements Runnable {
     /** 用于获取通道的策略接口 */
     private ChannelProvider channelProvider;
 
+    /** 心跳检测间隔时间，默认60秒，每隔60秒检测一次连接是否正常 */
     private int heartbeat;
 
+    /** 心跳的超时时间，如果连接断开的时间超过该时间，则客户端会进行重连，服务端会关闭channel */
     private int heartbeatTimeout;
 
     HeartBeatTask(ChannelProvider provider, int heartbeat, int heartbeatTimeout) {

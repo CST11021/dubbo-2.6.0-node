@@ -113,8 +113,8 @@ public class TransporterTest {
         Assert.assertEquals(1, channels.size());
 
         // 获取指定客户端的通道
-        Channel channel = minaServer.getChannel(new InetSocketAddress(9123));
-        Assert.assertNotNull(channel);
+        // Channel channel = minaServer.getChannel(new InetSocketAddress(9123));
+        // Assert.assertNotNull(channel);
 
         // 向所有的客户端发送消息
         minaServer.send("test123");

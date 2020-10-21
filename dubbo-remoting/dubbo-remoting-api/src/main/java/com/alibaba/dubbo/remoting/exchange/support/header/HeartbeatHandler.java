@@ -27,6 +27,9 @@ import com.alibaba.dubbo.remoting.exchange.Request;
 import com.alibaba.dubbo.remoting.exchange.Response;
 import com.alibaba.dubbo.remoting.transport.AbstractChannelHandlerDelegate;
 
+/**
+ * 用于处理心跳相关的请求
+ */
 public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartbeatHandler.class);
@@ -39,23 +42,45 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
         super(handler);
     }
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void connected(Channel channel) throws RemotingException {
         setReadTimestamp(channel);
         setWriteTimestamp(channel);
         handler.connected(channel);
     }
 
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void disconnected(Channel channel) throws RemotingException {
         clearReadTimestamp(channel);
         clearWriteTimestamp(channel);
         handler.disconnected(channel);
     }
 
+    /**
+     * 向Channel发送一个消息时，调用该方法
+     *
+     * @param channel 用于发送消息的通道
+     * @param message 要发送的消息
+     */
     public void sent(Channel channel, Object message) throws RemotingException {
         setWriteTimestamp(channel);
         handler.sent(channel, message);
     }
 
+    /**
+     * 当接收到请求时调用该方法
+     *
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
+     */
     public void received(Channel channel, Object message) throws RemotingException {
         setReadTimestamp(channel);
         if (isHeartbeatRequest(message)) {
@@ -75,6 +100,8 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
             }
             return;
         }
+
+        // 判断该响应消息是否为心跳检查的响应消息
         if (isHeartbeatResponse(message)) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
@@ -88,10 +115,20 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
         handler.received(channel, message);
     }
 
+    /**
+     * 当监听到通道有请求过来时，会调用该方法，为通道设置最近一次的读操作的时间搓
+     *
+     * @param channel
+     */
     private void setReadTimestamp(Channel channel) {
         channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());
     }
 
+    /**
+     * 当向通道发送消息时，会调用该方法，为通道设置最近一次的写操作的时间搓
+     *
+     * @param channel
+     */
     private void setWriteTimestamp(Channel channel) {
         channel.setAttribute(KEY_WRITE_TIMESTAMP, System.currentTimeMillis());
     }
@@ -104,10 +141,22 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
         channel.removeAttribute(KEY_WRITE_TIMESTAMP);
     }
 
+    /**
+     * 判断该请求是否为心跳检查的请求
+     *
+     * @param message
+     * @return
+     */
     private boolean isHeartbeatRequest(Object message) {
         return message instanceof Request && ((Request) message).isHeartbeat();
     }
 
+    /**
+     * 判断该响应消息是否为心跳检查的响应消息
+     *
+     * @param message
+     * @return
+     */
     private boolean isHeartbeatResponse(Object message) {
         return message instanceof Response && ((Response) message).isHeartbeat();
     }

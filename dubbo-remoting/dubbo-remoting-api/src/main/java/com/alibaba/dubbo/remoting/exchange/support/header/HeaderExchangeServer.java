@@ -48,16 +48,19 @@ public class HeaderExchangeServer implements ExchangeServer {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    /** 只有一个线程的线程池，用于服务端的心跳检测 */
     private final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(
             1, new NamedThreadFactory("dubbo-remoting-server-heartbeat", true));
 
     /** 具体的服务实现，通过URL中的server配置，例如：exchange://localhost:" + port + "?server=mina */
     private final Server server;
-    // heartbeat timer
+    /** 心跳检测定时器，默认每隔60秒进行一次心跳检查 */
     private ScheduledFuture<?> heatbeatTimer;
-    // heartbeat timeout (ms), default value is 0 , won't execute a heartbeat.
+    /** 心跳检测间隔时间，这里是60秒，每隔60秒检测一次连接是否正常 */
     private int heartbeat;
+    /** 心跳超时时间（毫秒），默认值为0，将不执行心跳 */
     private int heartbeatTimeout;
+    /** 用于标识Server是否关闭 */
     private AtomicBoolean closed = new AtomicBoolean(false);
 
     public HeaderExchangeServer(Server server) {

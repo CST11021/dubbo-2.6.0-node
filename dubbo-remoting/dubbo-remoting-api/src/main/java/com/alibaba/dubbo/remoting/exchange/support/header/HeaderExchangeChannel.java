@@ -33,7 +33,7 @@ import com.alibaba.dubbo.remoting.exchange.support.DefaultFuture;
 import java.net.InetSocketAddress;
 
 /**
- * ExchangeReceiver
+ * ExchangeReceiver：主要是实现了request方法，实现了信息交换语义，dubbo信息交换层的核心逻辑就通过HeaderExchangeChannel来实现的
  */
 final class HeaderExchangeChannel implements ExchangeChannel {
 
@@ -44,6 +44,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
     /** 用于通信的通道，具备基础的客户端通信能力（单向通信，不具备Request/response语义） */
     private final Channel channel;
 
+    /** 标识Channel是否关闭 */
     private volatile boolean closed = false;
 
     HeaderExchangeChannel(Channel channel) {
@@ -53,6 +54,12 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         this.channel = channel;
     }
 
+    /**
+     * 从Channel获取HeaderExchangeChannel.CHANNEL属性
+     *
+     * @param ch
+     * @return
+     */
     static HeaderExchangeChannel getOrAddChannel(Channel ch) {
         if (ch == null) {
             return null;
@@ -68,6 +75,11 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         return ret;
     }
 
+    /**
+     * 从Channel移除HeaderExchangeChannel.CHANNEL属性
+     *
+     * @param ch
+     */
     static void removeChannelIfDisconnected(Channel ch) {
         if (ch != null && !ch.isConnected()) {
             ch.removeAttribute(CHANNEL_KEY);

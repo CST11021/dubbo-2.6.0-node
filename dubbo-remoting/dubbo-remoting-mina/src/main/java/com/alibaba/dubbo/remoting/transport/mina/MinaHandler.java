@@ -23,12 +23,13 @@ import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 
 /**
- * MinaHandler：用于处理客户端请求
+ * MinaHandler：继承了Mina的IoHandlerAdapter，IoHandlerAdapter是Mina的session会话监听器，当连接建立、关闭以及收发消息时，都会回调该会话监听处理器
  */
 public class MinaHandler extends IoHandlerAdapter {
 
     private final URL url;
 
+    /** 通道事件监听处理器 */
     private final ChannelHandler handler;
 
     public MinaHandler(URL url, ChannelHandler handler) {

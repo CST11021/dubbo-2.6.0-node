@@ -150,6 +150,8 @@ public class TelnetCodec extends TransportCodec {
             if (isClientSide(channel)) {
                 message = message + "\r\n";
             }
+
+            // 将String类型的消息转为字节
             byte[] msgData = ((String) message).getBytes(getCharset(channel).name());
             buffer.writeBytes(msgData);
         } else {

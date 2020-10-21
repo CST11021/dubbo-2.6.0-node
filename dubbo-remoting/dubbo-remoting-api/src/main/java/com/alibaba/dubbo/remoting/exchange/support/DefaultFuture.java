@@ -90,6 +90,12 @@ public class DefaultFuture implements ResponseFuture {
         return CHANNELS.containsValue(channel);
     }
 
+    /**
+     * HeaderChannelHandler#sent会调用该方法
+     *
+     * @param channel
+     * @param request
+     */
     public static void sent(Channel channel, Request request) {
         DefaultFuture future = FUTURES.get(request.getId());
         if (future != null) {
@@ -98,7 +104,7 @@ public class DefaultFuture implements ResponseFuture {
     }
 
     /**
-     * ChannelHandler#received会调用该方法，设置#response
+     * HeaderChannelHandler#received会调用该方法，设置#response
      *
      * @param channel
      * @param response

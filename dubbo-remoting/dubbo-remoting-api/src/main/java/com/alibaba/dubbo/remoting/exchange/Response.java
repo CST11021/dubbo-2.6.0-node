@@ -75,6 +75,7 @@ public class Response {
      */
     public static final byte SERVER_THREADPOOL_EXHAUSTED_ERROR = 100;
 
+    /** 对应Request的ID */
     private long mId = 0;
 
     private String mVersion;

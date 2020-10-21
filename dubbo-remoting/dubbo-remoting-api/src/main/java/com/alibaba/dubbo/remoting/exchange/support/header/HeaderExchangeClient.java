@@ -53,8 +53,9 @@ public class HeaderExchangeClient implements ExchangeClient {
     /** 用于通信的通道，ExchangeChannel主要用于实现request/response语义，这里在构造器中被实例化为HeaderExchangeChannel对象 */
     private final ExchangeChannel channel;
 
-    /** 心跳计时器 */
+    /** 心跳检车定时器：每隔60秒检测一次连接是否正常 */
     private ScheduledFuture<?> heartbeatTimer;
+    /** 心跳检测间隔时间，这里是60秒，每隔60秒检测一次连接是否正常 */
     private int heartbeat;
     /** 心跳超时时间（毫秒），默认值为0，将不执行心跳 */
     private int heartbeatTimeout;

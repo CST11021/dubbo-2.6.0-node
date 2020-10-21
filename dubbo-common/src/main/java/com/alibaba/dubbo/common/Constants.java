@@ -119,6 +119,7 @@ public class Constants {
 
     public static final int DEFAULT_IDLE_TIMEOUT = 600 * 1000;
 
+    /** dubbo客户端和服务端的心跳检测间隔时间，这里是60秒，每隔60秒检测一次连接是否正常 */
     public static final int DEFAULT_HEARTBEAT = 60 * 1000;
 
     public static final int DEFAULT_TIMEOUT = 1000;

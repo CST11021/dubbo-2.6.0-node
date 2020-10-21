@@ -64,6 +64,11 @@ public class MinaClient extends AbstractClient {
         super(url, wrapChannelHandler(url, handler));
     }
 
+    /**
+     * 使用Mina框架创建一个客户端
+     *
+     * @throws Throwable
+     */
     @Override
     protected void doOpen() throws Throwable {
         connectorKey = getUrl().toFullString();
@@ -73,6 +78,7 @@ public class MinaClient extends AbstractClient {
         } else {
             // set thread pool.
             connector = new SocketConnector(Constants.DEFAULT_IO_THREADS, Executors.newCachedThreadPool(new NamedThreadFactory("MinaClientWorker", true)));
+
             // config
             SocketConnectorConfig cfg = (SocketConnectorConfig) connector.getDefaultConfig();
             cfg.setThreadModel(ThreadModel.MANUAL);
@@ -86,6 +92,11 @@ public class MinaClient extends AbstractClient {
         }
     }
 
+    /**
+     * 连接到服务端
+     *
+     * @throws Throwable
+     */
     @Override
     protected void doConnect() throws Throwable {
         ConnectFuture future = connector.connect(getConnectAddress(), new MinaHandler(getUrl(), this));

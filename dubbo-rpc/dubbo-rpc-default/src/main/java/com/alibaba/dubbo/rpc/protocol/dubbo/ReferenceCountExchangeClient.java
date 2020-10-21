@@ -36,9 +36,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class ReferenceCountExchangeClient implements ExchangeClient {
 
     private final URL url;
+    /** 用于统计有多少服务共享了{@link #client}这个连接 */
     private final AtomicInteger refenceCount = new AtomicInteger(0);
 
-    //    private final ExchangeHandler handler;
+
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap;
     private ExchangeClient client;
 

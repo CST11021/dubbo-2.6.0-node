@@ -31,8 +31,10 @@ public class Request {
     /** 表示一个消息体：当通道关闭时，会向通道发送一个READONLY_EVENT消息，即触发只读事件 */
     public static final String READONLY_EVENT = "R";
 
+    /** 用于生成Request的ID */
     private static final AtomicLong INVOKE_ID = new AtomicLong(0);
 
+    /** request的ID */
     private final long mId;
 
     /** 消息体的版本 */

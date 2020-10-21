@@ -359,20 +359,18 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
 
 
-    // ============================
-    // ===== 模板方法，子类扩展 ====
-    // ============================
+    // ========================================================
+    // ===== 子类扩展： MinaClient、NettyClient、GrizzlyClient都实现以下方法
+    // ========================================================
 
     /** 打开（创建）客户端 */
     protected abstract void doOpen() throws Throwable;
     /** 关闭客户端 */
     protected abstract void doClose() throws Throwable;
-
     /** 连接到服务端 */
     protected abstract void doConnect() throws Throwable;
     /** 与服务端断开连接 */
     protected abstract void doDisConnect() throws Throwable;
-
     /** 获取用于数据传输的连接通道 */
     protected abstract Channel getChannel();
 

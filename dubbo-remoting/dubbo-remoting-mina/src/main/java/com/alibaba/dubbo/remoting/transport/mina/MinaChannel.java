@@ -30,7 +30,7 @@ import org.apache.mina.common.WriteFuture;
 import java.net.InetSocketAddress;
 
 /**
- * MinaChannel
+ * MinaChannel：将Mina框架中的IoSession包装为Channel对象
  */
 final class MinaChannel extends AbstractChannel {
 
@@ -48,10 +48,19 @@ final class MinaChannel extends AbstractChannel {
         this.session = session;
     }
 
+    /**
+     * 创建一个Channel，设置到IoSession的属性中并返回
+     *
+     * @param session
+     * @param url
+     * @param handler
+     * @return
+     */
     static MinaChannel getOrAddChannel(IoSession session, URL url, ChannelHandler handler) {
         if (session == null) {
             return null;
         }
+
         MinaChannel ret = (MinaChannel) session.getAttribute(CHANNEL_KEY);
         if (ret == null) {
             ret = new MinaChannel(session, url, handler);

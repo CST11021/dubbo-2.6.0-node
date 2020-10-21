@@ -43,6 +43,7 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
 
     public AbstractEndpoint(URL url, ChannelHandler handler) {
         super(url, handler);
+        // 据SPI机制获取一个编解码器
         this.codec = getChannelCodec(url);
         this.timeout = url.getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
         this.connectTimeout = url.getPositiveParameter(Constants.CONNECT_TIMEOUT_KEY, Constants.DEFAULT_CONNECT_TIMEOUT);
@@ -94,6 +95,11 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         reset(getUrl().addParameters(parameters.getParameters()));
     }
 
+    /**
+     * 获取一个编解码器的实例
+     *
+     * @return
+     */
     protected Codec2 getCodec() {
         return codec;
     }
@@ -106,13 +112,19 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
         return connectTimeout;
     }
 
+    /**
+     * 根据SPI机制获取一个编解码器
+     *
+     * @param url
+     * @return
+     */
     protected static Codec2 getChannelCodec(URL url) {
         String codecName = url.getParameter(Constants.CODEC_KEY, "telnet");
         if (ExtensionLoader.getExtensionLoader(Codec2.class).hasExtension(codecName)) {
             return ExtensionLoader.getExtensionLoader(Codec2.class).getExtension(codecName);
         } else {
-            return new CodecAdapter(ExtensionLoader.getExtensionLoader(Codec.class)
-                    .getExtension(codecName));
+            // 这里返回的是CodecAdapter，内部的编解码逻辑还是通过Codec来实现的
+            return new CodecAdapter(ExtensionLoader.getExtensionLoader(Codec.class).getExtension(codecName));
         }
     }
 }

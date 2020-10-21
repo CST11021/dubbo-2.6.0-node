@@ -37,18 +37,40 @@ public abstract class AbstractChannelHandlerDelegate implements ChannelHandlerDe
         return handler;
     }
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void connected(Channel channel) throws RemotingException {
         handler.connected(channel);
     }
 
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void disconnected(Channel channel) throws RemotingException {
         handler.disconnected(channel);
     }
 
+    /**
+     * 向Channel发送一个消息时，调用该方法
+     *
+     * @param channel 用于发送消息的通道
+     * @param message 要发送的消息
+     */
     public void sent(Channel channel, Object message) throws RemotingException {
         handler.sent(channel, message);
     }
 
+    /**
+     * 当接收到请求时调用该方法
+     *
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
+     */
     public void received(Channel channel, Object message) throws RemotingException {
         handler.received(channel, message);
     }

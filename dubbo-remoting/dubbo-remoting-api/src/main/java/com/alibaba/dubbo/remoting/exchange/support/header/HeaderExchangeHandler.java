@@ -55,12 +55,25 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         this.handler = handler;
     }
 
+    /**
+     * 将response设置到DefaultFuture，这样Future就具备了request/response
+     *
+     * @param channel
+     * @param response
+     * @throws RemotingException
+     */
     static void handleResponse(Channel channel, Response response) throws RemotingException {
         if (response != null && !response.isHeartbeat()) {
             DefaultFuture.received(channel, response);
         }
     }
 
+    /**
+     * 判断当前channel是否为client端的
+     *
+     * @param channel
+     * @return
+     */
     private static boolean isClientSide(Channel channel) {
         InetSocketAddress address = channel.getRemoteAddress();
         URL url = channel.getUrl();
@@ -69,12 +82,27 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                         .equals(NetUtils.filterLocalHost(address.getAddress().getHostAddress()));
     }
 
+    /**
+     * 如果请求是只读的，则给channel的属性设置为只读的
+     *
+     * @param channel
+     * @param req
+     * @throws RemotingException
+     */
     void handlerEvent(Channel channel, Request req) throws RemotingException {
         if (req.getData() != null && req.getData().equals(Request.READONLY_EVENT)) {
             channel.setAttribute(Constants.CHANNEL_ATTRIBUTE_READONLY_KEY, Boolean.TRUE);
         }
     }
 
+    /**
+     * 处理请求并返回一个response对象
+     *
+     * @param channel
+     * @param req
+     * @return
+     * @throws RemotingException
+     */
     Response handleRequest(ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
         if (req.isBroken()) {
@@ -89,6 +117,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
             return res;
         }
+
         // find handler by message class.
         Object msg = req.getData();
         try {
@@ -103,6 +132,11 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         return res;
     }
 
+    /**
+     * 当客户端与服务端建立通道连接时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void connected(Channel channel) throws RemotingException {
         channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());
         channel.setAttribute(KEY_WRITE_TIMESTAMP, System.currentTimeMillis());
@@ -114,6 +148,11 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 当客户端与服务端的通道连接断开时，调用该方法
+     *
+     * @param channel channel.
+     */
     public void disconnected(Channel channel) throws RemotingException {
         channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());
         channel.setAttribute(KEY_WRITE_TIMESTAMP, System.currentTimeMillis());
@@ -161,6 +200,12 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 当从Channel获取到消息时调用该方法
+     *
+     * @param channel 用于接收消息的通道.
+     * @param message 要接收的消息.
+     */
     public void received(Channel channel, Object message) throws RemotingException {
         channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());
         ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);
@@ -172,6 +217,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                     handlerEvent(channel, request);
                 } else {
                     if (request.isTwoWay()) {
+                        //
                         Response response = handleRequest(exchangeChannel, request);
                         channel.send(response);
                     } else {
@@ -179,6 +225,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                     }
                 }
             } else if (message instanceof Response) {
+                //
                 handleResponse(channel, (Response) message);
             } else if (message instanceof String) {
                 if (isClientSide(channel)) {
@@ -198,6 +245,12 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 通信异常时调用该方法
+     *
+     * @param channel   channel.
+     * @param exception exception.
+     */
     public void caught(Channel channel, Throwable exception) throws RemotingException {
         if (exception instanceof ExecutionException) {
             ExecutionException e = (ExecutionException) exception;
