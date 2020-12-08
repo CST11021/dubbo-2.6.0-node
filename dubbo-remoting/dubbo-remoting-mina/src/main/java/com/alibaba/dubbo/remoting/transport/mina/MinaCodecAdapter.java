@@ -68,6 +68,9 @@ final class MinaCodecAdapter implements ProtocolCodecFactory {
         return decoder;
     }
 
+    /**
+     * 实现Mina的编码（序列化）器接口，内部通过dubbo的Codec2组件实现序列化
+     */
     private class InternalEncoder implements ProtocolEncoder {
 
         public void dispose(IoSession session) throws Exception {
@@ -92,6 +95,9 @@ final class MinaCodecAdapter implements ProtocolCodecFactory {
         }
     }
 
+    /**
+     * 实现Mina的解码（反序列化）器接口，内部通过dubbo的Codec2组件实现反序列化
+     */
     private class InternalDecoder implements ProtocolDecoder {
 
         private ChannelBuffer buffer = ChannelBuffers.EMPTY_BUFFER;
