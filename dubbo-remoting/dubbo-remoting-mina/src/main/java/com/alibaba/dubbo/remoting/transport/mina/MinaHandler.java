@@ -44,7 +44,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 当session打开时（即服务端和客户端建立连接时）触发ChannelHandler.connected方法，
+     * 当session打开时（即服务端和客户端建立连接时）要触发dubbo的ChannelHandler.connected方法
      *
      * @param session
      * @throws Exception
@@ -60,7 +60,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 当session关闭时（即服务端和客户端的连接断开时）调用
+     * 当session关闭时（即服务端和客户端的连接断开时）要触发dubbo的ChannelHandler.disconnected方法
      *
      * @param session
      * @throws Exception
@@ -76,7 +76,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 当接收了一个客户端请求时调用该方法
+     * 当Mina框架的服务端接收到了一个客户端请求时会调用该方法，此时需要触发dubbo的ChannelHandler.received方法
      *
      * @param session
      * @param message
@@ -94,7 +94,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 当一个消息被(IoSession#write)发送出去后调用，即服务端发起响应后的回调
+     * 当一个消息被(IoSession#write)发送出去后调用，即服务端发起响应后的回调，要调用dubbo的ChannelHandler.sent方法
      *
      * @param session
      * @param message
@@ -111,7 +111,7 @@ public class MinaHandler extends IoHandlerAdapter {
     }
 
     /**
-     * 服务端请求处理异常时，调用该方法
+     * Mina中服务端请求处理异常时，会调用该方法，此时需要调用dubbo的ChannelHandler.caught方法
      *
      * @param session
      * @param cause
