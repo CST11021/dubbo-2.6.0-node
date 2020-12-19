@@ -62,6 +62,7 @@ public class Constants {
 
     public static final String $ECHO = "$echo";
 
+    /** 表示在remoting层中，服务端处理客户端的请求的线程数，Runtime.getRuntime().availableProcessors()表示获取电脑的cpu内核数量 */
     public static final int DEFAULT_IO_THREADS = Math.min(Runtime.getRuntime().availableProcessors() + 1, 32);
 
     public static final String DEFAULT_PROXY = "javassist";
@@ -205,6 +206,7 @@ public class Constants {
 
     public static final String THREAD_NAME_KEY = "threadname";
 
+    /** 表示在remoting层中，服务端处理客户端的请求的线程数 */
     public static final String IO_THREADS_KEY = "iothreads";
 
     public static final String CORE_THREADS_KEY = "corethreads";

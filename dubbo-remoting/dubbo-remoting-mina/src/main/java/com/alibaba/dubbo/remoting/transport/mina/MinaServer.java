@@ -47,7 +47,7 @@ public class MinaServer extends AbstractServer {
 
     private static final Logger logger = LoggerFactory.getLogger(MinaServer.class);
 
-    /** Mina的服务 */
+    /** Mina框架的服务端对象 */
     private SocketAcceptor acceptor;
 
     public MinaServer(URL url, ChannelHandler handler) throws RemotingException {
@@ -55,13 +55,13 @@ public class MinaServer extends AbstractServer {
     }
 
     /**
-     * 启动一个Mina服务，开始监听客户端请求
+     * 启动一个Mina服务，并开始监听客户端请求
      *
      * @throws Throwable
      */
     @Override
     protected void doOpen() throws Throwable {
-        // 设置线程池
+        // 创建服务端对象，并配置服务端线程池的线程数量
         acceptor = new SocketAcceptor(
                 getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
                 Executors.newCachedThreadPool(new NamedThreadFactory("MinaServerWorker", true))
@@ -74,7 +74,7 @@ public class MinaServer extends AbstractServer {
         // 设置Mina的编解码处理器
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MinaCodecAdapter(getCodec(), getUrl(), this)));
 
-        // 启动Mina服务：绑定端口并监听客户端请求
+        // 启动Mina服务：绑定端口并监听客户端请求；
         acceptor.bind(getBindAddress(), new MinaHandler(getUrl(), this));
     }
 

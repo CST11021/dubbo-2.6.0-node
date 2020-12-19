@@ -30,7 +30,7 @@ import org.apache.mina.common.WriteFuture;
 import java.net.InetSocketAddress;
 
 /**
- * MinaChannel：将Mina框架中的IoSession包装为Channel对象
+ * MinaChannel：将Mina框架中的IoSession包装为dubbo的Channel对象
  */
 final class MinaChannel extends AbstractChannel {
 
@@ -82,7 +82,7 @@ final class MinaChannel extends AbstractChannel {
     }
 
     /**
-     * 获取服务提供者的地址
+     * 获取服务（即服务端或客户端）实例的本地地址
      *
      * @return
      */
@@ -91,7 +91,7 @@ final class MinaChannel extends AbstractChannel {
     }
 
     /**
-     * 获取客户端的地址
+     * 获取远端（及服务端或者客户端）地址
      *
      * @return
      */
