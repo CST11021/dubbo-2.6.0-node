@@ -128,7 +128,7 @@ final class MinaChannel extends AbstractChannel {
      * 向通道发送消息
      *
      * @param message
-     * @param sent
+     * @param sent      是否阻塞直到等待异步操作结束
      * @throws RemotingException
      */
     public void send(Object message, boolean sent) throws RemotingException {
@@ -140,6 +140,7 @@ final class MinaChannel extends AbstractChannel {
             WriteFuture future = session.write(message);
             if (sent) {
                 timeout = getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
+                // future.join：阻塞，直到等待异步操作结束
                 success = future.join(timeout);
             }
         } catch (Throwable e) {

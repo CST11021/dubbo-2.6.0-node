@@ -120,7 +120,7 @@ public class TransporterTest {
         minaServer.send("test123");
 
         // sleep5秒，以便于能观察到客户端的处理逻辑
-        Thread.sleep(5000);
+        Thread.sleep(50000);
 
     }
 
@@ -128,7 +128,7 @@ public class TransporterTest {
     public void testClient() throws Exception {
 
         Client client = new MinaClient(url, new ChannelHandlerAdapter());
-        ((MinaClient) client).disconnect();
+        // ((MinaClient) client).disconnect();
 
         // 测试向服务端发送消息
         client.send("test123");

@@ -34,7 +34,7 @@ public abstract class AbstractChannel extends AbstractPeer implements Channel {
      * 向通道发送消息，这里仅做通道是否关闭的校验，具体的发送逻辑子类自己去实现
      *
      * @param message
-     * @param sent    already sent to socket?
+     * @param sent    是否阻塞直到等待异步操作结束
      * @throws RemotingException
      */
     public void send(Object message, boolean sent) throws RemotingException {
