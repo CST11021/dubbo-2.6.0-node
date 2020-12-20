@@ -7,6 +7,7 @@ import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.transport.AbstractServer;
 import com.alibaba.dubbo.remoting.transport.dispatcher.ChannelHandlers;
+import com.taobao.gecko.service.RemotingContext;
 import com.taobao.gecko.service.RemotingFactory;
 import com.taobao.gecko.service.RemotingServer;
 import com.taobao.gecko.service.config.ServerConfig;
@@ -26,6 +27,11 @@ public class GeckoServer extends AbstractServer {
         super(url, handler);
     }
 
+    /**
+     * 启动一个Gecko服务，并开始监听客户端请求
+     *
+     * @throws Throwable
+     */
     @Override
     protected void doOpen() throws Throwable {
         final ServerConfig serverConfig = new ServerConfig();
@@ -33,6 +39,8 @@ public class GeckoServer extends AbstractServer {
         serverConfig.setLocalInetSocketAddress(getBindAddress());
 
         remotingServer = RemotingFactory.newRemotingServer(serverConfig);
+        // TODO whz remotingServer.registerProcessor
+        remotingServer.start();
     }
 
     @Override
@@ -42,7 +50,7 @@ public class GeckoServer extends AbstractServer {
 
     @Override
     public Collection<Channel> getChannels() {
-        // remotingServer.getRemotingContext().
+        RemotingContext remotingContext = remotingServer.getRemotingContext();
         return null;
     }
 
@@ -55,7 +63,9 @@ public class GeckoServer extends AbstractServer {
 
     @Override
     protected void doClose() throws Throwable {
-
+        if (remotingServer != null) {
+            remotingServer.stop();
+        }
     }
 
 }
