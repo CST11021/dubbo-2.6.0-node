@@ -125,7 +125,7 @@ final class MinaChannel extends AbstractChannel {
     }
 
     /**
-     * 向通道发送消息
+     * 向通道发送消息，实现该接口时，需要依赖Mina框架的发送消息机制
      *
      * @param message
      * @param sent      是否阻塞直到等待异步操作结束
