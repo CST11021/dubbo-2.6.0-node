@@ -52,7 +52,7 @@ public interface Endpoint {
      * 向所有的通道发送消息
      *
      * @param message
-     * @param sent    already sent to socket?
+     * @param sent    是否阻塞直到等待异步操作结束
      * @throws RemotingException
      */
     void send(Object message, boolean sent) throws RemotingException;

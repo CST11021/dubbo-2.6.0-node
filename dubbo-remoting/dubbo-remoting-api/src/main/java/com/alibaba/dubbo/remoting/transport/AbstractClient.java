@@ -178,6 +178,13 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         return channel.hasAttribute(key);
     }
 
+    /**
+     * 将发送消息的操作委托给Channel去实现
+     *
+     * @param message
+     * @param sent    already sent to socket?
+     * @throws RemotingException
+     */
     public void send(Object message, boolean sent) throws RemotingException {
         if (send_reconnect && !isConnected()) {
             connect();

@@ -27,10 +27,16 @@ import com.alibaba.dubbo.remoting.RemotingException;
 public interface TelnetHandler {
 
     /**
-     * telnet.
+     * 当使用 telnet 命令调用dubbo服务时，会将调用该方法处理invoke命令，这里的message就是客户端输入的命令，例如：invoke HelloService.sayHello("whz")
      *
-     * @param channel
-     * @param message
+     * @param channel   telnet客户端与服务端的通信通道
+     * @param message   具体的命令，例如：invoke HelloService.sayHello("whz")
+     * @return 返回命令的执行结果，例如如下：
+     * "Hello whz"
+     * elapsed: 4 ms.
+     * dubbo>
+     *
+     * @throws RemotingException
      */
     String telnet(Channel channel, String message) throws RemotingException;
 

@@ -123,6 +123,7 @@ public class Constants {
     /** dubbo客户端和服务端的心跳检测间隔时间，这里是60秒，每隔60秒检测一次连接是否正常 */
     public static final int DEFAULT_HEARTBEAT = 60 * 1000;
 
+    /** 服务调用的默认超时时间，默认是1秒 */
     public static final int DEFAULT_TIMEOUT = 1000;
 
     public static final int DEFAULT_CONNECT_TIMEOUT = 3000;
@@ -249,6 +250,7 @@ public class Constants {
 
     public static final String CONNECT_TIMEOUT_KEY = "connect.timeout";
 
+    /** 服务调用的默认超时时间 */
     public static final String TIMEOUT_KEY = "timeout";
 
     public static final String RETRIES_KEY = "retries";

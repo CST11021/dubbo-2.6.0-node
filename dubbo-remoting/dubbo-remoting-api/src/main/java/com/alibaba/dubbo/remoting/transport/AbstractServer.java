@@ -47,7 +47,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     ExecutorService executor;
     /** 监听客户端请求的服务端地址（IP/端口） */
     private InetSocketAddress localAddress;
-    /** 无误启动绑定的地址（一般和localAddress一样） */
+    /** 服务启动绑定的地址（一般和localAddress一样） */
     private InetSocketAddress bindAddress;
 
 

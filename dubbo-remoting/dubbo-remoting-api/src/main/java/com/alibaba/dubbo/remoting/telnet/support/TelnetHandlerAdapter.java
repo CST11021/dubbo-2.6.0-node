@@ -27,6 +27,18 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
 
     private final ExtensionLoader<TelnetHandler> extensionLoader = ExtensionLoader.getExtensionLoader(TelnetHandler.class);
 
+    /**
+     * 当使用 telnet 命令调用dubbo服务时，会将调用该方法处理invoke命令，这里的message就是客户端输入的命令，例如：invoke HelloService.sayHello("whz")
+     *
+     * @param channel   telnet客户端与服务端的通信通道
+     * @param message   具体的命令，例如：invoke HelloService.sayHello("whz")
+     * @return 返回命令的执行结果，例如如下：
+     * "Hello whz"
+     * elapsed: 4 ms.
+     * dubbo>
+     *
+     * @throws RemotingException
+     */
     public String telnet(Channel channel, String message) throws RemotingException {
         String prompt = channel.getUrl().getParameterAndDecoded(Constants.PROMPT_KEY, Constants.DEFAULT_PROMPT);
         boolean noprompt = message.contains("--no-prompt");
