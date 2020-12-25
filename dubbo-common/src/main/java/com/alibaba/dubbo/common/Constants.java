@@ -296,7 +296,7 @@ public class Constants {
      * 如果为“true”，表示使用默认值，默认为{@link #DEFAULT_RECONNECT_PERIOD}，2秒）*/
     public static final String RECONNECT_KEY = "reconnect";
 
-    /** 表示客户端向服务端发起请求时，是否要重新建立连接 */
+    /** 表示客户端向服务端发起请求时，是否要重新建立连接，默认为false */
     public static final String SEND_RECONNECT_KEY = "send.reconnect";
 
     /** 客户端重置连接的时间间隔 */
@@ -622,8 +622,9 @@ public class Constants {
 
     public static final String DUBBO_PORT_TO_BIND = "DUBBO_PORT_TO_BIND";
 
+    /** 第三方通信框架服务启动时绑定的IP地址 */
     public static final String BIND_IP_KEY = "bind.ip";
-
+    /** 第三方通信框架服务启动时绑定的端口 */
     public static final String BIND_PORT_KEY = "bind.port";
 
     public static final String REGISTER_IP_KEY = "register.ip";

@@ -28,21 +28,21 @@ import com.alibaba.dubbo.remoting.RemotingException;
 public interface Group {
 
     /**
-     * get group url.
+     * 获取该服务组的信息
      *
      * @return group url.
      */
     URL getUrl();
 
     /**
-     * join.
+     * 将一个节点添加到组，并返回一个代表服务组的Peer对象
      *
      * @param url
      */
     Peer join(URL url, ChannelHandler handler) throws RemotingException;
 
     /**
-     * leave.
+     * 将一个节点从该服务组移除
      *
      * @param url
      * @throws RemotingException
@@ -50,7 +50,7 @@ public interface Group {
     void leave(URL url) throws RemotingException;
 
     /**
-     * close the group.
+     * 关闭该服务组
      */
     void close();
 

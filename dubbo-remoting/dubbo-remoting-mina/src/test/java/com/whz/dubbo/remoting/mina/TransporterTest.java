@@ -32,61 +32,30 @@ public class TransporterTest {
     // 初始化Server和Client：开启服务和创建连接
     @Before
     public void Before() throws Exception {
+
         // 开启服务
-        minaServer = new MinaServer(url, new ChannelHandler() {
-            @Override
-            public void connected(Channel channel) throws RemotingException {
-                System.out.println("server:connected");
-            }
 
-            @Override
-            public void disconnected(Channel channel) throws RemotingException {
-                System.out.println("server:disconnected");
-            }
+        // 方案1：
+        // minaServer = Transporters.bind(url, new ServiceChannelHandler());
 
-            @Override
-            public void sent(Channel channel, Object message) throws RemotingException {
-                System.out.println("server:sent，message = " + message.toString());
-            }
+        // 方案2：
+        // Transporter transporter = Transporters.getTransporter();
+        // minaServer = transporter.bind(url, new ServiceChannelHandler());
 
-            @Override
-            public void received(Channel channel, Object message) throws RemotingException {
-                System.out.println("server:received，message = " + message.toString());
-            }
-
-            @Override
-            public void caught(Channel channel, Throwable exception) throws RemotingException {
-                System.out.println("server:caught：" + exception.getMessage());
-            }
-        });
+        // 方案3：
+        minaServer = new MinaServer(url, new ServiceChannelHandler());
 
         // 创建一个连接
-        minaClient = new MinaClient(url, new ChannelHandler() {
-            @Override
-            public void connected(Channel channel) throws RemotingException {
-                System.out.println("client:connected");
-            }
 
-            @Override
-            public void disconnected(Channel channel) throws RemotingException {
-                System.out.println("client:disconnected");
-            }
+        // 方案1：
+        // minaClient = Transporters.connect(url, new ClientChannelHandler());
 
-            @Override
-            public void sent(Channel channel, Object message) throws RemotingException {
-                System.out.println("client:sent，message = " + message.toString());
-            }
+        // 方案2：
+        // Transporter transporter = Transporters.getTransporter();
+        // minaClient = transporter.connect(url, new ClientChannelHandler());
 
-            @Override
-            public void received(Channel channel, Object message) throws RemotingException {
-                System.out.println("client:received，message = " + message.toString());
-            }
-
-            @Override
-            public void caught(Channel channel, Throwable exception) throws RemotingException {
-                System.out.println("client:caught：" + exception.getMessage());
-            }
-        });
+        // 方案3：
+        minaClient = new MinaClient(url, new ClientChannelHandler());
     }
 
     // 关闭服务和断开连接
@@ -139,9 +108,59 @@ public class TransporterTest {
 
 
 
+    class ServiceChannelHandler implements ChannelHandler {
+        @Override
+        public void connected(Channel channel) throws RemotingException {
+            System.out.println("server:connected");
+        }
 
+        @Override
+        public void disconnected(Channel channel) throws RemotingException {
+            System.out.println("server:disconnected");
+        }
 
+        @Override
+        public void sent(Channel channel, Object message) throws RemotingException {
+            System.out.println("server:sent，message = " + message.toString());
+        }
 
+        @Override
+        public void received(Channel channel, Object message) throws RemotingException {
+            System.out.println("server:received，message = " + message.toString());
+        }
+
+        @Override
+        public void caught(Channel channel, Throwable exception) throws RemotingException {
+            System.out.println("server:caught：" + exception.getMessage());
+        }
+    }
+
+    class ClientChannelHandler implements ChannelHandler {
+        @Override
+        public void connected(Channel channel) throws RemotingException {
+            System.out.println("client:connected");
+        }
+
+        @Override
+        public void disconnected(Channel channel) throws RemotingException {
+            System.out.println("client:disconnected");
+        }
+
+        @Override
+        public void sent(Channel channel, Object message) throws RemotingException {
+            System.out.println("client:sent，message = " + message.toString());
+        }
+
+        @Override
+        public void received(Channel channel, Object message) throws RemotingException {
+            System.out.println("client:received，message = " + message.toString());
+        }
+
+        @Override
+        public void caught(Channel channel, Throwable exception) throws RemotingException {
+            System.out.println("client:caught：" + exception.getMessage());
+        }
+    }
 
 
     // Transporter SPI扩展测试

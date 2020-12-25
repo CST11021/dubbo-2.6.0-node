@@ -28,7 +28,7 @@ import com.alibaba.dubbo.remoting.Codec2;
 import com.alibaba.dubbo.remoting.transport.codec.CodecAdapter;
 
 /**
- * AbstractEndpoint 扩展自AbstractPeer，添加了编解码功能和超时信息，该类有两个抽象子类，用于扩展：
+ * AbstractEndpoint 扩展自AbstractPeer，增加了编解码组件和从URL获取超时信息，该类有两个抽象子类，用于扩展：
  * {@link AbstractClient} 和 {@link AbstractServer}
  */
 public abstract class AbstractEndpoint extends AbstractPeer implements Resetable {
@@ -36,9 +36,9 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
     private static final Logger logger = LoggerFactory.getLogger(AbstractEndpoint.class);
     /** 对通道数据进行编解码 */
     private Codec2 codec;
-    /** 表示连接通道的默认超时时间 */
+    /** 客户端（通道）建立连接时的超时时间（timeout是给Mina、Grizzly和netty4的客户端用的） */
     private int timeout;
-    /** 表示连接通道的超时时间 */
+    /** 客户端（通道）建立连接时的超时时间（connectTimeout是给netty的客户端用）*/
     private int connectTimeout;
 
     public AbstractEndpoint(URL url, ChannelHandler handler) {

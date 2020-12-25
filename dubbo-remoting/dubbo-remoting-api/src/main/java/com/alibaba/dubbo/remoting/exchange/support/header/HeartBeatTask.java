@@ -48,7 +48,7 @@ final class HeartBeatTask implements Runnable {
     }
 
     /**
-     * dubbo心跳时间heartbeat默认是60s，超过heartbeat时间没有收到消息，就发送心跳消息(provider，consumer一样)，
+     * dubbo心跳时间heartbeat默认是60s，如果60秒内通道没有接收到或者发送过消息，就发送心跳消息(provider，consumer一样)，
      * 如果连着3次(heartbeatTimeout为heartbeat*3)没有收到心跳响应，provider会关闭channel，而consumer会进行重连；
      * 不论是provider还是consumer的心跳检测都是通过启动定时任务的方式实现；
      */

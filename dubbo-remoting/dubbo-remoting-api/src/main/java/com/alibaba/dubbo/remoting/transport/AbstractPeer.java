@@ -85,6 +85,11 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
 
     // 消息通道处理器
 
+    /**
+     * 获取通道事件监听处理器
+     *
+     * @return
+     */
     public ChannelHandler getChannelHandler() {
         if (handler instanceof ChannelHandlerDelegate) {
             return ((ChannelHandlerDelegate) handler).getHandler();
@@ -105,8 +110,27 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         return handler;
     }
 
+    /**
+     * 向通道发送消息
+     *
+     * @param message
+     * @throws RemotingException
+     */
+    public void send(Object message) throws RemotingException {
+        send(message, url.getParameter(Constants.SENT_KEY, false));
+    }
 
-    // 连接或断开
+
+
+
+
+
+
+
+
+
+    // ========= 实现ChannelHandler接口：通道IO事件处理接口，全部委托给#handler处理 =========
+
 
     /**
      * 当客户端与服务端建立通道连接时，调用该方法
@@ -129,12 +153,12 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         handler.disconnected(ch);
     }
 
-
-    // 发送或接受消息
-
-    public void send(Object message) throws RemotingException {
-        send(message, url.getParameter(Constants.SENT_KEY, false));
-    }
+    /**
+     * 向Channel发送一个消息，委托给ChannelHandler实现
+     *
+     * @param ch 用于发送消息的通道
+     * @param msg 要发送的消息
+     */
     public void sent(Channel ch, Object msg) throws RemotingException {
         if (closed) {
             return;
@@ -155,7 +179,6 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         }
         handler.received(ch, msg);
     }
-
 
     /**
      * 异常时调用该方法

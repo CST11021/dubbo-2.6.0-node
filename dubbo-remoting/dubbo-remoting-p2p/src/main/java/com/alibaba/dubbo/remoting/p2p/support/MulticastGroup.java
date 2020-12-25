@@ -29,7 +29,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 
 /**
- * MulticastGroup
+ * Socket广播实现
  */
 public class MulticastGroup extends AbstractGroup {
 
@@ -43,14 +43,18 @@ public class MulticastGroup extends AbstractGroup {
 
     public MulticastGroup(URL url) {
         super(url);
+        // ip必须是有效的广播地址
         if (!isMulticastAddress(url.getHost())) {
             throw new IllegalArgumentException("Invalid multicast address " + url.getHost() + ", scope: 224.0.0.0 - 239.255.255.255");
         }
+
         try {
             mutilcastAddress = InetAddress.getByName(url.getHost());
             mutilcastSocket = new MulticastSocket(url.getPort());
             mutilcastSocket.setLoopbackMode(false);
             mutilcastSocket.joinGroup(mutilcastAddress);
+
+            // 用于监听服务join和leave线程
             Thread thread = new Thread(new Runnable() {
                 public void run() {
                     byte[] buf = new byte[1024];
@@ -72,6 +76,12 @@ public class MulticastGroup extends AbstractGroup {
         }
     }
 
+    /**
+     * ip必须是有效的广播地址
+     *
+     * @param ip
+     * @return
+     */
     private static boolean isMulticastAddress(String ip) {
         int i = ip.indexOf('.');
         if (i > 0) {
@@ -84,6 +94,12 @@ public class MulticastGroup extends AbstractGroup {
         return false;
     }
 
+    /**
+     * 广播一条消息
+     *
+     * @param msg
+     * @throws RemotingException
+     */
     private void send(String msg) throws RemotingException {
         DatagramPacket hi = new DatagramPacket(msg.getBytes(), msg.length(), mutilcastAddress, mutilcastSocket.getLocalPort());
         try {
