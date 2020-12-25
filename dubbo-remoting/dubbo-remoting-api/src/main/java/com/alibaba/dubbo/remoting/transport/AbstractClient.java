@@ -117,10 +117,10 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + " connect to the server " + getRemoteAddress() + ", cause: " + t.getMessage(), t);
         }
 
-        executor = (ExecutorService) ExtensionLoader.getExtensionLoader(DataStore.class)
-                .getDefaultExtension().get(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
-        ExtensionLoader.getExtensionLoader(DataStore.class)
-                .getDefaultExtension().remove(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
+        // 从缓存组件里获取该线程池
+        executor = (ExecutorService) ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension().get(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
+        //
+        ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension().remove(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
     }
 
     protected static ChannelHandler wrapChannelHandler(URL url, ChannelHandler handler) {
@@ -333,6 +333,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     }
 
     public void close(int timeout) {
+        // 优雅的关闭线程池
         ExecutorUtil.gracefulShutdown(executor, timeout);
         close();
     }

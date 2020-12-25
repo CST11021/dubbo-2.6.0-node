@@ -27,6 +27,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 用来关闭线程池的工具
+ */
 public class ExecutorUtil {
     private static final Logger logger = LoggerFactory.getLogger(ExecutorUtil.class);
     private static final ThreadPoolExecutor shutdownExecutor = new ThreadPoolExecutor(0, 1,
@@ -52,6 +55,7 @@ public class ExecutorUtil {
 
     /**
      * 优雅的关闭线程池
+     *
      * @param executor
      * @param timeout
      */
@@ -62,7 +66,8 @@ public class ExecutorUtil {
 
         final ExecutorService es = (ExecutorService) executor;
         try {
-            es.shutdown(); // Disable new tasks from being submitted
+            // 禁止提交新任务
+            es.shutdown();
         } catch (SecurityException ex2) {
             return;
         } catch (NullPointerException ex2) {
@@ -70,6 +75,7 @@ public class ExecutorUtil {
         }
 
         try {
+            // 超过该时间还没关闭的话，则立马在尝试关闭
             if (!es.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
                 es.shutdownNow();
             }

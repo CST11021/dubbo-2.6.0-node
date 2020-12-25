@@ -49,7 +49,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     private InetSocketAddress localAddress;
     /** 第三方通信框架服务启动时绑定的地址（一般和localAddress一样，为什么要指定IP地址，这是因为一条机器上可能有多个网卡，每个网卡有不同的IP地址，绑定该IP地址意味着客户端只能通过该地址来请求） */
     private InetSocketAddress bindAddress;
-    /** 表示服务端可接受的最大连接数 */
+    /** 表示服务端可接受的最大连接数，默认为0，表示dubbo层不做限制，为0时，将该配置移交给接入的通信框架 */
     private int accepts;
     /** 600 seconds */
     private int idleTimeout = 600;
