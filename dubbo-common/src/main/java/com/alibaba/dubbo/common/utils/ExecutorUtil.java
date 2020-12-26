@@ -149,7 +149,7 @@ public class ExecutorUtil {
     }
 
     /**
-     * append thread name with url address
+     * 给url添加名为"threadname"的参数
      *
      * @return new url with updated thread name
      */

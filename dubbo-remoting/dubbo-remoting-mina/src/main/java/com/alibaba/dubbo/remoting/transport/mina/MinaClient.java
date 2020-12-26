@@ -63,6 +63,13 @@ public class MinaClient extends AbstractClient {
     /** Mina框架中的连接会话对象 */
     private volatile IoSession session;
 
+    /**
+     *
+     *
+     * @param url
+     * @param handler   该ChannelHandler为Transport层的通道IO事件处理器
+     * @throws RemotingException
+     */
     public MinaClient(final URL url, final ChannelHandler handler) throws RemotingException {
         super(url, wrapChannelHandler(url, handler));
     }
