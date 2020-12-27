@@ -96,8 +96,10 @@ public class DubboProtocol extends AbstractProtocol {
             // message必须是一个Invocation的对象，它包含远程方法的调用信息
             if (message instanceof Invocation) {
                 Invocation inv = (Invocation) message;
+                // 创建一个Invoker实例，调用本地对应的服务方法
                 Invoker<?> invoker = getInvoker(channel, inv);
-                // need to consider backward-compatibility if it's a callback
+
+                // 如果是回调，则需要考虑向后兼容性
                 if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                     String methodsStr = invoker.getUrl().getParameters().get("methods");
                     boolean hasMethod = false;
@@ -119,12 +121,21 @@ public class DubboProtocol extends AbstractProtocol {
                         return null;
                     }
                 }
+
+                // 获取当前RPC调用的线程，并设置客户端的地址
                 RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
                 return invoker.invoke(inv);
             }
             throw new RemotingException(channel, "Unsupported request: " + message == null ? null : (message.getClass().getName() + ": " + message) + ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress());
         }
 
+        /**
+         * 当接收到请求时，如果是正常的dubbo服务方法调用，则委托给#reply()方法处理
+         *
+         * @param channel
+         * @param message
+         * @throws RemotingException
+         */
         @Override
         public void received(Channel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
@@ -134,11 +145,24 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+
+        // 以下特性可以先不用关心。。。
+
+        /**
+         * 有客户端连接时，调用该方法：从url获取"onconnect"参数配置的方法名，然后调用，一般不会配置该参数
+         *
+         * @param channel
+         * @throws RemotingException
+         */
         @Override
         public void connected(Channel channel) throws RemotingException {
             invoke(channel, Constants.ON_CONNECT_KEY);
         }
-
+        /**
+         * 当连接断开时，调用该方法：从url获取"ondisconnect"参数配置的方法名，然后调用，一般不会配置该参数
+         * @param channel
+         * @throws RemotingException
+         */
         @Override
         public void disconnected(Channel channel) throws RemotingException {
             if (logger.isInfoEnabled()) {
@@ -146,7 +170,12 @@ public class DubboProtocol extends AbstractProtocol {
             }
             invoke(channel, Constants.ON_DISCONNECT_KEY);
         }
-
+        /**
+         * 调用指定的服务方法
+         *
+         * @param channel
+         * @param methodKey
+         */
         private void invoke(Channel channel, String methodKey) {
             Invocation invocation = createInvocation(channel, channel.getUrl(), methodKey);
             if (invocation != null) {
@@ -157,17 +186,27 @@ public class DubboProtocol extends AbstractProtocol {
                 }
             }
         }
-
+        /**
+         * 创建一个Invocation
+         *
+         * @param channel
+         * @param url
+         * @param methodKey
+         * @return
+         */
         private Invocation createInvocation(Channel channel, URL url, String methodKey) {
+            // 从url提取方法名
             String method = url.getParameter(methodKey);
             if (method == null || method.length() == 0) {
                 return null;
             }
+
             RpcInvocation invocation = new RpcInvocation(method, new Class<?>[0], new Object[0]);
             invocation.setAttachment(Constants.PATH_KEY, url.getPath());
             invocation.setAttachment(Constants.GROUP_KEY, url.getParameter(Constants.GROUP_KEY));
             invocation.setAttachment(Constants.INTERFACE_KEY, url.getParameter(Constants.INTERFACE_KEY));
             invocation.setAttachment(Constants.VERSION_KEY, url.getParameter(Constants.VERSION_KEY));
+            // 如果是本地存根服务，则加入附加值dubbo.stub.event为true
             if (url.getParameter(Constants.STUB_EVENT_KEY, false)) {
                 invocation.setAttachment(Constants.STUB_EVENT_KEY, Boolean.TRUE.toString());
             }
@@ -510,6 +549,14 @@ public class DubboProtocol extends AbstractProtocol {
     Map<String, Exporter<?>> getExporterMap() {
         return exporterMap;
     }
+    /**
+     * 根据Channel和Invocation对象，创建一个Invoker实例，该实例
+     *
+     * @param channel   网络通道
+     * @param inv       方法调用信息
+     * @return
+     * @throws RemotingException
+     */
     Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
         boolean isCallBackServiceInvoke = false;
         boolean isStubServiceInvoke = false;

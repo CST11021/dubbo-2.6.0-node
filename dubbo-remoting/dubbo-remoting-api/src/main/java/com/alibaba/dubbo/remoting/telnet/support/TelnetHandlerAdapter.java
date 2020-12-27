@@ -45,6 +45,8 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
         message = message.replace("--no-prompt", "");
         StringBuilder buf = new StringBuilder();
         message = message.trim();
+
+        // 表示命令，例如：invoke
         String command;
         if (message.length() > 0) {
             int i = message.indexOf(' ');
@@ -58,7 +60,9 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
         } else {
             command = "";
         }
+
         if (command.length() > 0) {
+            // 例如invoke命令，对应的实现是 InvokeTelnetHandler, 其他相关命令参考：com.alibaba.dubbo.rpc.protocol.dubbo.telnet包
             if (extensionLoader.hasExtension(command)) {
                 try {
                     String result = extensionLoader.getExtension(command).telnet(channel, message);
@@ -74,12 +78,15 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
                 buf.append(command);
             }
         }
+
         if (buf.length() > 0) {
             buf.append("\r\n");
         }
+
         if (prompt != null && prompt.length() > 0 && !noprompt) {
             buf.append(prompt);
         }
+
         return buf.toString();
     }
 

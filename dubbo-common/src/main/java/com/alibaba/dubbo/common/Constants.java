@@ -527,8 +527,9 @@ public class Constants {
      */
     public static final int DEFAULT_SERVER_SHUTDOWN_TIMEOUT = 10000;
 
+    /** 对应url上的一个参数key */
     public static final String ON_CONNECT_KEY = "onconnect";
-
+    /** 对应url上的一个参数key */
     public static final String ON_DISCONNECT_KEY = "ondisconnect";
 
     public static final String ON_INVOKE_METHOD_KEY = "oninvoke.method";

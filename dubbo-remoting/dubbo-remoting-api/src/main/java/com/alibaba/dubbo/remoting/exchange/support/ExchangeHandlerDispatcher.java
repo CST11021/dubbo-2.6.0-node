@@ -58,6 +58,40 @@ public class ExchangeHandlerDispatcher implements ExchangeHandler {
     }
 
 
+    // 一、服务调用，交给 ReplierDispatcher 处理
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Object reply(ExchangeChannel channel, Object request) throws RemotingException {
+        return ((Replier) replierDispatcher).reply(channel, request);
+    }
+
+    // 二、接收到telnet请求时，交给 TelnetHandler 处理
+
+    public String telnet(Channel channel, String message) throws RemotingException {
+        return telnetHandler.telnet(channel, message);
+    }
+
+    // 三、通道IO事件，交给 ChannelHandlerDispatcher 处理
+
+    public void connected(Channel channel) {
+        handlerDispatcher.connected(channel);
+    }
+    public void disconnected(Channel channel) {
+        handlerDispatcher.disconnected(channel);
+    }
+    public void sent(Channel channel, Object message) {
+        handlerDispatcher.sent(channel, message);
+    }
+    public void received(Channel channel, Object message) {
+        handlerDispatcher.received(channel, message);
+    }
+    public void caught(Channel channel, Throwable exception) {
+        handlerDispatcher.caught(channel, exception);
+    }
+
+
+
+
 
 
 
@@ -65,49 +99,17 @@ public class ExchangeHandlerDispatcher implements ExchangeHandler {
         handlerDispatcher.addChannelHandler(handler);
         return this;
     }
-
     public ExchangeHandlerDispatcher removeChannelHandler(ChannelHandler handler) {
         handlerDispatcher.removeChannelHandler(handler);
         return this;
     }
-
     public <T> ExchangeHandlerDispatcher addReplier(Class<T> type, Replier<T> replier) {
         replierDispatcher.addReplier(type, replier);
         return this;
     }
-
     public <T> ExchangeHandlerDispatcher removeReplier(Class<T> type) {
         replierDispatcher.removeReplier(type);
         return this;
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public Object reply(ExchangeChannel channel, Object request) throws RemotingException {
-        return ((Replier) replierDispatcher).reply(channel, request);
-    }
-
-    public void connected(Channel channel) {
-        handlerDispatcher.connected(channel);
-    }
-
-    public void disconnected(Channel channel) {
-        handlerDispatcher.disconnected(channel);
-    }
-
-    public void sent(Channel channel, Object message) {
-        handlerDispatcher.sent(channel, message);
-    }
-
-    public void received(Channel channel, Object message) {
-        handlerDispatcher.received(channel, message);
-    }
-
-    public void caught(Channel channel, Throwable exception) {
-        handlerDispatcher.caught(channel, exception);
-    }
-
-    public String telnet(Channel channel, String message) throws RemotingException {
-        return telnetHandler.telnet(channel, message);
     }
 
 }
