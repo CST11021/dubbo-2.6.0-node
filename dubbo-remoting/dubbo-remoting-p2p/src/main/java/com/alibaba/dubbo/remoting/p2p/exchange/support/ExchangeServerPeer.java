@@ -52,6 +52,11 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         this.group = group;
     }
 
+    /**
+     * 将当前服务节点从服务组中移除
+     *
+     * @throws RemotingException
+     */
     public void leave() throws RemotingException {
         group.leave(getUrl());
     }
@@ -65,16 +70,20 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         }
     }
 
+
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Collection<Channel> getChannels() {
         return (Collection) getExchangeChannels();
     }
-
     @Override
     public Channel getChannel(InetSocketAddress remoteAddress) {
         return getExchangeChannel(remoteAddress);
     }
+
+
+
 
     /**
      * 获取服务端的所有通道
@@ -90,7 +99,6 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         }
         return channels;
     }
-
     /**
      * 根据客户端IP和地址获取对应的连接对象
      *
@@ -112,6 +120,7 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         }
         return channel;
     }
+
 
 
     /**
