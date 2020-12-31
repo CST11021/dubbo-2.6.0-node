@@ -126,7 +126,7 @@ limitations under the License.
         <log4j_version>1.2.16</log4j_version>
         <logback_version>1.2.2</logback_version>
         <!-- Test libs -->
-        <junit_version>4.12</junit_version>
+        <junit_version>4.13.1</junit_version>
         <easymock_version>3.4</easymock_version>
         <jmockit_version>1.33</jmockit_version>
         <!-- Build args -->
