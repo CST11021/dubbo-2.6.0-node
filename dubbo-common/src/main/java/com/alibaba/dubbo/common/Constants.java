@@ -243,9 +243,9 @@ public class Constants {
 
     public static final String IDLE_TIMEOUT_KEY = "idle.timeout";
 
-    /** 心跳检测时间 */
+    /** 心跳检测时间的key，默认是60s */
     public static final String HEARTBEAT_KEY = "heartbeat";
-
+    /** 心跳超时时间的key，默认是180s */
     public static final String HEARTBEAT_TIMEOUT_KEY = "heartbeat.timeout";
 
     public static final String CONNECT_TIMEOUT_KEY = "connect.timeout";

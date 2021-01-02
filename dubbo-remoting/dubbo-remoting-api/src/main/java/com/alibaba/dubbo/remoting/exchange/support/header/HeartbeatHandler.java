@@ -92,6 +92,7 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
                 res.setEvent(Response.HEARTBEAT_EVENT);
                 channel.send(res);
                 if (logger.isInfoEnabled()) {
+                    // 记录日志，获取心跳时间，上游默认设置为60s
                     int heartbeat = channel.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);
                     if (logger.isDebugEnabled()) {
                         logger.debug("Received heartbeat from remote channel " + channel.getRemoteAddress()
