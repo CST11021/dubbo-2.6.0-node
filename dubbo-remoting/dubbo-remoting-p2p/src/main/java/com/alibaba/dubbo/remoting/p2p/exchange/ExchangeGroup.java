@@ -22,7 +22,7 @@ import com.alibaba.dubbo.remoting.exchange.ExchangeHandler;
 import com.alibaba.dubbo.remoting.p2p.Group;
 
 /**
- * Group
+ * 表示Exchange层的Group
  */
 public interface ExchangeGroup extends Group {
 

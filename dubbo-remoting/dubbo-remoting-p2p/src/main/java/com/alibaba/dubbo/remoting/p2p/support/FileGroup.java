@@ -35,7 +35,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * FileGroup
+ * 通过文件配置的方式里一组服务节点信息，添加一个服务和移除服务都会修改配置文件
  */
 public class FileGroup extends AbstractGroup {
 
@@ -81,6 +81,11 @@ public class FileGroup extends AbstractGroup {
         }
     }
 
+    /**
+     * 文件配置的服务节点信息发生变化时会调用方法，并遍历每个服务节点创建连接
+     *
+     * @throws RemotingException
+     */
     private void changed() throws RemotingException {
         try {
             String[] lines = IOUtils.readLines(file);
@@ -92,6 +97,14 @@ public class FileGroup extends AbstractGroup {
         }
     }
 
+    /**
+     * 追加一个服务节点到配置文件
+     *
+     * @param url
+     * @param handler
+     * @return
+     * @throws RemotingException
+     */
     public Peer join(URL url, ChannelHandler handler) throws RemotingException {
         Peer peer = super.join(url, handler);
         try {
@@ -109,6 +122,12 @@ public class FileGroup extends AbstractGroup {
         return peer;
     }
 
+    /**
+     * 将指定服务的节点信息从文件中移除
+     *
+     * @param url
+     * @throws RemotingException
+     */
     @Override
     public void leave(URL url) throws RemotingException {
         super.leave(url);

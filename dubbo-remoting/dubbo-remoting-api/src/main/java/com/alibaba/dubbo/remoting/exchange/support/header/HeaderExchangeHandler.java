@@ -36,16 +36,19 @@ import com.alibaba.dubbo.remoting.transport.ChannelHandlerDelegate;
 import java.net.InetSocketAddress;
 
 /**
- * ExchangeReceiver
+ * 通过实现ChannelHandler（通道IO时间监听处理器）接口，记录连接的最后读写时间，为心跳检测机制提供连接的最后读写时间
  */
 public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     protected static final Logger logger = LoggerFactory.getLogger(HeaderExchangeHandler.class);
 
+    /** 表示通道最后一次读取消息的时间搓 */
     public static String KEY_READ_TIMESTAMP = HeartbeatHandler.KEY_READ_TIMESTAMP;
 
+    /** 表示通道最后一次的写操作的时间搓 */
     public static String KEY_WRITE_TIMESTAMP = HeartbeatHandler.KEY_WRITE_TIMESTAMP;
 
+    /** 具有Request/Response语义的通道事件监听器处理器 */
     private final ExchangeHandler handler;
 
     public HeaderExchangeHandler(ExchangeHandler handler) {
@@ -133,7 +136,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     }
 
     /**
-     * 当客户端与服务端建立通道连接时，调用该方法
+     * 当客户端与服务端建立通道连接时，调用该方法：设置当前连接（即会话、通道）的最后读写时间
      *
      * @param channel channel.
      */
@@ -165,7 +168,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     }
 
     /**
-     * 向Channel发送一个消息时，调用该方法
+     * 向Channel发送一个消息时，调用该方法：设置Channel的最后写时间
      *
      * @param channel 用于发送消息的通道
      * @param message 要发送的消息
@@ -201,7 +204,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     }
 
     /**
-     * 当从Channel获取到消息时调用该方法
+     * 当从Channel获取到消息时调用该方法：设置Channel的最后读操作时间
      *
      * @param channel 用于接收消息的通道.
      * @param message 要接收的消息.
@@ -274,6 +277,11 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 获取ChannelHandler实例
+     *
+     * @return
+     */
     public ChannelHandler getHandler() {
         if (handler instanceof ChannelHandlerDelegate) {
             return ((ChannelHandlerDelegate) handler).getHandler();

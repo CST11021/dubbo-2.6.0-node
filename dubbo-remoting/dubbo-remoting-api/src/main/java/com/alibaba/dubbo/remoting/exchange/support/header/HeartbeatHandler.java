@@ -34,8 +34,10 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartbeatHandler.class);
 
+    /** 表示通道最后一次读取消息的时间搓 */
     public static String KEY_READ_TIMESTAMP = "READ_TIMESTAMP";
 
+    /** 表示通道最后一次的写操作的时间搓 */
     public static String KEY_WRITE_TIMESTAMP = "WRITE_TIMESTAMP";
 
     public HeartbeatHandler(ChannelHandler handler) {
@@ -90,6 +92,7 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
                 res.setEvent(Response.HEARTBEAT_EVENT);
                 channel.send(res);
                 if (logger.isInfoEnabled()) {
+                    // 记录日志，获取心跳时间，上游默认设置为60s
                     int heartbeat = channel.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);
                     if (logger.isDebugEnabled()) {
                         logger.debug("Received heartbeat from remote channel " + channel.getRemoteAddress()

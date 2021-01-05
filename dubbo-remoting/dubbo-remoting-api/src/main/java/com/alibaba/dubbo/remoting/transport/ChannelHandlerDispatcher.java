@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * ChannelListenerDispatcher：封装ChannelHandler集合，将多个ChannelHandler作为一个ChannelHandler使用
+ * ChannelHandlerDispatcher：封装ChannelHandler集合，将多个ChannelHandler作为一个ChannelHandler使用
  */
 public class ChannelHandlerDispatcher implements ChannelHandler {
 

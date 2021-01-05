@@ -43,7 +43,7 @@ public class ExchangeTest extends TestCase {
     protected WhzChannelHandler channelHandler = new WhzChannelHandler();
 
 
-
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         server = Exchangers.bind(URL.valueOf("exchange://localhost:" + port + "?server=mina"), channelHandler, replier);
@@ -67,6 +67,7 @@ public class ExchangeTest extends TestCase {
     @Test
     public void testFuture() throws Exception {
 
+        // 客户端想服务端发送请求
         ResponseFuture future = client.request("world");
         System.out.println(future.get());
 

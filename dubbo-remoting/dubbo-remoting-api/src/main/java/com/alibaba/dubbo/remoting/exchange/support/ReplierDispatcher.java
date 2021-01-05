@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ReplierDispatcher
+ * ReplierDispatcher：提供了不同请求对应不同的Replier处理策略
  */
 public class ReplierDispatcher implements Replier<Object> {
 

@@ -52,6 +52,11 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         this.group = group;
     }
 
+    /**
+     * 将当前服务节点从服务组中移除
+     *
+     * @throws RemotingException
+     */
     public void leave() throws RemotingException {
         group.leave(getUrl());
     }
@@ -65,17 +70,26 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         }
     }
 
+
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Collection<Channel> getChannels() {
         return (Collection) getExchangeChannels();
     }
-
     @Override
     public Channel getChannel(InetSocketAddress remoteAddress) {
         return getExchangeChannel(remoteAddress);
     }
 
+
+
+
+    /**
+     * 获取服务端的所有通道
+     *
+     * @return channels
+     */
     @Override
     public Collection<ExchangeChannel> getExchangeChannels() {
         Collection<ExchangeChannel> channels = super.getExchangeChannels();
@@ -85,7 +99,12 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         }
         return channels;
     }
-
+    /**
+     * 根据客户端IP和地址获取对应的连接对象
+     *
+     * @param remoteAddress 远端（客户端）IP和端口
+     * @return channel
+     */
     @Override
     public ExchangeChannel getExchangeChannel(InetSocketAddress remoteAddress) {
         String host = remoteAddress.getAddress() != null ? remoteAddress.getAddress().getHostAddress() : remoteAddress.getHostName();
@@ -102,11 +121,25 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         return channel;
     }
 
+
+
+    /**
+     * 向所有的客户端发送一个消息
+     *
+     * @param message
+     * @throws RemotingException
+     */
     @Override
     public void send(Object message) throws RemotingException {
         send(message, getUrl().getParameter(Constants.SENT_KEY, false));
     }
-
+    /**
+     * 向所有的通道发送消息
+     *
+     * @param message
+     * @param sent    是否阻塞直到等待异步操作结束
+     * @throws RemotingException
+     */
     @Override
     public void send(Object message, boolean sent) throws RemotingException {
         Throwable last = null;
@@ -115,6 +148,7 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
         } catch (Throwable t) {
             last = t;
         }
+
         for (Client client : clients.values()) {
             try {
                 client.send(message, sent);
@@ -122,6 +156,7 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
                 last = t;
             }
         }
+
         if (last != null) {
             if (last instanceof RemotingException) {
                 throw (RemotingException) last;
@@ -131,6 +166,7 @@ public class ExchangeServerPeer extends ExchangeServerDelegate implements Exchan
                 throw new RuntimeException(last.getMessage(), last);
             }
         }
+
     }
 
 }

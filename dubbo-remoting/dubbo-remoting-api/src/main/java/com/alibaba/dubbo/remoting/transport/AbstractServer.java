@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * AbstractServer
+ * AbstractServer：提供处理客户端请求的线程池、服务绑定的IP地址和最大连接数限制
  */
 public abstract class AbstractServer extends AbstractEndpoint implements Server {
 
@@ -47,12 +47,9 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     ExecutorService executor;
     /** 监听客户端请求的服务端地址（IP/端口） */
     private InetSocketAddress localAddress;
-    /** 服务启动绑定的地址（一般和localAddress一样） */
+    /** 第三方通信框架服务启动时绑定的地址（一般和localAddress一样，为什么要指定IP地址，这是因为一条机器上可能有多个网卡，每个网卡有不同的IP地址，绑定该IP地址意味着客户端只能通过该地址来请求） */
     private InetSocketAddress bindAddress;
-
-
-    // accepts和idleTimeout这两个属性目前看没啥用
-
+    /** 表示服务端可接受的最大连接数，默认为0，表示dubbo层不做限制，为0时，将该配置移交给接入的通信框架 */
     private int accepts;
     /** 600 seconds */
     private int idleTimeout = 600;
@@ -228,7 +225,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
     }
 
     /**
-     * 当客户端与服务端建立通道连接时，调用该方法
+     * 当客户端与服务端建立通道连接时，调用该方法：添加通道是否关闭以及是否超过最大连接数限制
      *
      * @param ch channel.
      */
@@ -242,6 +239,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
         }
 
         Collection<Channel> channels = getChannels();
+        // 如果超过了最大连接数，则关闭当前连接
         if (accepts > 0 && channels.size() > accepts) {
             logger.error("Close channel " + ch + ", cause: The server " + ch.getLocalAddress() + " connections greater than max config " + accepts);
             ch.close();

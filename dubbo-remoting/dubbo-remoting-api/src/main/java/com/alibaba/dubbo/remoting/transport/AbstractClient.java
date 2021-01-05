@@ -57,25 +57,33 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     protected static final String CLIENT_THREAD_POOL_NAME = "DubboClientHandler";
     private static final AtomicInteger CLIENT_THREAD_POOL_ID = new AtomicInteger();
 
-    /** 重试连接时用的线程池，总不能每次重试连接再去创建一个新的线程吧 */
+    /** 表示该客户端最后一次成功连接的时间 */
+    private long lastConnectedTime = System.currentTimeMillis();
+    /** 客户端通过该线程池定时去检查连接是否断开，如果连接断开了，则发起重连，否则重置最后连接时间（对应lastConnectedTime参数） */
     private static final ScheduledThreadPoolExecutor reconnectExecutorService = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("DubboClientReconnectTimer", true));
+
+    /** 当连接断开时，通过该计数器统计当前尝试重连的失败次数，如果成功连接上了该计数器置为0 */
+    private final AtomicInteger reconnect_count = new AtomicInteger(0);
+    /** 当连接断开时，如果重连失败了不会立即打印日志，比如该值为2，则表示每两次发起重连失败了才打印一次日志 */
+    private final int reconnect_warning_period;
+    /** 标记是否已经打印了重连失败的日志，每次成功打印了，设置true */
+    private final AtomicBoolean reconnect_error_log_flag = new AtomicBoolean(false);
+
     /** 表示在ScheduledExecutorService中提交了任务的返回结果，我们通过Delayed的接口getDelay()方法知道该任务还有多久才被执行 */
     private volatile ScheduledFuture<?> reconnectExecutorFuture = null;
 
     /** 客户端与服务端建立连接时用的锁 */
     private final Lock connectLock = new ReentrantLock();
+
     /** 表示客户端向服务端发起请求时，是否要重新建立连接 */
     private final boolean send_reconnect;
-    /** 表示重置连接的次数 */
-    private final AtomicInteger reconnect_count = new AtomicInteger(0);
-    /** 表示连接使出现异常的日志信息是否已经打印了，如果没有该标记则每次重置连接失败后都会打印日志 */
-    private final AtomicBoolean reconnect_error_log_flag = new AtomicBoolean(false);
-    /** 每n次重置与服务端建立连接都会打印日志，比如该值为2，则表示没两次连接失败打印一次日志 */
-    private final int reconnect_warning_period;
+
+
+
     private final long shutdown_timeout;
+    /** 表示处理通道IO事件的线程池，参考：{@link } */
     protected volatile ExecutorService executor;
-    /** 表示最后一次成功连接的时间 */
-    private long lastConnectedTime = System.currentTimeMillis();
+
 
 
     public AbstractClient(URL url, ChannelHandler handler) throws RemotingException {
@@ -83,7 +91,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
         send_reconnect = url.getParameter(Constants.SEND_RECONNECT_KEY, false);
         shutdown_timeout = url.getParameter(Constants.SHUTDOWN_TIMEOUT_KEY, Constants.DEFAULT_SHUTDOWN_TIMEOUT);
-        // The default reconnection interval is 2s, 1800 means warning interval is 1 hour.
+        // 默认的重新连接间隔为2s，1800表示警告间隔为1小时
         reconnect_warning_period = url.getParameter("reconnect.waring.period", 1800);
 
         // 打开（创建）一个客户端
@@ -117,26 +125,52 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + " connect to the server " + getRemoteAddress() + ", cause: " + t.getMessage(), t);
         }
 
-        executor = (ExecutorService) ExtensionLoader.getExtensionLoader(DataStore.class)
-                .getDefaultExtension().get(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
-        ExtensionLoader.getExtensionLoader(DataStore.class)
-                .getDefaultExtension().remove(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
+        // 从缓存组件里获取该线程池
+        executor = (ExecutorService) ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension().get(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
+        // 移除处理通道IO事件的线程池
+        /** 详见：{@link com.alibaba.dubbo.remoting.transport.dispatcher.WrappedChannelHandler#executor} */
+        ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension().remove(Constants.CONSUMER_SIDE, Integer.toString(url.getPort()));
     }
 
+    /**
+     * 给URL设置处理通道IO事件的线程名和线程池类，并通过SPI机制创建一个ChannelHandler实例
+     *
+     * @param url
+     * @param handler
+     * @return
+     */
     protected static ChannelHandler wrapChannelHandler(URL url, ChannelHandler handler) {
+        // 给url添加名为"threadname"的参数，默认：DubboClientHandler
         url = ExecutorUtil.setThreadName(url, CLIENT_THREAD_POOL_NAME);
+        // 给url添加名为"threadpool"的参数，默认：cached
         url = url.addParameterIfAbsent(Constants.THREADPOOL_KEY, Constants.DEFAULT_CLIENT_THREADPOOL);
+        // 根据SPI机制获取一个ChannelHandler实例
         return ChannelHandlers.wrap(handler, url);
     }
 
+    /**
+     * 创建一个线程池：线程名为：DubboClientHandler + ${自增的线程池ID} + "-" + "该客户端连接的服务IP地址"
+     *
+     * @return
+     */
     protected ExecutorService createExecutor() {
         return Executors.newCachedThreadPool(new NamedThreadFactory(CLIENT_THREAD_POOL_NAME + CLIENT_THREAD_POOL_ID.incrementAndGet() + "-" + getUrl().getAddress(), true));
     }
 
+    /**
+     * 获取当前客户端连接的应用服务地址（该地址可能对应多个服务节点）
+     *
+     * @return
+     */
     public InetSocketAddress getConnectAddress() {
         return new InetSocketAddress(NetUtils.filterLocalHost(getUrl().getHost()), getUrl().getPort());
     }
 
+    /**
+     * 获取通道连接的服务节点的IP地址和端口信息
+     *
+     * @return
+     */
     public InetSocketAddress getRemoteAddress() {
         Channel channel = getChannel();
         if (channel == null)
@@ -144,6 +178,11 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         return channel.getRemoteAddress();
     }
 
+    /**
+     * 获取当前客户端的本地地址
+     *
+     * @return
+     */
     public InetSocketAddress getLocalAddress() {
         Channel channel = getChannel();
         if (channel == null)
@@ -152,7 +191,12 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     }
 
 
-
+    /**
+     * 委托为Channel去实现，底层依赖通信框架的连接Attribute机制
+     *
+     * @param key
+     * @return
+     */
     public Object getAttribute(String key) {
         Channel channel = getChannel();
         if (channel == null)
@@ -186,14 +230,19 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
      * @throws RemotingException
      */
     public void send(Object message, boolean sent) throws RemotingException {
+        // 每次发送消息时，如果连接断开，并且配置send_reconnect为true，则重新建立连接
         if (send_reconnect && !isConnected()) {
             connect();
         }
+
+        // 获取当前客户端对应的通道实例，一般不会为null，如果为null就有问题了
         Channel channel = getChannel();
-        //TODO Can the value returned by getChannel() be null? need improvement.
+        //TODO getChannel()返回的值可以为null吗？需要改进
         if (channel == null || !channel.isConnected()) {
             throw new RemotingException(this, "message can not send, because channel is closed . url:" + getUrl());
         }
+
+        // 通过channel来发送消息
         channel.send(message, sent);
     }
 
@@ -204,9 +253,13 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
             if (isConnected()) {
                 return;
             }
+
             // 初始化重置连接的线程
             initConnectStatusCheckCommand();
+
+            // 建立连接，交给底层具体的通信框架去实现
             doConnect();
+
             if (!isConnected()) {
                 throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
                         + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
@@ -218,6 +271,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + ", channel is " + this.getChannel());
                 }
             }
+
             reconnect_count.set(0);
             reconnect_error_log_flag.set(false);
         } catch (RemotingException e) {
@@ -239,9 +293,13 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     }
     /** 初始化重置连接的线程 */
     private synchronized void initConnectStatusCheckCommand() {
-        // 获取重置连接的时间间隔
+        // reconnect表示多久检查一次当前连接是否断开
         int reconnect = getReconnectParam(getUrl());
+
+        // reconnectExecutorFuture 不为null并且还没有canneled，说明当前正在执行重连任务，并且任务还没有执行结束
         if (reconnect > 0 && (reconnectExecutorFuture == null || reconnectExecutorFuture.isCancelled())) {
+
+            // 如果连接断开了，则重新建立连接，否则重置最后连接时间
             Runnable connectStatusCheckCommand = new Runnable() {
                 public void run() {
                     try {
@@ -260,17 +318,23 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                                 return;
                             }
                         }
+
+                        // 每隔多少次连接失败，打印一行warn日志
                         if (reconnect_count.getAndIncrement() % reconnect_warning_period == 0) {
                             logger.warn(errorMsg, t);
                         }
+
                     }
                 }
             };
+
+            // 定时任务：如果连接断开了，则发起重连
             reconnectExecutorFuture = reconnectExecutorService.scheduleWithFixedDelay(connectStatusCheckCommand, reconnect, reconnect, TimeUnit.MILLISECONDS);
         }
     }
     /**
-     * 获取本次连接请求的重置连接时间间隔
+     * 获取多久检查一次当前连接是否断开，单位是毫秒，返回0表示不检查
+     *
      * @param url
      * @return 0-false
      */
@@ -333,6 +397,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     }
 
     public void close(int timeout) {
+        // 优雅的关闭线程池
         ExecutorUtil.gracefulShutdown(executor, timeout);
         close();
     }

@@ -40,8 +40,10 @@ public class ServerPeer extends ServerDelegate implements Peer {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerPeer.class);
 
+    /** 保存该服务组的所有的连接对象 */
     private final Map<URL, Client> clients;
 
+    /** 表示一个服务组 */
     private final Group group;
 
     public ServerPeer(Server server, Map<URL, Client> clients, Group group) {
@@ -54,6 +56,9 @@ public class ServerPeer extends ServerDelegate implements Peer {
         group.leave(getUrl());
     }
 
+    /**
+     * 关闭服务组：关闭所有的连接实例
+     */
     @Override
     public void close() {
         try {
@@ -63,6 +68,11 @@ public class ServerPeer extends ServerDelegate implements Peer {
         }
     }
 
+    /**
+     * 获取服务组内各个服务的连接对象的总和
+     *
+     * @return
+     */
     @Override
     public Collection<Channel> getChannels() {
         Collection<Channel> channels = super.getChannels();
@@ -73,6 +83,12 @@ public class ServerPeer extends ServerDelegate implements Peer {
         return channels;
     }
 
+    /**
+     * 获取与指定客户端地址建立连接（通道）
+     *
+     * @param remoteAddress
+     * @return
+     */
     @Override
     public Channel getChannel(InetSocketAddress remoteAddress) {
         String host = remoteAddress.getAddress() != null ? remoteAddress.getAddress().getHostAddress() : remoteAddress.getHostName();
@@ -89,11 +105,24 @@ public class ServerPeer extends ServerDelegate implements Peer {
         return channel;
     }
 
+    /**
+     * 向服务组内的所有客户端（通道）发送消息
+     *
+     * @param message
+     * @throws RemotingException
+     */
     @Override
     public void send(Object message) throws RemotingException {
         send(message, getUrl().getParameter(Constants.SENT_KEY, false));
     }
 
+    /**
+     * 向服务组内的所有客户端（通道）发送消息
+     *
+     * @param message
+     * @param sent    是否阻塞直到等待异步操作结束
+     * @throws RemotingException
+     */
     @Override
     public void send(Object message, boolean sent) throws RemotingException {
         Throwable last = null;

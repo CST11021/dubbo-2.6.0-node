@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractGroup implements Group {
 
-    // log output
     protected static final Logger logger = LoggerFactory.getLogger(AbstractGroup.class);
 
     protected final URL url;
@@ -55,10 +54,18 @@ public abstract class AbstractGroup implements Group {
         this.url = url;
     }
 
+    /**
+     * 获取该服务组的信息
+     *
+     * @return
+     */
     public URL getUrl() {
         return url;
     }
 
+    /**
+     * Group关闭：关闭组内所有的服务和连接实例
+     */
     public void close() {
         for (URL url : new ArrayList<URL>(servers.keySet())) {
             try {
@@ -67,6 +74,7 @@ public abstract class AbstractGroup implements Group {
                 logger.error(t.getMessage(), t);
             }
         }
+
         for (URL url : new ArrayList<URL>(clients.keySet())) {
             try {
                 disconnect(url);
@@ -76,16 +84,32 @@ public abstract class AbstractGroup implements Group {
         }
     }
 
+    /**
+     * 将一个服务节点添加组，并返回一个代表服务组的Peer对象
+     *
+     * @param url
+     * @param handler
+     * @return
+     * @throws RemotingException
+     */
     public Peer join(URL url, ChannelHandler handler) throws RemotingException {
         Server server = servers.get(url);
-        if (server == null) { // TODO exist concurrent gap
+        // TODO exist concurrent gap
+        if (server == null) {
             server = Transporters.bind(url, handler);
             servers.put(url, server);
             dispatcher.addChannelHandler(handler);
         }
+
         return new ServerPeer(server, clients, this);
     }
 
+    /**
+     * 关闭所有的服务
+     *
+     * @param url
+     * @throws RemotingException
+     */
     public void leave(URL url) throws RemotingException {
         Server server = servers.remove(url);
         if (server != null) {
@@ -97,8 +121,10 @@ public abstract class AbstractGroup implements Group {
         if (servers.containsKey(url)) {
             return null;
         }
+
         Client client = clients.get(url);
-        if (client == null) { // TODO exist concurrent gap
+        // TODO exist concurrent gap
+        if (client == null) {
             client = Transporters.connect(url, dispatcher);
             clients.put(url, client);
         }
