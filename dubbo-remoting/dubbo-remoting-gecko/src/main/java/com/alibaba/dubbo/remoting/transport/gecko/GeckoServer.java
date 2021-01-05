@@ -24,7 +24,8 @@ public class GeckoServer extends AbstractServer {
     private RemotingServer remotingServer;
 
     public GeckoServer(URL url, ChannelHandler handler) throws RemotingException {
-        super(url, handler);
+
+        super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
     /**
