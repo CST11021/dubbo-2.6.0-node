@@ -7,13 +7,12 @@ import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.transport.AbstractServer;
 import com.alibaba.dubbo.remoting.transport.dispatcher.ChannelHandlers;
-import com.taobao.gecko.service.RemotingContext;
-import com.taobao.gecko.service.RemotingFactory;
-import com.taobao.gecko.service.RemotingServer;
+import com.taobao.gecko.core.command.RequestCommand;
+import com.taobao.gecko.service.*;
 import com.taobao.gecko.service.config.ServerConfig;
 
 import java.net.InetSocketAddress;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * @Author: wanghz
@@ -21,10 +20,11 @@ import java.util.Collection;
  */
 public class GeckoServer extends AbstractServer {
 
+    private Map<InetSocketAddress, Channel> remoteAddress2Channel = new HashMap();
+
     private RemotingServer remotingServer;
 
     public GeckoServer(URL url, ChannelHandler handler) throws RemotingException {
-
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
@@ -40,27 +40,38 @@ public class GeckoServer extends AbstractServer {
         serverConfig.setLocalInetSocketAddress(getBindAddress());
 
         remotingServer = RemotingFactory.newRemotingServer(serverConfig);
-        // TODO whz remotingServer.registerProcessor
+        remotingServer.registerProcessor(RequestCommand.class, new GeckoRequestProcessor(getUrl(), this));
         remotingServer.start();
     }
 
     @Override
     public boolean isBound() {
-        return remotingServer.isStarted();
+        if (remotingServer.isStarted()) {
+            InetSocketAddress address = remotingServer.getInetSocketAddress();
+            if (address != null && address.equals(getBindAddress())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public void connected(Channel ch) throws RemotingException {
+        super.connected(ch);
+        InetSocketAddress remoteAddress = ch.getRemoteAddress();
+        remoteAddress2Channel.put(remoteAddress, ch);
     }
 
     @Override
     public Collection<Channel> getChannels() {
-        RemotingContext remotingContext = remotingServer.getRemotingContext();
-        return null;
+        return remoteAddress2Channel.values();
     }
 
     @Override
     public Channel getChannel(InetSocketAddress remoteAddress) {
-        return null;
+        return remoteAddress2Channel.get(remoteAddress);
     }
-
-
 
     @Override
     protected void doClose() throws Throwable {
@@ -68,5 +79,7 @@ public class GeckoServer extends AbstractServer {
             remotingServer.stop();
         }
     }
+
+
 
 }
