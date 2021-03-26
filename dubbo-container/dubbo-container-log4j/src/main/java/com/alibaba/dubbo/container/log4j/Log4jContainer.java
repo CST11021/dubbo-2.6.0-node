@@ -42,9 +42,11 @@ public class Log4jContainer implements Container {
 
     @SuppressWarnings("unchecked")
     public void start() {
-        // 获取
+
+        // 获取日志文件地址
         String file = ConfigUtils.getProperty(LOG4J_FILE);
         if (file != null && file.length() > 0) {
+            // 获取log4j的日志级别
             String level = ConfigUtils.getProperty(LOG4J_LEVEL);
             if (level == null || level.length() == 0) {
                 level = DEFAULT_LOG4J_LEVEL;
@@ -64,6 +66,7 @@ public class Log4jContainer implements Container {
         if (subdirectory != null && subdirectory.length() > 0) {
             Enumeration<org.apache.log4j.Logger> ls = LogManager.getCurrentLoggers();
             while (ls.hasMoreElements()) {
+
                 org.apache.log4j.Logger l = ls.nextElement();
                 if (l != null) {
                     Enumeration<Appender> as = l.getAllAppenders();
@@ -90,6 +93,7 @@ public class Log4jContainer implements Container {
                         }
                     }
                 }
+
             }
         }
     }

@@ -35,4 +35,9 @@ public class JettyContainerTest {
         container.stop();
     }
 
+    public static void main(String[] args) {
+        JettyContainer container = (JettyContainer) ExtensionLoader.getExtensionLoader(Container.class).getExtension("jetty");
+        container.start();
+    }
+
 }

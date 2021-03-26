@@ -33,4 +33,11 @@ public class Log4jContainerTest {
         container.stop();
     }
 
+    public static void main(String[] args) {
+        System.setProperty(Log4jContainer.LOG4J_FILE, "testLog.txt");
+        System.setProperty(Log4jContainer.LOG4J_SUBDIRECTORY, "whzLog4jSubdirectory");
+        Log4jContainer container = (Log4jContainer) ExtensionLoader.getExtensionLoader(Container.class).getExtension("log4j");
+        container.start();
+    }
+
 }

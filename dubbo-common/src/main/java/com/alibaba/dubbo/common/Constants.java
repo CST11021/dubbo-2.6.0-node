@@ -358,8 +358,8 @@ public class Constants {
 
     public static final String COMMA_SEPARATOR = ",";
 
-    public static final Pattern COMMA_SPLIT_PATTERN = Pattern
-            .compile("\\s*[,]+\\s*");
+    /** 将","前后的空格剔除，并以","分割，例如：Constants.COMMA_SPLIT_PATTERN.split(" 123,abc , abc123 ") -> [" 123", "abc", "abc123 "] */
+    public static final Pattern COMMA_SPLIT_PATTERN = Pattern.compile("\\s*[,]+\\s*");
 
     public final static String PATH_SEPARATOR = "/";
 

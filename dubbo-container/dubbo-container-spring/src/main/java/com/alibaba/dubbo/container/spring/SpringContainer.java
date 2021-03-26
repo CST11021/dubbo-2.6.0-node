@@ -28,9 +28,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class SpringContainer implements Container {
 
-    public static final String SPRING_CONFIG = "dubbo.spring.config";
-    public static final String DEFAULT_SPRING_CONFIG = "classpath*:META-INF/spring/*.xml";
     private static final Logger logger = LoggerFactory.getLogger(SpringContainer.class);
+
+    /** 对应dubbo服务相关配置文件的路径 */
+    public static final String SPRING_CONFIG = "dubbo.spring.config";
+    /** 默认的spring配置文件路径 */
+    public static final String DEFAULT_SPRING_CONFIG = "classpath*:META-INF/spring/*.xml";
+    /** spring容器 */
     static ClassPathXmlApplicationContext context;
 
     public static ClassPathXmlApplicationContext getContext() {

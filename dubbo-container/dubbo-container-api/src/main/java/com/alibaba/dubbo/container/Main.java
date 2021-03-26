@@ -58,6 +58,7 @@ public class Main {
         try {
             if (args == null || args.length == 0) {
                 String config = ConfigUtils.getProperty(CONTAINER_KEY, loader.getDefaultExtensionName());
+                // 将","前后的空格剔除，并以","分割，例如：Constants.COMMA_SPLIT_PATTERN.split(" 123,abc , abc123 ") -> [" 123", "abc", "abc123 "]
                 args = Constants.COMMA_SPLIT_PATTERN.split(config);
             }
 
