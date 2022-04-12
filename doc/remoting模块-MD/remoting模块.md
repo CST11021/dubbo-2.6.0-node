@@ -79,7 +79,7 @@ Transporters是网络传输层的门面类，它统一了网络传输层的访�
 
 
 
-###bind方法
+### bind方法
 
 我们先来看下它的bind方法：
 
@@ -144,7 +144,7 @@ public static Client connect(URL url, ChannelHandler... handlers) throws Remotin
 
 # 信息交换层：Exchanger
 
-##Exchanger层的作用
+## Exchanger层的作用
 
 Exchange层，属于信息交换层，是对Request和Response的抽象。
 
@@ -156,7 +156,7 @@ Dubbo要使用TCP长连接，就得自己实现Request和Response的抽象概念
 
 
 
-##Exchanger接口
+## Exchanger接口
 
 先看一下Exchanger的接口定义，就是bind和connect ，bind是服务端调用的，绑定一个端口用来接收客户端的请求。connect是作为一个客户端去连接服务端，进行和服务端交换。
 
@@ -170,7 +170,7 @@ Dubbo要使用TCP长连接，就得自己实现Request和Response的抽象概念
 
 
 
-##EndPoint
+## EndPoint
 
 
 
@@ -212,11 +212,11 @@ Dubbo要使用TCP长连接，就得自己实现Request和Response的抽象概念
 
 
 
-#接口说明
+# 接口说明
 
 <img src="assets/image-20201009223111117.png" alt="image-20201009223111117" style="zoom:50%;" />
 
-##EndPoint
+## EndPoint
 
 终端：描述的是终端机器的具有的能力；
 
@@ -247,7 +247,7 @@ public interface Endpoint {
 
 
 
-###Channel
+### Channel
 
 Channel是连接客户端和服务端的通道，它继承了Endpoint接口，实现Channel接口基本就已经具备了客户端单向的向服务端发送消息的能力：
 
@@ -272,7 +272,7 @@ public interface Channel extends Endpoint {
 
 
 
-####Client、ExchangeChannel
+#### Client、ExchangeChannel
 
 * Client继承了Channel，再此基础上仅仅添加reconnect的功能，从这里我们可以看出，实现Channel就基本具备了客户端的基础能力；
 
@@ -306,7 +306,7 @@ public interface ExchangeChannel extends Channel {
 
 
 
-#####ExchangeClient
+##### ExchangeClient
 
 ExchangeClient继承了Client和ExchangeChannel，具备客户端创建连接和request/response信息交换语义
 
@@ -317,7 +317,7 @@ public interface ExchangeClient extends Client, ExchangeChannel {
 
 
 
-###Server
+### Server
 
 ```java
 public interface Server extends Endpoint, Resetable {
@@ -337,7 +337,7 @@ public interface Server extends Endpoint, Resetable {
 
 
 
-####Peer、ExchangeServer
+#### Peer、ExchangeServer
 
 * Peer的英文意思是“同等地位的人”，这里Peer的主要作用是将多个服务提供封装为一个服务对外提供，该接口仅提供了一个leave方法，使每个服务都具有从服务组下线的能力
 
@@ -361,7 +361,7 @@ public interface ExchangeServer extends Server {
 }
 ```
 
-#####ExchangePeer
+##### ExchangePeer
 
 ```java
 public interface ExchangePeer extends Peer, ExchangeServer {
