@@ -28,8 +28,8 @@ import java.util.Collection;
 public class PeerMain {
 
     public static void main(String[] args) throws Throwable {
-        String groupURL = "multicast://224.5.6.7:9911"; // Group address, supporting two groups of multicast and file, extensible
-        final String peerURL = "dubbo://0.0.0.0:" + (((int) (Math.random() * 10000)) + 20000); // The native server address for cross networking
+        String groupURL = "multicast://224.5.6.7:9911"; // 组地址，支持组播和文件两组，可扩展
+        final String peerURL = "dubbo://0.0.0.0:" + (((int) (Math.random() * 10000)) + 20000); // 跨网络的本机服务器地址
 
         // Join the group and get the peer reference
         Peer peer = Networkers.join(groupURL, peerURL, new ChannelHandlerAdapter() {
@@ -41,10 +41,12 @@ public class PeerMain {
 
         // Sending messages to other peers in the network
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
-            Collection<Channel> channels = peer.getChannels(); // Access to channels with all other peers, this list changes dynamically
+            // Access to channels with all other peers, this list changes dynamically
+            Collection<Channel> channels = peer.getChannels();
             if (channels != null && channels.size() > 0) {
                 for (Channel channel : channels) {
-                    channel.send("(" + i + ") " + peerURL); // Sending messages to a specified peer
+                    // Sending messages to a specified peer
+                    channel.send("(" + i + ") " + peerURL);
                 }
             }
             Thread.sleep(1000);

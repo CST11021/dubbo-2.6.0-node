@@ -21,6 +21,7 @@ import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
 
 /**
+ * 用于维护一组服务器节点
  * Group. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Peer-to-peer">Peer-to-peer</a>
@@ -28,9 +29,9 @@ import com.alibaba.dubbo.remoting.RemotingException;
 public interface Group {
 
     /**
-     * 获取该服务组的信息
+     * 表示维护一组服务器集合的配置，可能是一个配置文件，或者是网络组播对象
      *
-     * @return group url.
+     * @return 服务组的信息
      */
     URL getUrl();
 

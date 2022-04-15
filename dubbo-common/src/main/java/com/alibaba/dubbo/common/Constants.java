@@ -204,7 +204,7 @@ public class Constants {
     public static final String DEFAULT_CLIENT_THREADPOOL = "cached";
 
     public static final String THREADPOOL_KEY = "threadpool";
-
+    /** 线程名：用于dubbo线程池的 */
     public static final String THREAD_NAME_KEY = "threadname";
 
     /** 表示在remoting层中，服务端处理客户端的请求的线程数 */

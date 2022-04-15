@@ -30,7 +30,7 @@ import com.alibaba.dubbo.remoting.Server;
 public interface Peer extends Server {
 
     /**
-     *
+     * 将当前的服务从服务组移除
      *
      * @throws RemotingException
      */

@@ -43,21 +43,16 @@ public class Exchangers {
     // 服务端调用bind方法，创建一个服务监听，等待客户端连接，注意：bind方法一定要有Replier，而connect不一定需要Replier
     // -------------------------------------------------
 
-    public static ExchangeServer bind(String url, Replier<?> replier) throws RemotingException {
-        return bind(URL.valueOf(url), replier);
-    }
-    public static ExchangeServer bind(URL url, Replier<?> replier) throws RemotingException {
-        return bind(url, new ChannelHandlerAdapter(), replier);
-    }
-    public static ExchangeServer bind(String url, ChannelHandler handler, Replier<?> replier) throws RemotingException {
-        return bind(URL.valueOf(url), handler, replier);
-    }
-    public static ExchangeServer bind(URL url, ChannelHandler handler, Replier<?> replier) throws RemotingException {
-        return bind(url, new ExchangeHandlerDispatcher(replier, handler));
-    }
-    public static ExchangeServer bind(String url, ExchangeHandler handler) throws RemotingException {
-        return bind(URL.valueOf(url), handler);
-    }
+
+    /**
+     * 重要的方法：DubboProtocol就是通过调用该方法，来创建一个ExchangeServer实例，使dubbo服务提供者，具有接收服务请求的能力，同时服务提供者
+     * 通过扩展ExchangeHandler#reply方法，来处理接收到的请求，将请求交由具体的业务实现，然后将处理结果反馈给服务消费者。
+     *
+     * @param url
+     * @param handler
+     * @return
+     * @throws RemotingException
+     */
     public static ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
@@ -68,6 +63,35 @@ public class Exchangers {
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
         return getExchanger(url).bind(url, handler);
     }
+    public static ExchangeServer bind(String url, ExchangeHandler handler) throws RemotingException {
+        return bind(URL.valueOf(url), handler);
+    }
+    /**
+     * 该方法创建的ExchangeServer，具有请求分发能力
+     *
+     * @param url
+     * @param handler
+     * @param replier
+     * @return
+     * @throws RemotingException
+     */
+    public static ExchangeServer bind(URL url, ChannelHandler handler, Replier<?> replier) throws RemotingException {
+        // 注意：这里使用的是ExchangeHandlerDispatcher实现，该实现具有请求分发能力
+        return bind(url, new ExchangeHandlerDispatcher(replier, handler));
+    }
+    public static ExchangeServer bind(String url, ChannelHandler handler, Replier<?> replier) throws RemotingException {
+        return bind(URL.valueOf(url), handler, replier);
+    }
+    public static ExchangeServer bind(URL url, Replier<?> replier) throws RemotingException {
+        return bind(url, new ChannelHandlerAdapter(), replier);
+    }
+    public static ExchangeServer bind(String url, Replier<?> replier) throws RemotingException {
+        return bind(URL.valueOf(url), replier);
+    }
+
+
+
+
 
 
 
@@ -124,12 +148,13 @@ public class Exchangers {
     // 基于传输层之上，实现 Request-Response 信息交换语义
     // -------------------------------------------------
 
+    public static Exchanger getExchanger(String type) {
+        return ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type);
+    }
     public static Exchanger getExchanger(URL url) {
         String type = url.getParameter(Constants.EXCHANGER_KEY, Constants.DEFAULT_EXCHANGER);
         return getExchanger(type);
     }
-    public static Exchanger getExchanger(String type) {
-        return ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type);
-    }
+
 
 }

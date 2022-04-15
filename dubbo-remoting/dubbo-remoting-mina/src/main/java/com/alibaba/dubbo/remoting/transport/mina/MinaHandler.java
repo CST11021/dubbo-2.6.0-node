@@ -29,7 +29,7 @@ public class MinaHandler extends IoHandlerAdapter {
 
     private final URL url;
 
-    /** 通道事件监听处理器 */
+    /** dubbo的通道事件监听处理器 */
     private final ChannelHandler handler;
 
     public MinaHandler(URL url, ChannelHandler handler) {

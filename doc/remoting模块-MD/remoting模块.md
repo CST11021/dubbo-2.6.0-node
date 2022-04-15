@@ -214,7 +214,7 @@ Dubbo要使用TCP长连接，就得自己实现Request和Response的抽象概念
 
 # 接口说明
 
-<img src="assets/image-20201009223111117.png" alt="image-20201009223111117" style="zoom:50%;" />
+ <img src="assets/image-20201009223111117.png" alt="image-20201009223111117" style="zoom:30%;"/>
 
 ## EndPoint
 

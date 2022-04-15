@@ -35,27 +35,32 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 通过文件配置的方式里一组服务节点信息，添加一个服务和移除服务都会修改配置文件
+ * 通过文件配置的方式，维护一组服务节点信息，添加一个服务和移除服务都会修改配置文件
  */
 public class FileGroup extends AbstractGroup {
 
+    /** 保存服务节点的配置文件 */
     private final File file;
-    // Scheduled executor service
+    /** 检查配置是否被修改的定时任务 */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3, new NamedThreadFactory("FileGroupModifiedChecker", true));
-    // Reconnect the timer to check whether the connection is available at a time, and when unavailable, an infinite reconnection
+    /** 重连定时器一次检查连接是否可用，不可用时无限重连 */
     private final ScheduledFuture<?> checkModifiedFuture;
+    /** 表示最后一次修改配置文件的时间戳 */
     private volatile long last;
 
     public FileGroup(URL url) {
         super(url);
+        // 从url获取配置文件的绝对路径地址，然后创建一个文件
         String path = url.getAbsolutePath();
         file = new File(path);
+
+        // 创建一个定时任务，检查配置是否被修改
         checkModifiedFuture = scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                // Check the file change
+                // 检查配置文件是否被修改，如果配置文件被修改，则获取配置文件的服务节点信息，并遍历每个服务节点创建连接
                 try {
                     check();
-                } catch (Throwable t) { // Defensive fault tolerance
+                } catch (Throwable t) {
                     logger.error("Unexpected error occur at reconnect, cause: " + t.getMessage(), t);
                 }
             }
@@ -73,6 +78,11 @@ public class FileGroup extends AbstractGroup {
         }
     }
 
+    /**
+     * 检查配置文件是否被修改，如果配置文件被修改，则获取配置文件的服务节点信息，并遍历每个服务节点创建连接
+     *
+     * @throws RemotingException
+     */
     private void check() throws RemotingException {
         long modified = file.lastModified();
         if (modified > last) {
@@ -134,6 +144,7 @@ public class FileGroup extends AbstractGroup {
         try {
             String full = url.toFullString();
             String[] lines = IOUtils.readLines(file);
+
             List<String> saves = new ArrayList<String>();
             for (String line : lines) {
                 if (full.equals(line)) {

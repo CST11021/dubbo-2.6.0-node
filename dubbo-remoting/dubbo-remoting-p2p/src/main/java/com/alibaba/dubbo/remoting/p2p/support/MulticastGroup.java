@@ -37,6 +37,7 @@ public class MulticastGroup extends AbstractGroup {
 
     private static final String LEAVE = "leave";
 
+    /** 表示广播的地址 */
     private InetAddress mutilcastAddress;
 
     private MulticastSocket mutilcastSocket;
@@ -109,6 +110,15 @@ public class MulticastGroup extends AbstractGroup {
         }
     }
 
+    /**
+     * 接收消息：
+     * 如果是JOIN类型的消息，则创建一个连接对象，加入该服务组
+     * 如果是LEAVE类型的消息，则断开链接对象，从该服务组移除
+     *
+     * @param msg
+     * @param remoteAddress
+     * @throws RemotingException
+     */
     private void receive(String msg, InetSocketAddress remoteAddress) throws RemotingException {
         if (msg.startsWith(JOIN)) {
             String url = msg.substring(JOIN.length()).trim();

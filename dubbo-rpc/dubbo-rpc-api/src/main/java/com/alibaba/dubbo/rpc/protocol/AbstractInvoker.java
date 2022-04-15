@@ -130,6 +130,7 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
      * @throws RpcException
      */
     public Result invoke(Invocation inv) throws RpcException {
+        // 如果invoke已经被销毁直接报错
         if (destroyed.get()) {
             throw new RpcException("Rpc invoker for service " + this + " on consumer " + NetUtils.getLocalHost()
                     + " use dubbo version " + Version.getVersion()

@@ -20,8 +20,17 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.zookeeper.ZookeeperClient;
 import com.alibaba.dubbo.remoting.zookeeper.ZookeeperTransporter;
 
+/**
+ * 用于创建ZookeeperClient客户端
+ */
 public class ZkclientZookeeperTransporter implements ZookeeperTransporter {
 
+    /**
+     * 通过url获取对应的zk服务器信息，从而创建一个zk客户端实例
+     *
+     * @param url   保存了zk服务器的信息
+     * @return
+     */
     public ZookeeperClient connect(URL url) {
         return new ZkclientZookeeperClient(url);
     }

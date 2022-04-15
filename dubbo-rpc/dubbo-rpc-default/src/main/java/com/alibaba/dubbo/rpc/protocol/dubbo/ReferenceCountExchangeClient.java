@@ -54,12 +54,17 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
         this.ghostClientMap = ghostClientMap;
     }
 
-    public void reset(URL url) {
-        client.reset(url);
-    }
 
     public ResponseFuture request(Object request) throws RemotingException {
         return client.request(request);
+    }
+    public ResponseFuture request(Object request, int timeout) throws RemotingException {
+        return client.request(request, timeout);
+    }
+
+
+    public void reset(URL url) {
+        client.reset(url);
     }
 
     public URL getUrl() {
@@ -72,10 +77,6 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     public ChannelHandler getChannelHandler() {
         return client.getChannelHandler();
-    }
-
-    public ResponseFuture request(Object request, int timeout) throws RemotingException {
-        return client.request(request, timeout);
     }
 
     public boolean isConnected() {

@@ -39,10 +39,13 @@ public abstract class AbstractGroup implements Group {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractGroup.class);
 
+    /** 表示维护一组服务器集合的配置，可能是一个配置文件，或者是网络组播对象 */
     protected final URL url;
 
+    /** 表示该组里维护的Server集合 */
     protected final Map<URL, Server> servers = new ConcurrentHashMap<URL, Server>();
 
+    /** 表示连接了每个Server的客户端对象 */
     protected final Map<URL, Client> clients = new ConcurrentHashMap<URL, Client>();
 
     protected final ChannelHandlerDispatcher dispatcher = new ChannelHandlerDispatcher();
@@ -117,6 +120,13 @@ public abstract class AbstractGroup implements Group {
         }
     }
 
+    /**
+     * 根据url，创建一个连接服务器的Client对象
+     *
+     * @param url
+     * @return
+     * @throws RemotingException
+     */
     protected Client connect(URL url) throws RemotingException {
         if (servers.containsKey(url)) {
             return null;

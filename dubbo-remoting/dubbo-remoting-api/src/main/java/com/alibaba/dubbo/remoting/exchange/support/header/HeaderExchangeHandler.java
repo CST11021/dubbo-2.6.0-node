@@ -216,6 +216,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
             if (message instanceof Request) {
                 // handle request.
                 Request request = (Request) message;
+                // TODO whz 什么时候请求是一个事件请求
                 if (request.isEvent()) {
                     handlerEvent(channel, request);
                 } else {

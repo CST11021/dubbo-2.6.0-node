@@ -103,7 +103,7 @@ public class MinaClient extends AbstractClient {
     }
 
     /**
-     * 客户端发起连接远端的请求，并阻塞知道连接到服务端
+     * 客户端发起连接远端的请求，并阻塞直到与服务端建立连接
      *
      * @throws Throwable
      */
@@ -187,7 +187,6 @@ public class MinaClient extends AbstractClient {
     @Override
     protected void doDisConnect() throws Throwable {
         try {
-            // TODO whz 为什么这里要移除？
             MinaChannel.removeChannelIfDisconnectd(session);
         } catch (Throwable t) {
             logger.warn(t.getMessage());
@@ -202,8 +201,10 @@ public class MinaClient extends AbstractClient {
     @Override
     protected Channel getChannel() {
         IoSession s = session;
-        if (s == null || !s.isConnected())
+        if (s == null || !s.isConnected()) {
             return null;
+        }
+
         return MinaChannel.getOrAddChannel(s, getUrl(), this);
     }
 

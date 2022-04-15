@@ -50,6 +50,13 @@ public class MinaServer extends AbstractServer {
     /** Mina框架的服务端对象 */
     private SocketAcceptor acceptor;
 
+    /**
+     * ChannelHandlers.wrap方法很重要，dubbo的线程模型就通过该方法实现的
+     *
+     * @param url
+     * @param handler
+     * @throws RemotingException
+     */
     public MinaServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
